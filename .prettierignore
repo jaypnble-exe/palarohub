@@ -1,6 +1,9 @@
 node_modules
 .next
 coverage
+**/.temp/
+.tmp
 pnpm-lock.yaml
 CLAUDE.md
 next-env.d.ts
+ui-reference.html

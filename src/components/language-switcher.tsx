@@ -10,7 +10,11 @@ export function LanguageSwitcher() {
   const t = useTranslations("Language");
   const [pending, startTransition] = useTransition();
   return (
-    <div role="group" aria-label={t("label")} className="flex gap-1">
+    <div
+      role="group"
+      aria-label={t("label")}
+      className="flex gap-1 rounded-full bg-navy-secondary p-1"
+    >
       {locales.map((option) => (
         <button
           key={option}
@@ -18,7 +22,7 @@ export function LanguageSwitcher() {
           aria-pressed={locale === option}
           disabled={pending}
           onClick={() => startTransition(() => setLocale(option))}
-          className="min-h-11 min-w-11 rounded-lg px-3 text-sm font-semibold hover:bg-slate-200 aria-pressed:bg-slate-900 aria-pressed:text-white disabled:opacity-60"
+          className="min-h-11 min-w-11 rounded-full px-3 text-sm font-bold text-on-dark-muted transition-colors hover:bg-white/10 aria-pressed:bg-background aria-pressed:text-foreground disabled:opacity-60"
         >
           {t(option)}
         </button>

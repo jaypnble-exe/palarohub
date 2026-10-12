@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palaro Hub UI Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#14213D; --navy-2:#1E2D4F; --navy-3:#2F4170; --ink:#0B1428;
+  --orange:#E8772E; --orange-dark:#B04E17; --orange-soft:#FDEBDD;
+  --cream:#F6F3EC; --paper:#FFFCF6; --line:#E2DACB; --band:#F1ECE2;
+  --text:#14213D; --muted:#4A5568; --on-dark:#F6F3EC; --on-dark-muted:#BFC8D6;
+  --success:#2E7D4F; --success-soft:#E3F2E8;
+  --warning:#9A5B00; --warning-soft:#FFF1D6;
+  --danger:#B3261E; --danger-soft:#FBE4E2;
+  --radius:16px; --radius-sm:12px;
+  --display:'Oswald', Arial, sans-serif; --body:'Public Sans', Arial, sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E9E4D8;color:var(--text);font-family:var(--body);font-size:16px;line-height:1.45}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+h1,h2,h3{line-height:1.15}
+
+/* ---------- page chrome ---------- */
+.topbar{position:sticky;top:0;z-index:20;background:var(--navy);color:var(--on-dark);padding:14px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px}
+.brand{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.brand span{color:var(--orange)}
+.tabs{display:flex;gap:6px;overflow-x:auto;max-width:100%;scrollbar-width:none}
+.tab{white-space:nowrap;padding:10px 14px;border-radius:999px;color:var(--on-dark-muted);font-weight:600;font-size:15px}
+.tab[aria-selected="true"]{background:var(--orange);color:var(--navy)}
+.page{max-width:1280px;margin:0 auto;padding:32px 16px 64px}
+.section{display:none}
+.section.active{display:block}
+.section-head{margin-bottom:24px;max-width:820px}
+.section-head h1{font-family:var(--display);font-size:40px;text-transform:uppercase;font-weight:700}
+.section-head p{color:var(--muted);margin-top:8px;font-size:17px}
+.screens{display:flex;flex-wrap:wrap;gap:40px 32px;align-items:flex-start}
+.screen-col{display:flex;flex-direction:column;gap:14px;width:min(380px,100%)}
+.screen-label{font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--orange-dark)}
+.notes{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px 16px;font-size:14px;color:var(--muted)}
+.notes b{color:var(--text)}
+.notes ul{padding-left:18px;display:flex;flex-direction:column;gap:4px;margin-top:6px}
+
+/* ---------- phone frame ---------- */
+.phone{width:100%;height:760px;border:10px solid var(--ink);border-radius:40px;background:var(--cream);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 18px 40px rgba(20,33,61,.18)}
+.phone .scroll{flex:1;overflow-y:auto;padding:16px}
+.app-header{background:var(--navy);color:var(--on-dark);padding:18px 16px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.app-header .league{font-family:var(--display);font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.app-header small{display:block;color:var(--on-dark-muted);font-size:13px}
+.lang{display:flex;background:var(--navy-2);border-radius:999px;padding:3px}
+.lang button{padding:6px 10px;border-radius:999px;font-size:13px;font-weight:700;color:var(--on-dark-muted);min-height:32px}
+.lang button[aria-pressed="true"]{background:var(--cream);color:var(--navy)}
+.bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--paper)}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 12px;font-size:12px;font-weight:600;color:var(--muted);text-decoration:none}
+.bottom-nav a.on{color:var(--orange-dark)}
+.bottom-nav svg{width:22px;height:22px}
+
+/* ---------- components ---------- */
+.h-title{font-family:var(--display);font-size:24px;font-weight:600;text-transform:uppercase;margin:4px 0 12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:12px}
+.between{justify-content:space-between}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 20px;border-radius:14px;font-weight:700;font-size:17px}
+.btn-primary{background:var(--orange);color:var(--navy)}
+.btn-dark{background:var(--navy);color:var(--on-dark)}
+.btn-secondary{background:var(--paper);color:var(--navy);border:2px solid var(--navy)}
+.btn-danger{background:var(--danger);color:#FFF8F6}
+.btn-block{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.b-success{background:var(--success-soft);color:var(--success)}
+.b-warning{background:var(--warning-soft);color:var(--warning)}
+.b-danger{background:var(--danger-soft);color:var(--danger)}
+.b-neutral{background:var(--band);color:var(--muted)}
+.rating{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;font-family:var(--display);font-weight:700;font-size:18px}
+.r-A{background:var(--navy);color:var(--on-dark)}
+.r-B{background:var(--navy-3);color:var(--on-dark)}
+.r-C{background:#C9D3E3;color:var(--navy)}
+.r-D{background:var(--band);color:var(--navy);border:1px solid var(--line)}
+.todo{display:flex;align-items:center;gap:14px;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius)}
+.todo .num{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-family:var(--display);font-size:22px;font-weight:700;background:var(--orange-soft);color:var(--orange-dark)}
+.todo .txt{flex:1;font-weight:600;font-size:16px;line-height:1.3}
+.todo .go{flex:none;min-height:44px;padding:0 14px;border-radius:12px;background:var(--navy);color:var(--on-dark);font-weight:700;font-size:14px}
+.live-card{background:var(--navy);color:var(--on-dark);border-radius:var(--radius);padding:16px}
+.live-dot{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#FFB78A;text-transform:uppercase;letter-spacing:1px}
+.live-dot::before{content:"";width:9px;height:9px;border-radius:50%;background:#FF6B4A;animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.live-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;margin-top:10px;text-align:center}
+.live-score .t{font-weight:700;font-size:15px}
+.live-score .s{font-family:var(--display);font-size:40px;font-weight:700;line-height:1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700;font-size:15px}
+.input{min-height:52px;border:2px solid var(--line);border-radius:12px;padding:0 14px;font:inherit;font-size:17px;background:#FFFEFA;color:var(--text);width:100%}
+.input:focus{outline:3px solid var(--orange);outline-offset:1px;border-color:var(--navy)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;min-width:52px;padding:0 14px;border-radius:12px;border:2px solid var(--line);background:#FFFEFA;font-weight:700;font-size:16px}
+.chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:var(--on-dark)}
+.progress{height:8px;background:var(--band);border-radius:999px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--orange)}
+.alert{display:flex;gap:10px;padding:12px 14px;border-radius:12px;font-size:15px;line-height:1.35}
+.alert-danger{background:var(--danger-soft);color:#7A1A14;border-left:6px solid var(--danger)}
+.alert-warning{background:var(--warning-soft);color:#6B4000;border-left:6px solid var(--warning)}
+.player-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.player-row:last-child{border-bottom:none}
+.player-row .jersey{font-family:var(--display);font-size:20px;font-weight:700;width:40px}
+.player-row .name{flex:1;font-weight:600}
+.list{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.player-row.error{background:var(--danger-soft)}
+.sheet{background:var(--paper);border-radius:24px 24px 0 0;padding:20px 16px;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(20,33,61,.12)}
+.table{width:100%;border-collapse:collapse;font-size:15px}
+.table th{text-align:left;font-size:13px;color:var(--muted);font-weight:700;padding:8px 6px;border-bottom:2px solid var(--line)}
+.table td{padding:10px 6px;border-bottom:1px solid var(--line)}
+.table td.num,.table th.num{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- style guide ---------- */
+.sg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px}
+.swatch{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--paper)}
+.swatch div{height:64px}
+.swatch p{padding:8px 10px;font-size:13px}
+.swatch code{display:block;color:var(--muted);font-size:12px}
+.type-sample>*+*{margin-top:12px}
+
+/* ---------- scorer (tablet landscape) ---------- */
+.device-wrap{overflow-x:auto;padding-bottom:8px;max-width:100%}
+.tablet{width:1040px;border:12px solid var(--ink);border-radius:28px;background:var(--navy);color:var(--on-dark);box-shadow:0 18px 40px rgba(20,33,61,.25);overflow:hidden}
+.sc-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:14px 20px;background:var(--ink)}
+.sc-team{display:flex;align-items:center;gap:14px}
+.sc-team.right{justify-content:flex-end;text-align:right}
+.sc-team .nm{font-family:var(--display);font-size:22px;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.sc-team .meta{font-size:13px;color:var(--on-dark-muted)}
+.sc-team .pts{font-family:var(--display);font-size:56px;font-weight:700;line-height:1;min-width:84px;text-align:center}
+.sc-mid{text-align:center}
+.sc-mid .per{font-weight:700;color:var(--orange);font-size:15px}
+.sc-mid .clock{font-family:var(--display);font-size:40px;font-weight:600;line-height:1.05;font-variant-numeric:tabular-nums}
+.clock-btn{margin-top:4px;min-height:36px;padding:0 14px;border-radius:10px;background:var(--navy-3);font-weight:700;font-size:14px}
+.bonus{display:inline-block;margin-top:4px;padding:2px 10px;border-radius:999px;background:#9FD8B0;color:var(--navy);font-size:12px;font-weight:800;letter-spacing:.5px}
+.sc-body{display:grid;grid-template-columns:1fr 250px 1fr;gap:16px;padding:16px 20px}
+.court{display:flex;flex-direction:column;gap:8px}
+.court h4{font-size:13px;color:var(--on-dark-muted);text-transform:uppercase;letter-spacing:1px}
+.pbtn{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:10px;min-height:62px;padding:8px 12px;border-radius:14px;background:var(--navy-2);border:2px solid transparent;text-align:left}
+.pbtn .no{font-family:var(--display);font-size:26px;font-weight:700}
+.pbtn .pn{font-weight:700;font-size:16px}
+.pbtn .ps{font-size:13px;color:var(--on-dark-muted)}
+.pbtn.sel{border-color:var(--orange);background:var(--navy-3)}
+.pbtn.out{opacity:.4;text-decoration:line-through}
+.fouls{display:flex;gap:4px}
+.fouls i{width:10px;height:10px;border-radius:50%;background:#3A4A6B}
+.fouls i.on{background:#F5B57F}
+.fouls.warn i.on{background:#FF6B4A}
+.bench{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.bench button{min-height:40px;padding:0 10px;border-radius:10px;background:transparent;border:1px dashed #4A5B80;color:var(--on-dark-muted);font-weight:600;font-size:13px}
+.bench button.pick{border-style:solid;border-color:var(--orange);color:var(--on-dark)}
+.pad{display:flex;flex-direction:column;gap:10px}
+.pad .hint{font-size:13px;color:var(--on-dark-muted);text-align:center;min-height:36px}
+.pad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.act{min-height:64px;border-radius:14px;font-family:var(--display);font-size:26px;font-weight:700}
+.act.score{background:var(--orange);color:var(--navy)}
+.act.other{background:var(--navy-3);font-family:var(--body);font-size:17px}
+.act.wide{grid-column:span 3}
+.act[disabled]{opacity:.35;cursor:not-allowed}
+.to-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.undo{min-height:52px;border-radius:14px;background:transparent;border:2px solid var(--on-dark-muted);font-weight:700}
+.sc-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 20px 14px;border-top:1px solid var(--navy-3)}
+.sync{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.sync i{width:10px;height:10px;border-radius:50%}
+.pbp{font-size:13px;color:var(--on-dark-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:560px}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--on-dark-muted)}
+.toggle input{width:18px;height:18px;accent-color:var(--orange)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--on-dark);padding:14px 20px;border-radius:14px;font-weight:700;border-left:6px solid var(--orange);box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:50;max-width:calc(100% - 32px);display:none}
+.toast.show{display:block}
+
+/* ---------- TV ---------- */
+.tv{width:100%;max-width:1120px;aspect-ratio:16/9;background:var(--ink);border:14px solid #2A3550;border-radius:22px;color:var(--on-dark);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:3% 4%;container-type:inline-size}
+.tv-sponsor{position:absolute;top:3%;left:0;right:0;text-align:center;font-size:clamp(10px,1.6cqi,18px);letter-spacing:3px;text-transform:uppercase;color:var(--on-dark-muted)}
+.tv-board{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:3cqi}
+.tv-team{text-align:center}
+.tv-team .nm{font-family:var(--display);font-size:4.2cqi;font-weight:600;letter-spacing:.3cqi}
+.tv-team .pts{font-family:var(--display);font-size:17cqi;font-weight:700;line-height:1}
+.tv-team .meta{font-size:2cqi;color:var(--on-dark-muted)}
+.tv-mid{text-align:center}
+.tv-mid .per{font-size:3.4cqi;font-weight:800;color:var(--orange)}
+.tv-mid .clock{font-family:var(--display);font-size:8cqi;font-weight:600;font-variant-numeric:tabular-nums}
+.tv-mid .bonus{font-size:1.8cqi;padding:.4cqi 1.4cqi}
+.tv-flash{position:absolute;left:4%;right:4%;bottom:5%;background:var(--orange);color:var(--navy);border-radius:1.2cqi;padding:1.6cqi 2.4cqi;transform:translateY(160%);transition:transform .35s ease}
+.tv-flash.show{transform:none}
+.tv-flash .big{font-family:var(--display);font-size:4.6cqi;font-weight:700;text-transform:uppercase;line-height:1.1}
+.tv-flash .sub{font-size:2.2cqi;font-weight:700}
+
+/* ---------- responsive ---------- */
+@media (max-width:720px){
+  .section-head h1{font-size:30px}
+  .page{padding:24px 16px 48px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Palaro <span>Hub</span></div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" aria-selected="true" data-tab="style">Style guide</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="commissioner">Commissioner</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="team">Team manager</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="scorer">Scorer + TV</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="public">Public page</button>
+  </nav>
+</header>
+
+<main class="page">
+
+<!-- =============== STYLE GUIDE =============== -->
+<section class="section active" id="style">
+  <div class="section-head">
+    <h1>Style guide</h1>
+    <p>Design tokens and components for every screen. Phone-first, big tap targets (min 44px, primary 52px), plain words, and status is always written in text, never shown by color alone.</p>
+  </div>
+  <div class="sg-grid">
+    <div class="card stack">
+      <h3 class="h-title">Colors</h3>
+      <div class="swatches">
+        <div class="swatch"><div style="background:#14213D"></div><p>Navy<code>#14213D</code></p></div>
+        <div class="swatch"><div style="background:#1E2D4F"></div><p>Navy 2<code>#1E2D4F</code></p></div>
+        <div class="swatch"><div style="background:#E8772E"></div><p>Orange<code>#E8772E</code></p></div>
+        <div class="swatch"><div style="background:#B04E17"></div><p>Orange dark<code>#B04E17</code></p></div>
+        <div class="swatch"><div style="background:#F6F3EC"></div><p>Cream (bg)<code>#F6F3EC</code></p></div>
+        <div class="swatch"><div style="background:#FFFCF6"></div><p>Paper (card)<code>#FFFCF6</code></p></div>
+        <div class="swatch"><div style="background:#4A5568"></div><p>Muted text<code>#4A5568</code></p></div>
+        <div class="swatch"><div style="background:#2E7D4F"></div><p>Success<code>#2E7D4F</code></p></div>
+        <div class="swatch"><div style="background:#9A5B00"></div><p>Warning<code>#9A5B00</code></p></div>
+        <div class="swatch"><div style="background:#B3261E"></div><p>Danger<code>#B3261E</code></p></div>
+      </div>
+      <p class="small muted">Light screens (admin, team, public) use cream + paper. Game screens (scorer, TV) use navy for contrast in gyms. Orange text on cream uses <b>Orange dark</b> for contrast.</p>
+    </div>
+    <div class="card type-sample">
+      <h3 class="h-title">Type</h3>
+      <p style="font-family:var(--display);font-size:40px;font-weight:700;text-transform:uppercase;line-height:1">Oswald 40 · Headings</p>
+      <p style="font-family:var(--display);font-size:24px;font-weight:600;text-transform:uppercase">Oswald 24 · Section titles</p>
+      <p style="font-size:17px;font-weight:700">Public Sans 17 bold · Buttons, labels</p>
+      <p style="font-size:16px">Public Sans 16 · Body text. Minimum size for anything a commissioner must read.</p>
+      <p class="small muted">Public Sans 14 · Secondary info only</p>
+      <p style="font-family:var(--display);font-size:56px;font-weight:700;line-height:1">54 – 51</p>
+      <p class="small muted">Scores and clocks always in Oswald, tabular numbers.</p>
+    </div>
+    <div class="card stack">
+      <h3 class="h-title">Buttons</h3>
+      <button class="btn btn-primary btn-block">Approve team</button>
+      <button class="btn btn-dark btn-block">Share on WhatsApp</button>
+      <button class="btn btn-secondary btn-block">Send back</button>
+      <button class="btn btn-danger btn-block">Remove player</button>
+      <button class="btn btn-primary btn-block" disabled>Submit lineup</button>
+      <p class="small muted">One primary (orange) button per screen. Destructive actions ask to confirm and offer undo.</p>
+    </div>
+    <div class="card stack">
+      <h3 class="h-title">Status and ratings</h3>
+      <div class="chips">
+        <span class="badge b-success">✓ Approved</span>
+        <span class="badge b-warning">Waiting for approval</span>
+        <span class="badge b-danger">Not eligible</span>
+        <span class="badge b-neutral">Draft</span>
+      </div>
+      <div class="row"><span class="rating r-A">A</span><span class="rating r-B">B</span><span class="rating r-C">C</span><span class="rating r-D">D</span><span class="small muted">Rating badge: letter always visible</span></div>
+      <div class="alert alert-danger"><b>!</b><span><b>Juan Dela Cruz</b> is rated A and cannot join Division C (max rating: C).</span></div>
+      <div class="alert alert-warning"><b>!</b><span>Titans are behind by 1 game payment.</span></div>
+    </div>
+    <div class="card stack">
+      <h3 class="h-title">Inputs</h3>
+      <div class="field"><label for="sg-in">Team name</label><input id="sg-in" class="input" placeholder="e.g. Jeddah Warriors"></div>
+      <div class="field"><label>Division</label>
+        <div class="chips" data-single>
+          <button class="chip" aria-pressed="false">Open</button><button class="chip" aria-pressed="true">Div B</button><button class="chip" aria-pressed="false">Div C</button>
+        </div>
+      </div>
+      <p class="small muted">Prefer tap-to-choose chips over dropdowns. Labels always above fields.</p>
+    </div>
+    <div class="card stack">
+      <h3 class="h-title">Wording</h3>
+      <ul class="small" style="padding-left:18px;display:flex;flex-direction:column;gap:6px">
+        <li>"Teams waiting for approval", not "Pending registrations"</li>
+        <li>"Saved on this device" / "Synced", not "Offline queue"</li>
+        <li>Every string has English and Tagalog (EN / TL toggle in header)</li>
+        <li>Numbers with currency: "SAR 1,800"</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =============== COMMISSIONER =============== -->
+<section class="section" id="commissioner">
+  <div class="section-head">
+    <h1>Commissioner</h1>
+    <p>The commissioner mostly reviews and approves. Home is a to-do list, setup is a step-by-step wizard, and money is always clear. Try the EN / TL toggle on the home screen.</p>
+  </div>
+  <div class="screens">
+
+    <div class="screen-col">
+      <p class="screen-label">1 · Home (to-do)</p>
+      <div class="phone">
+        <div class="app-header">
+          <div><div class="league">Riyadh Pinoy Liga</div><small data-i18n="season">Season 5 · Elimination round</small></div>
+          <div class="lang" role="group" aria-label="Language">
+            <button aria-pressed="true" data-lang="en">EN</button><button aria-pressed="false" data-lang="tl">TL</button>
+          </div>
+        </div>
+        <div class="scroll stack">
+          <p style="font-size:20px;font-weight:700" data-i18n="greet">Good evening, Commissioner Rey</p>
+          <h3 class="h-title" data-i18n="todo">Today's to-do</h3>
+          <div class="todo"><div class="num">3</div><div class="txt" data-i18n="t1">Teams waiting for approval</div><button class="go" data-i18n="review">Review</button></div>
+          <div class="todo"><div class="num">2</div><div class="txt" data-i18n="t2">Teams haven't paid this week</div><button class="go" data-i18n="view">View</button></div>
+          <div class="todo"><div class="num">4</div><div class="txt" data-i18n="t3">Saturday games need referees</div><button class="go" data-i18n="assign">Assign</button></div>
+          <div class="todo"><div class="num">1</div><div class="txt" data-i18n="t4">Rating appeal to review</div><button class="go" data-i18n="review">Review</button></div>
+          <h3 class="h-title" data-i18n="live">Live now</h3>
+          <div class="live-card">
+            <div class="row between"><span class="live-dot">Live · Q3</span><span class="small" style="color:var(--on-dark-muted)">Court 1</span></div>
+            <div class="live-score"><div><div class="t">Warriors</div></div><div class="s">54 – 51</div><div><div class="t">Falcons</div></div></div>
+            <p class="small" style="color:#F5B57F;margin-top:10px">⚠ #7 Santos has 4 fouls</p>
+          </div>
+        </div>
+        <nav class="bottom-nav" aria-label="Main">
+          <a class="on" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span data-i18n="nHome">Home</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4.5"/></svg><span data-i18n="nTeams">Teams</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span data-i18n="nGames">Games</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="2.5"/></svg><span data-i18n="nPay">Payments</span></a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg><span data-i18n="nMore">More</span></a>
+        </nav>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>Opens to "what do I need to do today?"</li><li>Each to-do has one clear action button.</li><li>Live games show alerts (fouls, ejections).</li><li>5-item bottom nav, icon + label.</li></ul></div>
+    </div>
+
+    <div class="screen-col">
+      <p class="screen-label">2 · New season wizard</p>
+      <div class="phone">
+        <div class="app-header"><div><div class="league">New season</div><small>Step 3 of 5</small></div><button class="small" style="color:var(--on-dark-muted);font-weight:700">Close</button></div>
+        <div class="scroll stack">
+          <div class="progress" aria-label="Step 3 of 5"><span style="width:60%"></span></div>
+          <p style="font-size:22px;font-weight:700;line-height:1.25">What is the highest rating allowed in each division?</p>
+          <p class="muted small">Players rated higher cannot register in that division.</p>
+          <div class="card stack">
+            <p style="font-weight:700">Open</p>
+            <div class="chips" data-single><button class="chip" aria-pressed="true">A</button><button class="chip" aria-pressed="false">B</button><button class="chip" aria-pressed="false">C</button><button class="chip" aria-pressed="false">D</button></div>
+          </div>
+          <div class="card stack">
+            <p style="font-weight:700">Division B</p>
+            <div class="chips" data-single><button class="chip" aria-pressed="false">A</button><button class="chip" aria-pressed="true">B</button><button class="chip" aria-pressed="false">C</button><button class="chip" aria-pressed="false">D</button></div>
+          </div>
+          <div class="card stack">
+            <p style="font-weight:700">Division C</p>
+            <div class="chips" data-single><button class="chip" aria-pressed="false">A</button><button class="chip" aria-pressed="false">B</button><button class="chip" aria-pressed="true">C</button><button class="chip" aria-pressed="false">D</button></div>
+          </div>
+          <button class="btn btn-secondary btn-block">Copy from last season</button>
+        </div>
+        <div class="row" style="padding:12px 16px 16px;background:var(--paper);border-top:1px solid var(--line)">
+          <button class="btn btn-secondary" style="flex:1">Back</button>
+          <button class="btn btn-primary" style="flex:2">Next</button>
+        </div>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>One question per step, progress always shown.</li><li>Defaults pre-selected; "Copy from last season".</li><li>Steps: name → divisions → max rating → fees and deadline → review and share link.</li></ul></div>
+    </div>
+
+    <div class="screen-col">
+      <p class="screen-label">3 · Approve teams</p>
+      <div class="phone">
+        <div class="app-header"><div><div class="league">Waiting for approval</div><small>3 teams</small></div></div>
+        <div class="scroll stack">
+          <div class="card stack">
+            <div class="row between"><p style="font-weight:700;font-size:18px">Jeddah Warriors</p><span class="badge b-success">✓ All checks passed</span></div>
+            <p class="small muted">Division B · 12 players · Fee paid: SAR 600 of 1,800</p>
+            <div class="row"><button class="btn btn-secondary" style="flex:1">Send back</button><button class="btn btn-primary" style="flex:1">Approve</button></div>
+          </div>
+          <div class="card stack">
+            <div class="row between"><p style="font-weight:700;font-size:18px">Falcons</p><span class="badge b-success">✓ All checks passed</span></div>
+            <p class="small muted">Division B · 10 players · Fee paid: SAR 1,800 of 1,800</p>
+            <div class="row"><button class="btn btn-secondary" style="flex:1">Send back</button><button class="btn btn-primary" style="flex:1">Approve</button></div>
+          </div>
+          <div class="card stack">
+            <div class="row between"><p style="font-weight:700;font-size:18px">Titans</p><span class="badge b-danger">1 problem</span></div>
+            <div class="alert alert-danger"><span>#23 Mark Reyes is suspended until 18 Oct (ejection, Season 5 Game 12).</span></div>
+            <div class="row"><button class="btn btn-secondary" style="flex:1">See roster</button><button class="btn btn-primary" style="flex:1">Send back</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>The app has already checked ratings, roster size, suspensions and documents.</li><li>Problems explained in one plain sentence.</li><li>"Send back" asks for a short comment to the team.</li></ul></div>
+    </div>
+
+    <div class="screen-col">
+      <p class="screen-label">4 · Payments</p>
+      <div class="phone" style="position:relative">
+        <div class="app-header"><div><div class="league">Payments</div><small>Season 5 · Quota SAR 1,800 per team</small></div></div>
+        <div class="scroll stack" style="padding-bottom:300px">
+          <div class="card stack">
+            <p class="small muted">Collected so far</p>
+            <p style="font-family:var(--display);font-size:34px;font-weight:700;line-height:1">SAR 9,600 <span class="small muted" style="font-family:var(--body);font-weight:500">of 21,600</span></p>
+            <div class="progress"><span style="width:44%"></span></div>
+          </div>
+          <div class="list">
+            <div class="player-row"><div class="name">Warriors<div class="small muted">SAR 1,800 of 1,800</div></div><span class="badge b-success">✓ Fully paid</span></div>
+            <div class="player-row"><div class="name">Falcons<div class="small muted">SAR 800 of 1,800</div></div><span class="badge b-neutral">4 of 9 games</span></div>
+            <div class="player-row"><div class="name">Titans<div class="small muted">SAR 400 of 1,800</div></div><span class="badge b-warning">Behind 1 game</span></div>
+          </div>
+        </div>
+        <div class="sheet stack" style="position:absolute;left:0;right:0;bottom:0">
+          <p style="font-weight:700;font-size:18px">Record payment · Titans</p>
+          <div class="field"><label>Amount</label>
+            <div class="chips" data-single><button class="chip" aria-pressed="true">SAR 200 · 1 game</button><button class="chip" aria-pressed="false">SAR 1,400 · Full balance</button></div>
+          </div>
+          <div class="field"><label>Paid by</label>
+            <div class="chips" data-single><button class="chip" aria-pressed="true">Cash</button><button class="chip" aria-pressed="false">Bank transfer</button><button class="chip" aria-pressed="false">STC Pay</button></div>
+          </div>
+          <button class="btn btn-primary btn-block">Save and send receipt</button>
+        </div>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>Two taps to record a payment at the venue.</li><li>Quick amounts: one game or full balance.</li><li>Status written in words: "Behind 1 game".</li><li>Money stored as halalas; shown as SAR.</li></ul></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- =============== TEAM MANAGER =============== -->
+<section class="section" id="team">
+  <div class="section-head">
+    <h1>Team manager</h1>
+    <p>Teams register themselves from a shared link. Eligibility is checked live, so problems are fixed before the commissioner ever sees them.</p>
+  </div>
+  <div class="screens">
+    <div class="screen-col">
+      <p class="screen-label">5 · Register lineup</p>
+      <div class="phone">
+        <div class="app-header"><div><div class="league">Jeddah Warriors</div><small>Season 5 · Division C · max rating C</small></div></div>
+        <div class="scroll stack">
+          <div class="field"><label for="psearch">Add a player</label><input id="psearch" class="input" placeholder="Search name or past team"></div>
+          <div class="row between"><h3 class="h-title" style="margin:0">Roster</h3><span class="small muted">5 of 8–15 players</span></div>
+          <div class="list">
+            <div class="player-row"><span class="jersey">4</span><span class="name">Paolo Cruz</span><span class="rating r-C">C</span></div>
+            <div class="player-row"><span class="jersey">7</span><span class="name">Rico Santos</span><span class="rating r-D">D</span></div>
+            <div class="player-row error"><span class="jersey">11</span><span class="name">Juan Dela Cruz</span><span class="rating r-A">A</span></div>
+            <div class="player-row"><span class="jersey">15</span><span class="name">Ben Aquino</span><span class="rating r-C">C</span></div>
+            <div class="player-row"><span class="jersey">23</span><span class="name">Leo Ramos</span><span class="rating r-D">D</span></div>
+          </div>
+          <div class="alert alert-danger"><b>!</b><span><b>Juan Dela Cruz</b> is rated A and cannot join Division C (max rating: C). Remove him or register in the Open division.</span></div>
+          <div class="alert alert-warning"><b>!</b><span>Add at least 3 more players (minimum 8).</span></div>
+        </div>
+        <div style="padding:12px 16px 16px;background:var(--paper);border-top:1px solid var(--line)" class="stack">
+          <p class="small muted" style="text-align:center">Fix 2 problems before submitting</p>
+          <button class="btn btn-primary btn-block" disabled>Submit lineup</button>
+        </div>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>Checks run as players are added, not after submit.</li><li>Error row highlighted + plain-language reason + what to do.</li><li>Submit stays disabled with a count of problems.</li></ul></div>
+    </div>
+
+    <div class="screen-col">
+      <p class="screen-label">6 · After submitting</p>
+      <div class="phone">
+        <div class="app-header"><div><div class="league">Jeddah Warriors</div><small>Season 5 · Division C</small></div></div>
+        <div class="scroll stack">
+          <div class="card stack" style="text-align:center;padding:28px 16px">
+            <span class="badge b-warning" style="align-self:center">Waiting for approval</span>
+            <p style="font-size:22px;font-weight:700">Lineup sent!</p>
+            <p class="muted">The commissioner will review your 12 players. We'll notify you here.</p>
+          </div>
+          <div class="card stack">
+            <p style="font-weight:700">Registration fee</p>
+            <p class="muted small">SAR 0 paid of SAR 1,800 · Pay in full or SAR 200 per game</p>
+            <div class="progress"><span style="width:0%"></span></div>
+          </div>
+          <div class="card stack">
+            <p style="font-weight:700">First game</p>
+            <p class="muted small">Fri 23 Oct · 8:00 PM · Court 1 vs Falcons</p>
+            <button class="btn btn-dark btn-block">Open in Google Maps</button>
+          </div>
+          <button class="btn btn-secondary btn-block">Share schedule on WhatsApp</button>
+        </div>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>Always tell the user what happens next.</li><li>Fee balance visible to the team manager.</li><li>Share buttons for WhatsApp/Facebook.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- =============== SCORER + TV =============== -->
+<section class="section" id="scorer">
+  <div class="section-head">
+    <h1>Scorer and TV scoreboard</h1>
+    <p>Working demo. Tap a player, then an action. The TV below updates from the same data, with flashes for 4th fouls, foul-outs, 3-pointers, subs and timeouts. To substitute: tap a player on court, tap <b>Sub</b>, then tap a bench player.</p>
+  </div>
+  <div class="stack" style="gap:32px">
+    <div>
+      <p class="screen-label" style="margin-bottom:12px">7 · Scorebook (tablet, landscape)</p>
+      <div class="device-wrap">
+        <div class="tablet">
+          <div class="sc-top">
+            <div class="sc-team"><div class="pts" id="s-home-pts">0</div><div><div class="nm" id="s-home-nm"></div><div class="meta" id="s-home-meta"></div></div></div>
+            <div class="sc-mid">
+              <div class="per" id="s-per">Q3</div>
+              <div class="clock" id="s-clock">10:00</div>
+              <button class="clock-btn" id="s-clockbtn">▶ Start clock</button>
+              <button class="clock-btn" id="s-nextq">Next quarter</button>
+            </div>
+            <div class="sc-team right"><div><div class="nm" id="s-away-nm"></div><div class="meta" id="s-away-meta"></div></div><div class="pts" id="s-away-pts">0</div></div>
+          </div>
+          <div class="sc-body">
+            <div class="court" id="court-home"></div>
+            <div class="pad">
+              <div class="hint" id="s-hint">Tap a player</div>
+              <div class="pad-grid">
+                <button class="act score" data-act="p1">+1</button>
+                <button class="act score" data-act="p2">+2</button>
+                <button class="act score" data-act="p3">+3</button>
+                <button class="act other wide" data-act="foul">Foul</button>
+                <button class="act other wide" data-act="sub">Sub</button>
+              </div>
+              <div class="to-row">
+                <button class="act other" data-act="to-home" id="to-home">Timeout</button>
+                <button class="act other" data-act="to-away" id="to-away">Timeout</button>
+              </div>
+              <button class="undo" id="s-undo">↶ Undo last</button>
+            </div>
+            <div class="court" id="court-away"></div>
+          </div>
+          <div class="sc-foot">
+            <span class="sync" id="s-sync"><i style="background:#9FD8B0"></i>Synced</span>
+            <span class="pbp" id="s-pbp">Play-by-play will appear here</span>
+            <label class="toggle"><input type="checkbox" id="s-offline"> Simulate no signal</label>
+          </div>
+        </div>
+      </div>
+      <div class="notes" style="margin-top:14px;max-width:1040px"><b>UX notes</b><ul><li>Score always visible at top; no menus during the game.</li><li>On-court players as big buttons with points and foul dots; bench below.</li><li>4th foul turns dots red and shows an alert; at 5 the player is fouled out and must be subbed.</li><li>Team fouls ≥ 4 in a quarter: opponent shows BONUS. Timeouts blocked at 0.</li><li>Big Undo; every action logged. Sync status always shown; works offline.</li></ul></div>
+    </div>
+
+    <div>
+      <p class="screen-label" style="margin-bottom:12px">8 · Gym TV scoreboard (16:9)</p>
+      <div class="tv">
+        <div class="tv-sponsor">Scoreboard powered by [Sponsor]</div>
+        <div class="tv-board">
+          <div class="tv-team"><div class="nm" id="tv-home-nm"></div><div class="pts" id="tv-home-pts">0</div><div class="meta" id="tv-home-meta"></div></div>
+          <div class="tv-mid"><div class="per" id="tv-per">Q3</div><div class="clock" id="tv-clock">10:00</div><div id="tv-bonus"></div></div>
+          <div class="tv-team"><div class="nm" id="tv-away-nm"></div><div class="pts" id="tv-away-pts">0</div><div class="meta" id="tv-away-meta"></div></div>
+        </div>
+        <div class="tv-flash" id="tv-flash"><div class="big" id="tv-flash-big"></div><div class="sub" id="tv-flash-sub"></div></div>
+      </div>
+      <div class="notes" style="margin-top:14px;max-width:1120px"><b>UX notes</b><ul><li>Readable across a court: huge score, high contrast, minimal text.</li><li>Flashes last about 3.5 seconds and never cover the score.</li><li>Sponsor line on screen; sponsor ads during timeouts and breaks.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- =============== PUBLIC =============== -->
+<section class="section" id="public">
+  <div class="section-head">
+    <h1>Public league page</h1>
+    <p>What fans and family see from a shared link, no login needed. Live games first, then standings and the schedule.</p>
+  </div>
+  <div class="screens">
+    <div class="screen-col">
+      <p class="screen-label">9 · League page</p>
+      <div class="phone">
+        <div class="app-header"><div><div class="league">Riyadh Pinoy Liga</div><small>Season 5 · Basketball</small></div><div class="lang"><button aria-pressed="true">EN</button><button aria-pressed="false">TL</button></div></div>
+        <div class="scroll stack">
+          <div class="live-card">
+            <div class="row between"><span class="live-dot">Live · Q3 · 04:12</span><span class="small" style="color:var(--on-dark-muted)">Div B</span></div>
+            <div class="live-score"><div class="t">Warriors</div><div class="s">54 – 51</div><div class="t">Falcons</div></div>
+            <p class="small" style="color:var(--on-dark-muted);margin-top:10px;text-align:center">Top scorer: #11 Reyes, 18 pts</p>
+          </div>
+          <h3 class="h-title">Standings · Division B</h3>
+          <div class="card" style="padding:8px 10px">
+            <table class="table">
+              <tr><th>#</th><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">+/−</th></tr>
+              <tr><td>1</td><td><b>Warriors</b></td><td class="num">6</td><td class="num">1</td><td class="num">+58</td></tr>
+              <tr><td>2</td><td><b>Falcons</b></td><td class="num">5</td><td class="num">2</td><td class="num">+31</td></tr>
+              <tr><td>3</td><td><b>Titans</b></td><td class="num">4</td><td class="num">3</td><td class="num">+4</td></tr>
+              <tr><td>4</td><td><b>Kabayan Ballers</b></td><td class="num">2</td><td class="num">5</td><td class="num">−40</td></tr>
+            </table>
+          </div>
+          <h3 class="h-title">Next games</h3>
+          <div class="card stack">
+            <div class="row between"><b>Titans vs Kabayan Ballers</b><span class="small muted">Fri 8:00 PM</span></div>
+            <div class="row between"><b>Warriors vs Titans</b><span class="small muted">Fri 9:30 PM</span></div>
+          </div>
+          <button class="btn btn-dark btn-block">Share on WhatsApp</button>
+          <p class="small muted" style="text-align:center">Presented by [Sponsor]</p>
+        </div>
+      </div>
+      <div class="notes"><b>UX notes</b><ul><li>Fast to load on mobile data; no login.</li><li>Live score updates in real time.</li><li>Easy to share; sponsor slot at the bottom.</li></ul></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',x===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===t.dataset.tab));
+  window.scrollTo({top:0});
+}));
+
+/* ---------- single-select chips ---------- */
+document.querySelectorAll('[data-single]').forEach(g=>g.addEventListener('click',e=>{
+  const c=e.target.closest('.chip'); if(!c) return;
+  g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===c));
+}));
+
+/* ---------- EN / TL demo ---------- */
+const I18N={
+  en:{season:'Season 5 · Elimination round',greet:'Good evening, Commissioner Rey',todo:"Today's to-do",t1:'Teams waiting for approval',t2:"Teams haven't paid this week",t3:'Saturday games need referees',t4:'Rating appeal to review',review:'Review',view:'View',assign:'Assign',live:'Live now',nHome:'Home',nTeams:'Teams',nGames:'Games',nPay:'Payments',nMore:'More'},
+  tl:{season:'Season 5 · Elimination round',greet:'Magandang gabi, Commissioner Rey',todo:'Gagawin ngayon',t1:'Team na naghihintay ng approval',t2:'Team na hindi pa nakakabayad ngayong linggo',t3:'Laro sa Sabado na kailangan ng referee',t4:'Rating appeal na susuriin',review:'Tingnan',view:'Tingnan',assign:'Mag-assign',live:'Live ngayon',nHome:'Home',nTeams:'Mga Team',nGames:'Mga Laro',nPay:'Bayad',nMore:'Iba pa'}
+};
+document.querySelectorAll('#commissioner .lang button').forEach(b=>b.addEventListener('click',()=>{
+  const lang=b.dataset.lang;
+  b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  document.querySelectorAll('#commissioner [data-i18n]').forEach(el=>{el.textContent=I18N[lang][el.dataset.i18n]});
+}));
+
+/* ---------- scorer demo state ---------- */
+const RULES={foulOut:5,warnAt:4,bonusAt:4,timeoutsPerHalf:3,quarterSecs:600};
+const mk=(n,name,on)=>({n,name,pts:0,f:0,on,out:false});
+const S={
+  per:3, clock:252, running:false,
+  teams:{
+    home:{key:'home',name:'Warriors',pts:52,tf:2,to:2,players:[mk(4,'Cruz',true),mk(7,'Santos',true),mk(11,'Reyes',true),mk(15,'Aquino',true),mk(23,'Ramos',true),mk(5,'Lim',false),mk(9,'Torres',false),mk(30,'Bautista',false)]},
+    away:{key:'away',name:'Falcons',pts:51,tf:4,to:1,players:[mk(1,'Garcia',true),mk(3,'Mendoza',true),mk(8,'Flores',true),mk(12,'Navarro',true),mk(21,'Castro',true),mk(6,'Villa',false),mk(10,'Ocampo',false),mk(14,'Pascual',false)]}
+  },
+  sel:null, subMode:false, log:[], history:[]
+};
+// seed some realistic numbers
+(()=>{const h=S.teams.home.players,a=S.teams.away.players;
+ h[0].pts=8;h[1].pts=12;h[1].f=3;h[2].pts=16;h[2].f=1;h[3].pts=10;h[4].pts=6;h[4].f=2;
+ a[0].pts=14;a[0].f=2;a[1].pts=9;a[2].pts=11;a[2].f=3;a[3].pts=10;a[4].pts=7;a[4].f=1;})();
+
+const $=id=>document.getElementById(id);
+const opp=k=>k==='home'?'away':'home';
+const fmt=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const snap=()=>JSON.stringify({teams:S.teams,per:S.per,clock:S.clock,log:S.log});
+
+function renderCourt(t){
+  const el=$('court-'+t.key);
+  const on=t.players.filter(p=>p.on), bench=t.players.filter(p=>!p.on);
+  const pickable=S.subMode&&S.sel&&S.sel.team===t.key;
+  el.innerHTML=`<h4>${t.name} · on court</h4>`+on.map(p=>{
+    const sel=S.sel&&S.sel.team===t.key&&S.sel.n===p.n;
+    const dots=Array.from({length:RULES.foulOut},(_,i)=>`<i class="${i<p.f?'on':''}"></i>`).join('');
+    return `<button class="pbtn ${sel?'sel':''} ${p.out?'out':''}" data-team="${t.key}" data-n="${p.n}">
+      <span class="no">${p.n}</span><span><span class="pn">${p.name}</span><br><span class="ps">${p.pts} pts${p.out?' · fouled out':''}</span></span>
+      <span class="fouls ${p.f>=RULES.warnAt?'warn':''}" aria-label="${p.f} fouls">${dots}</span></button>`;
+  }).join('')+`<h4 style="margin-top:6px">Bench</h4><div class="bench">`+bench.map(p=>
+    `<button class="${pickable&&!p.out?'pick':''}" data-bench="${t.key}" data-n="${p.n}" ${p.out?'disabled':''}>#${p.n} ${p.name}${p.out?' (out)':''}</button>`).join('')+`</div>`;
+}
+function render(){
+  const h=S.teams.home,a=S.teams.away;
+  for(const t of [h,a]){
+    $(`s-${t.key}-pts`).textContent=t.pts; $(`s-${t.key}-nm`).textContent=t.name;
+    $(`s-${t.key}-meta`).textContent=`Team fouls ${t.tf} · Timeouts ${t.to}`;
+    $(`tv-${t.key}-pts`).textContent=t.pts; $(`tv-${t.key}-nm`).textContent=t.name.toUpperCase();
+    $(`tv-${t.key}-meta`).textContent=`Fouls ${t.tf} · TO ${t.to}`;
+    $(`to-${t.key}`).textContent=`${t.name} timeout (${t.to})`;
+    $(`to-${t.key}`).disabled=t.to<=0;
+    renderCourt(t);
+  }
+  $('s-per').textContent=$('tv-per').textContent='Q'+S.per;
+  $('s-clock').textContent=$('tv-clock').textContent=fmt(S.clock);
+  $('s-clockbtn').textContent=S.running?'❚❚ Stop clock':'▶ Start clock';
+  // bonus: team with >= bonusAt team fouls puts opponent in bonus
+  const bonusFor=[h,a].filter(t=>t.tf>=RULES.bonusAt).map(t=>S.teams[opp(t.key)].name);
+  const bonusHtml=bonusFor.map(n=>`<span class="bonus">${n.toUpperCase()} IN BONUS</span>`).join(' ');
+  $('tv-bonus').innerHTML=bonusHtml;
+  const sc=document.querySelector('.sc-mid .bonus-wrap'); if(sc) sc.remove();
+  if(bonusHtml){const d=document.createElement('div');d.className='bonus-wrap';d.innerHTML=bonusHtml;document.querySelector('.sc-mid').appendChild(d);}
+  // hint + buttons
+  const p=selPlayer();
+  $('s-hint').textContent=S.subMode?`Sub: tap a ${S.teams[S.sel.team].name} bench player`:
+    p?`#${p.n} ${p.name} selected`:'Tap a player';
+  document.querySelectorAll('[data-act="p1"],[data-act="p2"],[data-act="p3"],[data-act="foul"],[data-act="sub"]').forEach(b=>b.disabled=!p);
+  document.querySelectorAll('[data-act="p1"],[data-act="p2"],[data-act="p3"],[data-act="foul"]').forEach(b=>{if(p&&p.out)b.disabled=true});
+  $('s-undo').disabled=!S.history.length;
+  $('s-pbp').textContent=S.log.length?S.log.slice(-4).reverse().join('  ·  '):'Play-by-play will appear here';
+}
+function selPlayer(){if(!S.sel)return null;return S.teams[S.sel.team].players.find(p=>p.n===S.sel.n)}
+
+function record(text){
+  S.log.push(`Q${S.per} ${fmt(S.clock)} ${text}`);
+  const off=$('s-offline').checked;
+  $('s-sync').innerHTML=`<i style="background:#F5B57F"></i>Saved on this device`;
+  if(!off) setTimeout(()=>{ if(!$('s-offline').checked) $('s-sync').innerHTML=`<i style="background:#9FD8B0"></i>Synced`; },700);
+}
+let flashTimer;
+function flash(big,sub){
+  $('tv-flash-big').textContent=big; $('tv-flash-sub').textContent=sub||'';
+  $('tv-flash').classList.add('show'); clearTimeout(flashTimer);
+  flashTimer=setTimeout(()=>$('tv-flash').classList.remove('show'),3500);
+}
+let toastTimer;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600)}
+
+document.querySelector('.tablet').addEventListener('click',e=>{
+  const pb=e.target.closest('.pbtn');
+  if(pb){S.subMode=false;S.sel={team:pb.dataset.team,n:+pb.dataset.n};render();return}
+  const bb=e.target.closest('[data-bench]');
+  if(bb&&S.subMode&&S.sel&&bb.dataset.bench===S.sel.team){
+    const t=S.teams[S.sel.team], outP=selPlayer(), inP=t.players.find(p=>p.n===+bb.dataset.n);
+    if(inP.out) return;
+    S.history.push(snap());
+    outP.on=false; inP.on=true;
+    record(`${t.name}: #${outP.n} out, #${inP.n} in`);
+    flash(`Sub · ${t.name}`,`#${outP.n} ${outP.name} out → #${inP.n} ${inP.name} in`);
+    S.subMode=false; S.sel=null; render(); return;
+  }
+  const ab=e.target.closest('[data-act]'); if(!ab||ab.disabled) return;
+  const act=ab.dataset.act;
+  if(act.startsWith('to-')){
+    const t=S.teams[act.slice(3)]; if(t.to<=0) return;
+    S.history.push(snap()); t.to--; S.running=false;
+    record(`${t.name} timeout`); flash(`Timeout · ${t.name}`,`${t.to} left`); render(); return;
+  }
+  const p=selPlayer(); if(!p) return; const t=S.teams[S.sel.team];
+  if(act==='sub'){S.subMode=true;render();return}
+  S.history.push(snap());
+  if(act==='p1'||act==='p2'||act==='p3'){
+    const v=+act[1]; p.pts+=v; t.pts+=v;
+    record(`#${p.n} ${p.name} +${v}`);
+    if(v===3) flash(`#${p.n} ${p.name} · 3-pointer!`,`${p.pts} points`);
+  }
+  if(act==='foul'){
+    p.f++; t.tf++;
+    record(`#${p.n} ${p.name} personal foul (${p.f})`);
+    if(p.f>=RULES.foulOut){p.out=true;toast(`#${p.n} ${p.name} fouled out. Substitute now.`);flash(`#${p.n} ${p.name} · Fouled out`,'5th personal foul');S.subMode=true;render();return}
+    else if(p.f===RULES.warnAt){toast(`4th foul: #${p.n} ${p.name}`);flash(`#${p.n} ${p.name} · 4th foul`,'One more and he is out')}
+    if(t.tf===RULES.bonusAt) toast(`${S.teams[opp(t.key)].name} now in BONUS`);
+  }
+  S.sel=null; render();
+});
+$('s-undo').addEventListener('click',()=>{
+  const prev=S.history.pop(); if(!prev) return; const o=JSON.parse(prev);
+  S.teams=o.teams; S.per=o.per; S.clock=o.clock; S.log=o.log; S.sel=null; S.subMode=false;
+  toast('Last action undone'); render();
+});
+let tick;
+$('s-clockbtn').addEventListener('click',()=>{
+  S.running=!S.running; clearInterval(tick);
+  if(S.running) tick=setInterval(()=>{ if(!S.running||S.clock<=0){S.running=false;clearInterval(tick);render();return} S.clock--; render(); },1000);
+  render();
+});
+$('s-nextq').addEventListener('click',()=>{
+  if(S.per>=4){toast('Game ends after Q4 (overtime would be added here)');return}
+  S.history.push(snap()); S.per++; S.clock=RULES.quarterSecs; S.running=false; clearInterval(tick);
+  S.teams.home.tf=0; S.teams.away.tf=0;
+  if(S.per===3){S.teams.home.to=RULES.timeoutsPerHalf;S.teams.away.to=RULES.timeoutsPerHalf}
+  record(`Start of Q${S.per}`); render();
+});
+$('s-offline').addEventListener('change',e=>{
+  if(e.target.checked) $('s-sync').innerHTML=`<i style="background:#F5B57F"></i>No signal · saved on this device`;
+  else { $('s-sync').innerHTML=`<i style="background:#F5B57F"></i>Syncing…`; setTimeout(()=>$('s-sync').innerHTML=`<i style="background:#9FD8B0"></i>Synced`,900); }
+});
+render();
+</script>
+</body>
+</html>

@@ -249,11 +249,17 @@ Replaces the paper scoresheet at the scorer's table. Must be faster than writing
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=        # server only
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=    # optional legacy fallback for local/older projects
+SUPABASE_SERVICE_ROLE_KEY=        # optional, server-only privileged jobs
 NEXT_PUBLIC_SITE_URL=             # https://palarohub.com in production
 SENTRY_DSN=
 ```
+
+Use Supabase Cloud for the app. The publishable key is the primary public API key;
+the legacy anon key remains supported for optional local development. Local Docker
+commands above are for migration/RLS testing. Apply cloud schema changes through
+tracked migrations using `supabase link` and `supabase db push`, never a cloud reset.
 
 ## Roadmap
 

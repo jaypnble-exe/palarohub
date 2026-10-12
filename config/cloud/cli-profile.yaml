@@ -1,0 +1,6 @@
+# Separate CLI account name; endpoints are the standard Supabase Cloud endpoints.
+name: palarohub
+api_url: https://api.supabase.com
+project_host: supabase.co
+dashboard_url: https://supabase.com/dashboard
+pooler_host: supabase.com

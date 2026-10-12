@@ -1,18 +1,77 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f6f3ec;
+  --foreground: #14213d;
+  --card: #fffcf6;
+  --primary: #e8772e;
+  --primary-foreground: #14213d;
+  --muted-foreground: #4a5568;
+  --accent: #f1ece2;
+  --border: #e2dacb;
+  --input: #e2dacb;
+  --ring: #b04e17;
+  --destructive: #b3261e;
+  --navy: #14213d;
+  --navy-secondary: #1e2d4f;
+  --on-dark: #f6f3ec;
+  --on-dark-muted: #bfc8d6;
+  --orange-dark: #b04e17;
+  --orange-soft: #fdebdd;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-navy: var(--navy);
+  --color-navy-secondary: var(--navy-secondary);
+  --color-on-dark: var(--on-dark);
+  --color-on-dark-muted: var(--on-dark-muted);
+  --color-orange-dark: var(--orange-dark);
+  --color-orange-soft: var(--orange-soft);
+  --font-sans: var(--font-public-sans), Arial, sans-serif;
+  --font-display: var(--font-oswald), Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-public-sans), Arial, sans-serif;
+  line-height: 1.45;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-oswald), Arial, sans-serif;
+    line-height: 1.15;
+    text-transform: uppercase;
+  }
+  button,
+  a,
+  summary,
+  input,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 3px;
+  }
+  header :focus-visible {
+    outline-color: var(--primary);
+  }
 }
