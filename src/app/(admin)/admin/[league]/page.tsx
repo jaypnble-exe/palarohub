@@ -79,6 +79,11 @@ export default async function CommissionerHome({
       .eq("league_id", league.id)
       .eq("status", "submitted"),
     supabase
+      .from("games")
+      .select("id", { count: "exact", head: true })
+      .eq("league_id", league.id)
+      .eq("status", "submitted"),
+    supabase
       .from("league_player_catalog")
       .select("id", { count: "exact", head: true })
       .eq("league_id", league.id)
@@ -108,7 +113,8 @@ export default async function CommissionerHome({
       tasks={{
         registrations: counts[0].count ?? 0,
         changes: counts[1].count ?? 0,
-        unrated: counts[2].count ?? 0,
+        unrated: counts[3].count ?? 0,
+        toApprove: counts[2].count ?? 0,
         unscheduled,
       }}
     />

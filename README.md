@@ -356,4 +356,25 @@ static files are cached. Commissioner pages and Supabase API responses are
 never cached. It never reloads the page on reconnect. The worker is disabled in
 `pnpm dev`; test offline behaviour with `pnpm build && pnpm start`.
 
-Next: **5e — game review, commissioner approval, suspensions, and PDF scoresheet**.
+**5e — review, approval, suspensions, and PDF.** After the final buzzer the
+scorer reviews the box score and sends the game to the commissioner; this is
+allowed only when every action is synced (`submit_game` checks the device's
+last sequence) and a final buzzer exists. Submitted games lock the scorebook
+and appear on the commissioner's to-do list and at `/admin/[league]/games`.
+The review page shows the score, box scores, and history. Staff either send the
+game back with a required reason (the scorer sees it, uses Undo to remove the
+final buzzer, fixes, and resubmits) or approve it. Approval recomputes the
+result on the server from the event log with the sport module and stores it in
+`game_results`, tied to the last event sequence so later changes cannot slip
+in. Ejected players (not foul-outs) are offered as suspensions; ticked ones get
+a suspension record and are marked suspended, so eligibility checks and the
+next scorebook block them until the commissioner lifts it. Results, reviews,
+and suspensions are append-only; approved games cannot be rescheduled or
+reopened. The public schedule shows approved scores. `/api/games/[id]/scoresheet`
+renders the official PDF (paper layout: players, starters, foul boxes with
+type and quarter, points, team fouls, timeouts, score by period, running score,
+officials, signature lines) on demand from the approved events, for league
+staff and members. The 44 review pgTAP checks pass in the in-memory test
+database; the migration is not yet applied to cloud.
+
+Next: **Phase 1, step 6 — automatic standings**, then step 7 — team payments.

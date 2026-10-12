@@ -13,6 +13,9 @@ export interface ScheduleGame {
   homeName: string;
   awayName: string;
   divisionName?: string;
+  /** Only once the result is approved. */
+  homeScore?: number | null;
+  awayScore?: number | null;
 }
 
 export interface DivisionOverview {

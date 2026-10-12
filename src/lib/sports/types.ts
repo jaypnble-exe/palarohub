@@ -21,6 +21,21 @@ export const gameEventEnvelopeSchema = z.strictObject({
 });
 export type GameEventEnvelope = z.output<typeof gameEventEnvelopeSchema>;
 
+/** The official result of a finished game, stored when staff approve it. */
+export interface GameSummary {
+  homeScore: number;
+  awayScore: number;
+  /** Sport-specific record (box score, fouls, officials), stored as JSON. */
+  summary: Record<string, unknown>;
+  /** Players ejected in this game; staff choose who is suspended. */
+  ejectedPlayers: {
+    playerId: string;
+    name: string;
+    jersey: number;
+    team: "home" | "away";
+  }[];
+}
+
 /** Sport-specific event payloads and rules stay inside each module. */
 export interface SportModule<Rules, Event, State, EventError = string> {
   sport: Sport;
@@ -31,6 +46,11 @@ export interface SportModule<Rules, Event, State, EventError = string> {
   reduceGame(events: readonly Event[], rules: Rules): State;
   /** Why an event cannot be added to the current state, or null if it can. */
   validateEvent(state: State, event: Event, rules: Rules): EventError | null;
+  /** The official result once the game has ended, otherwise null. */
+  summarizeGame(
+    state: State,
+    teamNames: Record<"home" | "away", string>,
+  ): GameSummary | null;
   stats: readonly StatDefinition[];
   standingsPoints(result: GameResult): number;
   tiebreakers: readonly string[];

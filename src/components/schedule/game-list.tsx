@@ -73,7 +73,17 @@ export async function GameList({
                       : "text-lg font-semibold"
                   }
                 >
-                  {t("matchup", { home: game.homeName, away: game.awayName })}
+                  {game.homeScore != null && game.awayScore != null
+                    ? t("finalResult", {
+                        home: game.homeName,
+                        homeScore: game.homeScore,
+                        away: game.awayName,
+                        awayScore: game.awayScore,
+                      })
+                    : t("matchup", {
+                        home: game.homeName,
+                        away: game.awayName,
+                      })}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {[

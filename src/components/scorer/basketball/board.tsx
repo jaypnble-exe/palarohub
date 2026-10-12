@@ -21,6 +21,7 @@ import {
   type Side,
 } from "@/lib/sports/basketball";
 import { Button } from "@/components/ui/button";
+import { isNetworkError } from "@/lib/offline/network";
 import { useEventLog, type SyncStatus } from "../use-event-log";
 import {
   formatClock,
@@ -54,12 +55,15 @@ export function BasketballScorebook({
   setup,
   log: initial,
   openedOffline = false,
+  reopenComment = null,
 }: {
   supabase: ReturnType<typeof createClient>;
   store: ScorebookStore;
   setup: ScorerSetup;
   log: Reconciled<BasketballEvent>;
   openedOffline?: boolean;
+  /** Why the commissioner sent this game back, if they did. */
+  reopenComment?: string | null;
 }) {
   const t = useTranslations("Scorer");
   const rules = setup.rules as BasketballRules;
@@ -114,7 +118,17 @@ export function BasketballScorebook({
       return;
     rostered.current = true;
     for (const side of sides)
-      record("roster", { team: side, players: setup.teams[side].players });
+      record("roster", {
+        team: side,
+        // The snapshot keeps only what the event schema allows.
+        players: setup.teams[side].players.map(
+          ({ playerId, name, jersey }) => ({
+            playerId,
+            name,
+            jersey,
+          }),
+        ),
+      });
   }, [state.log, record, setup.teams]);
 
   const undo = lastUndoableEvent(state);
@@ -132,7 +146,48 @@ export function BasketballScorebook({
         "teamPenalty",
       ].includes(effect.kind),
   );
-  const blocked = ["replaced", "closed", "conflict"].includes(log.status);
+  const [review, setReview] = useState<"open" | "submitting" | "submitted">(
+    setup.status === "submitted" || setup.status === "approved"
+      ? "submitted"
+      : "open",
+  );
+  const blocked =
+    review !== "open" ||
+    ["replaced", "closed", "conflict"].includes(log.status);
+  const suspended = useMemo(
+    () =>
+      new Set(
+        [...setup.teams.home.players, ...setup.teams.away.players]
+          .filter((player) => player.suspended)
+          .map((player) => player.playerId),
+      ),
+    [setup.teams],
+  );
+
+  async function submit() {
+    if (!window.confirm(t("confirmSubmit"))) return;
+    setReview("submitting");
+    const { error } = await supabase
+      .rpc("submit_game", {
+        p_game_id: setup.gameId,
+        p_last_sequence: state.lastSequence,
+      })
+      .then(
+        (result) => result,
+        () => ({ error: { message: "network" } }),
+      );
+    if (!error) return setReview("submitted");
+    setReview("open");
+    setNotice(
+      error.message.includes("events_not_synced")
+        ? "submitNotSynced"
+        : error.message.includes("game_not_open")
+          ? "blocked.closed"
+          : isNetworkError(error) || error.message === "network"
+            ? "submitOffline"
+            : "submitFailed",
+    );
+  }
   const period = periodName(state.period, rules, t);
 
   return (
@@ -190,6 +245,14 @@ export function BasketballScorebook({
           className="rounded-xl bg-destructive p-4 font-semibold text-white"
         >
           {t(`blocked.${log.status}`)}
+        </p>
+      )}
+      {reopenComment && review === "open" && (
+        <p
+          role="alert"
+          className="rounded-xl bg-orange-soft p-4 font-semibold text-orange-dark"
+        >
+          {t("reopened", { comment: reopenComment })}
         </p>
       )}
       {openedOffline && log.status !== "synced" && (
@@ -273,6 +336,7 @@ export function BasketballScorebook({
           teamNames={teamNames}
           record={record}
           disabled={blocked}
+          suspended={suspended}
         />
       )}
 
@@ -402,9 +466,33 @@ export function BasketballScorebook({
               awayScore: state.teams.away.score,
             })}
           </p>
-          <p className="rounded-xl border bg-card p-4 text-sm">
-            {t("finalNext")}
-          </p>
+          {review === "submitted" ? (
+            <p
+              role="status"
+              className="rounded-xl bg-green-700 p-4 font-semibold text-white"
+            >
+              {t(
+                setup.status === "approved" ? "approvedNote" : "submittedNote",
+              )}
+            </p>
+          ) : (
+            <div className="space-y-3 rounded-2xl border-2 border-navy bg-card p-4">
+              <p className="text-sm">{t("finalNext")}</p>
+              <Button
+                type="button"
+                className="w-full text-lg sm:w-fit"
+                disabled={review !== "open" || log.status !== "synced"}
+                onClick={() => void submit()}
+              >
+                {t(review === "submitting" ? "submitting" : "submitGame")}
+              </Button>
+              {log.status !== "synced" && (
+                <p className="text-sm text-muted-foreground">
+                  {t("submitWaitSync")}
+                </p>
+              )}
+            </div>
+          )}
           <BoxScores state={state} teamNames={teamNames} />
         </section>
       )}

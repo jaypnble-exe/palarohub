@@ -55,6 +55,7 @@ const scorerTeamSchema = z.object({
       playerId: z.uuid(),
       name: z.string().min(1),
       jersey: z.number().int(),
+      suspended: z.boolean().default(false),
     }),
   ),
 });

@@ -16,11 +16,14 @@ export function Pregame({
   teamNames,
   record,
   disabled,
+  suspended,
 }: {
   state: BasketballGameState;
   teamNames: Record<Side, string>;
   record: RecordEvent;
   disabled: boolean;
+  /** Players serving a suspension; they cannot be marked present. */
+  suspended: ReadonlySet<string>;
 }) {
   const t = useTranslations("Scorer");
   const ready = sides.every((side) => state.teams[side].startersSet);
@@ -36,6 +39,7 @@ export function Pregame({
             state={state}
             record={record}
             disabled={disabled}
+            suspended={suspended}
           />
         ))}
       </div>
@@ -63,12 +67,14 @@ function TeamSetup({
   state,
   record,
   disabled,
+  suspended,
 }: {
   side: Side;
   name: string;
   state: BasketballGameState;
   record: RecordEvent;
   disabled: boolean;
+  suspended: ReadonlySet<string>;
 }) {
   const t = useTranslations("Scorer");
   const team = state.teams[side];
@@ -166,6 +172,10 @@ function TeamSetup({
                 >
                   {t("starter")}
                 </button>
+              ) : suspended.has(id) ? (
+                <span className="rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+                  {t("suspended")}
+                </span>
               ) : (
                 <Button
                   type="button"

@@ -6,6 +6,7 @@ import {
   type BasketballEventError,
   type BasketballGameState,
 } from "./reducer";
+import { summarizeBasketballGame } from "./summary";
 import {
   basketballRulesSchema,
   defaultBasketballRules,
@@ -15,6 +16,8 @@ import {
 export * from "./events";
 export * from "./reducer";
 export * from "./rules";
+export * from "./summary";
+export * from "./scoresheet-data";
 
 export const basketball: SportModule<
   BasketballRules,
@@ -28,6 +31,7 @@ export const basketball: SportModule<
   defaultRules: defaultBasketballRules,
   reduceGame: reduceBasketballGame,
   validateEvent: validateBasketballEvent,
+  summarizeGame: summarizeBasketballGame,
   stats: [
     { key: "points", labelKey: "points" },
     { key: "fieldGoals", labelKey: "fieldGoals" },

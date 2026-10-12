@@ -48,7 +48,7 @@ export default async function PublicSchedulePage({
     let request = supabase
       .from("published_games")
       .select(
-        "id,round,scheduled_at,venue,status,home_team_name,away_team_name,division_name",
+        "id,round,scheduled_at,venue,status,home_team_name,away_team_name,division_name,home_score,away_score",
       )
       .eq("league_id", leagueId)
       .eq("season_id", seasonId);
@@ -66,6 +66,8 @@ export default async function PublicSchedulePage({
       homeName: game.home_team_name ?? "",
       awayName: game.away_team_name ?? "",
       divisionName: division ? undefined : (game.division_name ?? undefined),
+      homeScore: game.home_score,
+      awayScore: game.away_score,
     }));
   }
   if (season) games = await loadGames(season.id);

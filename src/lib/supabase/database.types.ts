@@ -222,6 +222,113 @@ export type Database = {
           },
         ];
       };
+      game_results: {
+        Row: {
+          approved_at: string;
+          approved_by: string;
+          away_score: number;
+          game_id: string;
+          home_score: number;
+          last_sequence: number;
+          league_id: string;
+          summary: Json;
+        };
+        Insert: {
+          approved_at?: string;
+          approved_by: string;
+          away_score: number;
+          game_id: string;
+          home_score: number;
+          last_sequence: number;
+          league_id: string;
+          summary: Json;
+        };
+        Update: {
+          approved_at?: string;
+          approved_by?: string;
+          away_score?: number;
+          game_id?: string;
+          home_score?: number;
+          last_sequence?: number;
+          league_id?: string;
+          summary?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "game_results_approved_by_fkey";
+            columns: ["approved_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "game_results_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_results_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      game_reviews: {
+        Row: {
+          action: string;
+          actor_id: string;
+          comment: string;
+          created_at: string;
+          game_id: string;
+          id: string;
+          league_id: string;
+        };
+        Insert: {
+          action: string;
+          actor_id: string;
+          comment?: string;
+          created_at?: string;
+          game_id: string;
+          id?: string;
+          league_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          comment?: string;
+          created_at?: string;
+          game_id?: string;
+          id?: string;
+          league_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "game_reviews_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "game_reviews_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_reviews_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       game_scorer_access: {
         Row: {
           created_at: string;
@@ -1106,6 +1213,65 @@ export type Database = {
           },
         ];
       };
+      suspensions: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          game_id: string;
+          id: string;
+          league_id: string;
+          player_id: string;
+          reason: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          game_id: string;
+          id?: string;
+          league_id: string;
+          player_id: string;
+          reason: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          game_id?: string;
+          id?: string;
+          league_id?: string;
+          player_id?: string;
+          reason?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "suspensions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "suspensions_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "suspensions_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "suspensions_player_id_league_id_fkey";
+            columns: ["player_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id", "league_id"];
+          },
+        ];
+      };
       teams: {
         Row: {
           created_at: string;
@@ -1168,10 +1334,12 @@ export type Database = {
       published_games: {
         Row: {
           away_season_team_id: string | null;
+          away_score: number | null;
           away_team_name: string | null;
           division_id: string | null;
           division_name: string | null;
           home_season_team_id: string | null;
+          home_score: number | null;
           home_team_name: string | null;
           id: string | null;
           league_id: string | null;
@@ -1282,6 +1450,18 @@ export type Database = {
         };
         Returns: string;
       };
+      approve_game: {
+        Args: {
+          p_away_score: number;
+          p_game_id: string;
+          p_home_score: number;
+          p_last_sequence: number;
+          p_league_id: string;
+          p_summary: Json;
+          p_suspend_player_ids?: string[];
+        };
+        Returns: undefined;
+      };
       check_registration_eligibility: {
         Args: {
           p_division_id: string;
@@ -1332,6 +1512,10 @@ export type Database = {
           p_season_id: string;
         };
         Returns: Json;
+      };
+      reopen_game: {
+        Args: { p_comment: string; p_game_id: string; p_league_id: string };
+        Returns: undefined;
       };
       request_roster_change: {
         Args: {
@@ -1401,6 +1585,10 @@ export type Database = {
           p_require_documents: boolean;
           p_season_id: string;
         };
+        Returns: undefined;
+      };
+      submit_game: {
+        Args: { p_game_id: string; p_last_sequence: number };
         Returns: undefined;
       };
       update_game: {

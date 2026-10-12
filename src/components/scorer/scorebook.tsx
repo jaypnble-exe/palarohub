@@ -29,6 +29,7 @@ type Stage =
       log: Reconciled<BasketballEvent>;
       /** Opened from this device's copy because the server could not be reached. */
       offline: boolean;
+      reopenComment: string | null;
     }
   | { kind: "error"; message: string };
 
@@ -58,6 +59,7 @@ export function Scorebook({ gameId }: { gameId: string }) {
       setup: ScorerSetup,
       server: readonly BasketballEvent[],
       offline: boolean,
+      reopenComment: string | null = null,
     ): Promise<Stage> => {
       const { eventSchema } = getSportModule(setup.sport);
       let local: Awaited<ReturnType<ScorebookStore["loadEvents"]>> = [];
@@ -72,7 +74,7 @@ export function Scorebook({ gameId }: { gameId: string }) {
       });
       if (log.alreadySaved.length)
         await store.markSynced(log.alreadySaved).catch(() => undefined);
-      return { kind: "ready", setup, log, offline };
+      return { kind: "ready", setup, log, offline, reopenComment };
     },
     [store, gameId],
   );
@@ -114,13 +116,31 @@ export function Scorebook({ gameId }: { gameId: string }) {
         ? "offline"
         : { kind: "error", message: "setupFailed" };
     const { events } = parseGameEvents(parsed.data.sport, rows.data);
+    // A reopened game tells the scorer what to fix.
+    const reopened =
+      parsed.data.status === "in_progress"
+        ? await supabase
+            .from("game_reviews")
+            .select("action,comment")
+            .eq("game_id", gameId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        : null;
+    const reopenComment =
+      reopened?.data?.action === "reopened" ? reopened.data.comment : null;
     try {
       await store.saveSetup(gameId, setup.data);
       await store.saveServerEvents(gameId, events);
     } catch {
       /* Without device storage the game still works online. */
     }
-    return ready(parsed.data, events as BasketballEvent[], false);
+    return ready(
+      parsed.data,
+      events as BasketballEvent[],
+      false,
+      reopenComment,
+    );
   }, [supabase, gameId, store, ready]);
 
   const claim = useCallback(
@@ -274,6 +294,7 @@ export function Scorebook({ gameId }: { gameId: string }) {
         setup={stage.setup}
         log={stage.log}
         openedOffline={stage.offline}
+        reopenComment={stage.reopenComment}
       />
     );
   return null;

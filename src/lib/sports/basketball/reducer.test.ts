@@ -12,6 +12,8 @@ import {
   teamFoulsThisPeriod,
   timeoutsLeft,
   validateBasketballEvent,
+  summarizeBasketballGame,
+  scoresheetMarks,
   type BasketballEvent,
   type BasketballEventOf,
   type BasketballRules,
@@ -632,5 +634,64 @@ describe("basketball box score and event parsing", () => {
         payload: {},
       }).success,
     ).toBe(true);
+  });
+});
+
+describe("basketball official summary", () => {
+  it("is empty until the final buzzer, then records the result", () => {
+    const game = tipOff();
+    const names = { home: "Royals", away: "Hawks" };
+    game.add("score", { team: "home", playerId: h1, points: 3, made: true });
+    for (let i = 0; i < 2; i++) foul(game, "home", h2, "technical");
+    for (let i = 0; i < 5; i++) foul(game, "away", a1);
+    expect(summarizeBasketballGame(game.state(), names)).toBeNull();
+    game.add("period_end", {});
+    for (let period = 2; period <= 4; period++) {
+      game.add("period_start", {});
+      game.add("period_end", {});
+    }
+    game.add("game_end", {});
+    const result = summarizeBasketballGame(game.state(), names);
+    expect(result).toMatchObject({
+      homeScore: 3,
+      awayScore: 0,
+      summary: { sport: "basketball", winner: "home", periods: 4 },
+    });
+    // Ejections are offered as suspensions; fouling out is not.
+    expect(result?.ejectedPlayers).toEqual([
+      { playerId: h2, name: "home 2", jersey: 5, team: "home" },
+    ]);
+    expect(JSON.parse(JSON.stringify(result?.summary))).toEqual(
+      result?.summary,
+    );
+  });
+});
+
+describe("basketball scoresheet marks", () => {
+  it("lists counted fouls in order and the running score by period", () => {
+    const game = tipOff();
+    game.add("score", { team: "home", playerId: h1, points: 2, made: true });
+    const miss = game.add("score", {
+      team: "home",
+      playerId: h2,
+      points: 3,
+      made: true,
+    });
+    game.add("void", { eventId: miss.id });
+    foul(game, "home", h1);
+    game.add("period_end", {});
+    game.add("period_start", {});
+    game.add("score", { team: "home", playerId: h2, points: 3, made: true });
+    foul(game, "home", h1, "technical");
+    const { fouls, running } = scoresheetMarks(game.state(), game.events);
+    expect(fouls.home[h1]).toEqual([
+      { kind: "personal", period: 1 },
+      { kind: "technical", period: 2 },
+    ]);
+    expect(running.home).toEqual([
+      { total: 2, points: 2, jersey: 4, period: 1 },
+      { total: 5, points: 3, jersey: 5, period: 2 },
+    ]);
+    expect(running.away).toEqual([]);
   });
 });
