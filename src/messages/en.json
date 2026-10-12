@@ -92,7 +92,7 @@
     "unnamedMember": "League member"
   },
   "PublicLeague": {
-    "placeholder": "Standings and results will appear here once games are played."
+    "placeholder": "Results and standings update automatically once games are approved."
   },
   "TeamHome": {
     "placeholder": "Your team workspace will be available here soon."
@@ -480,7 +480,8 @@
     "invalidForm": "Some details are missing or not valid.",
     "saveFailed": "Could not save. Check your connection and try again.",
     "gameNotOpen": "This game is no longer open for scoring.",
-    "finalResult": "{home} {homeScore} – {awayScore} {away}"
+    "finalResult": "{home} {homeScore} – {awayScore} {away}",
+    "standings": "Standings"
   },
   "Announcements": {
     "heading": "Announcements",
@@ -786,5 +787,37 @@
     "winner": "Winner: {team}",
     "refereeSignature": "Referee",
     "captainSignature": "Captain, {team}"
+  },
+  "Standings": {
+    "title": "Standings",
+    "schedule": "Game schedule",
+    "chooseSeason": "Choose season",
+    "noSeason": "No published season yet.",
+    "noTeams": "No approved teams in this division yet.",
+    "team": "Team",
+    "rankLong": "Rank",
+    "played": "P",
+    "playedLong": "Games played",
+    "wins": "W",
+    "winsLong": "Wins",
+    "losses": "L",
+    "lossesLong": "Losses",
+    "draws": "D",
+    "drawsLong": "Draws",
+    "for": "PF",
+    "forLong": "Points for",
+    "against": "PA",
+    "againstLong": "Points against",
+    "differenceLong": "Point difference",
+    "points": "Pts",
+    "pointsLong": "Standings points",
+    "gamesCounted": "{count, plural, =0 {No approved results yet.} one {Based on # approved game.} other {Based on # approved games.}}",
+    "tiedNote": "= means the teams are still level after every tiebreaker; the commissioner decides.",
+    "pointsRule": {
+      "basketball": "Basketball: 2 points for a win, 1 for a loss."
+    },
+    "tiebreakNote": "Teams level on points are separated by the games between them (points, then point difference, then points scored), then by overall point difference and points scored.",
+    "share": "Share the standings",
+    "shareText": "Standings – {season}:"
   }
 }

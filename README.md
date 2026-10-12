@@ -377,4 +377,20 @@ officials, signature lines) on demand from the approved events, for league
 staff and members. The 44 review pgTAP checks pass in the in-memory test
 database; the migration is not yet applied to cloud.
 
-Next: **Phase 1, step 6 — automatic standings**, then step 7 — team payments.
+Phase 1, step 6 adds automatic standings at `/[league]/standings`, linked from
+the public league page and schedule, with season choice and WhatsApp/Facebook
+sharing. Each division is ranked from approved results only, read through the
+same public views as the schedule, so standings update the moment a game is
+approved and never show unapproved scores. The pure, sport-neutral ranking in
+`src/lib/domain/standings.ts` orders teams by standings points, then applies the
+sport module's tiebreakers; whenever a tiebreaker splits a tied group, each
+smaller group starts again from head-to-head using only its own games (FIBA
+style). Teams still level after every tiebreaker share a rank and are marked
+with "=". Basketball awards 2 points for a win, 1 for a loss, 0 for a forfeit
+loss, and breaks ties by head-to-head points, head-to-head difference,
+head-to-head points scored, overall difference, then points scored. Tables are
+phone-first (points for/against appear on wider screens). Standings are
+computed on request; no new tables or migrations. Snapshotting final standings
+when a season closes needs a season "closed" status, which does not exist yet.
+
+Next: **Phase 1, step 7 — team payment tracking**.

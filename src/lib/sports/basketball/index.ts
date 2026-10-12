@@ -45,11 +45,16 @@ export const basketball: SportModule<
     { key: "block", labelKey: "blocks" },
     { key: "turnover", labelKey: "turnovers" },
   ],
-  // Standings arrive in Phase 1, step 6.
-  standingsPoints: () => {
-    throw new Error("Basketball standings are not implemented yet.");
-  },
-  tiebreakers: [],
+  // FIBA: 2 points for a win, 1 for a loss, 0 for a loss by forfeit.
+  standingsPoints: (result) =>
+    result === "win" ? 2 : result === "forfeit" ? 0 : 1,
+  tiebreakers: [
+    "headToHeadPoints",
+    "headToHeadDifference",
+    "headToHeadScored",
+    "pointDifference",
+    "pointsScored",
+  ],
   ui: {
     rulesForm: "basketball",
     scorer: null,

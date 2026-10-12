@@ -81,11 +81,16 @@ export default async function PublicLeaguePage({
         {sport(league.sport)}
       </p>
       <h1 className="text-4xl font-bold tracking-tight">{league.name}</h1>
-      <Button asChild>
-        <Link href={`/${slug}/schedule`}>
-          {scheduleText("viewPublicSchedule")}
-        </Link>
-      </Button>
+      <div className="flex flex-wrap gap-3">
+        <Button asChild>
+          <Link href={`/${slug}/schedule`}>
+            {scheduleText("viewPublicSchedule")}
+          </Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href={`/${slug}/standings`}>{scheduleText("standings")}</Link>
+        </Button>
+      </div>
       {settings.data?.map((setting) => (
         <Button key={setting.season_id} asChild variant="outline">
           <Link href={`/${slug}/register/${setting.season_id}`}>

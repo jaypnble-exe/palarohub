@@ -79,9 +79,18 @@ export default async function PublicSchedulePage({
     "inline-flex min-h-11 items-center rounded-xl border-2 bg-background px-4 font-semibold aria-[current=true]:border-navy aria-[current=true]:bg-navy aria-[current=true]:text-on-dark";
   return (
     <main className="space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/${slug}`}>{league.name}</Link>
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="ghost">
+          <Link href={`/${slug}`}>{league.name}</Link>
+        </Button>
+        <Button asChild variant="ghost">
+          <Link
+            href={`/${slug}/standings${season ? `?season=${season.id}` : ""}`}
+          >
+            {t("standings")}
+          </Link>
+        </Button>
+      </div>
       <div className="space-y-2">
         <h1 className="font-display text-3xl font-semibold">
           {t("publicTitle")}

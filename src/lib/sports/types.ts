@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Tiebreaker } from "../domain/standings";
 
 export type Sport = "basketball";
 export type GameResult = "win" | "loss" | "draw" | "forfeit";
@@ -53,7 +54,8 @@ export interface SportModule<Rules, Event, State, EventError = string> {
   ): GameSummary | null;
   stats: readonly StatDefinition[];
   standingsPoints(result: GameResult): number;
-  tiebreakers: readonly string[];
+  /** Applied in order to teams level on standings points. */
+  tiebreakers: readonly Tiebreaker[];
   ui: {
     rulesForm: string | null;
     scorer: string | null;
