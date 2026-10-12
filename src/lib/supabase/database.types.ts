@@ -39,6 +39,64 @@ export type Database = {
   };
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          body: string;
+          created_at: string;
+          created_by: string;
+          division_id: string | null;
+          id: string;
+          league_id: string;
+          season_id: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          body: string;
+          created_at?: string;
+          created_by: string;
+          division_id?: string | null;
+          id?: string;
+          league_id: string;
+          season_id?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          body?: string;
+          created_at?: string;
+          created_by?: string;
+          division_id?: string | null;
+          id?: string;
+          league_id?: string;
+          season_id?: string | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "announcements_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "announcements_division_id_league_id_season_id_fkey";
+            columns: ["division_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "announcements_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       divisions: {
         Row: {
           created_at: string;
@@ -90,6 +148,104 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "seasons";
             referencedColumns: ["id", "league_id"];
+          },
+        ];
+      };
+      games: {
+        Row: {
+          away_season_team_id: string;
+          created_at: string;
+          created_by: string;
+          division_id: string;
+          home_season_team_id: string;
+          id: string;
+          league_id: string;
+          round: number | null;
+          scheduled_at: string | null;
+          season_id: string;
+          status: string;
+          updated_at: string;
+          venue: string;
+        };
+        Insert: {
+          away_season_team_id: string;
+          created_at?: string;
+          created_by: string;
+          division_id: string;
+          home_season_team_id: string;
+          id?: string;
+          league_id: string;
+          round?: number | null;
+          scheduled_at?: string | null;
+          season_id: string;
+          status?: string;
+          updated_at?: string;
+          venue?: string;
+        };
+        Update: {
+          away_season_team_id?: string;
+          created_at?: string;
+          created_by?: string;
+          division_id?: string;
+          home_season_team_id?: string;
+          id?: string;
+          league_id?: string;
+          round?: number | null;
+          scheduled_at?: string | null;
+          season_id?: string;
+          status?: string;
+          updated_at?: string;
+          venue?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "games_away_season_team_id_league_id_season_id_fkey";
+            columns: ["away_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_away_season_team_id_league_id_season_id_fkey";
+            columns: ["away_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "games_division_id_league_id_season_id_fkey";
+            columns: ["division_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_home_season_team_id_league_id_season_id_fkey";
+            columns: ["home_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_home_season_team_id_league_id_season_id_fkey";
+            columns: ["home_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -823,6 +979,67 @@ export type Database = {
           },
         ];
       };
+      published_games: {
+        Row: {
+          away_season_team_id: string | null;
+          away_team_name: string | null;
+          division_id: string | null;
+          division_name: string | null;
+          home_season_team_id: string | null;
+          home_team_name: string | null;
+          id: string | null;
+          league_id: string | null;
+          round: number | null;
+          scheduled_at: string | null;
+          season_id: string | null;
+          status: string | null;
+          venue: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "games_away_season_team_id_league_id_season_id_fkey";
+            columns: ["away_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_away_season_team_id_league_id_season_id_fkey";
+            columns: ["away_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_division_id_league_id_season_id_fkey";
+            columns: ["division_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_home_season_team_id_league_id_season_id_fkey";
+            columns: ["home_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_home_season_team_id_league_id_season_id_fkey";
+            columns: ["home_season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       published_season_teams: {
         Row: {
           division_id: string | null;
@@ -858,6 +1075,17 @@ export type Database = {
       };
     };
     Functions: {
+      add_game: {
+        Args: {
+          p_away_season_team_id: string;
+          p_division_id: string;
+          p_home_season_team_id: string;
+          p_league_id: string;
+          p_scheduled_at: string;
+          p_venue: string;
+        };
+        Returns: string;
+      };
       add_player_rating: {
         Args: {
           p_effective_from: string;
@@ -934,6 +1162,15 @@ export type Database = {
         };
         Returns: undefined;
       };
+      save_division_schedule: {
+        Args: {
+          p_division_id: string;
+          p_games: Json;
+          p_league_id: string;
+          p_replace?: boolean;
+        };
+        Returns: number;
+      };
       save_season_setup: {
         Args: { p_league_id: string; p_season_id?: string; p_setup: Json };
         Returns: string;
@@ -964,6 +1201,16 @@ export type Database = {
           p_league_id: string;
           p_require_documents: boolean;
           p_season_id: string;
+        };
+        Returns: undefined;
+      };
+      update_game: {
+        Args: {
+          p_game_id: string;
+          p_league_id: string;
+          p_scheduled_at: string;
+          p_status: string;
+          p_venue: string;
         };
         Returns: undefined;
       };

@@ -96,7 +96,7 @@ declare
  fixture record; team_uuid uuid; registration_uuid uuid; player_uuid uuid;
  manager uuid; division_uuid uuid; inserted_registration uuid; n integer;
  names text[] := array['Juan','Miguel','Marco','Luis','Anton','Jose','Gabriel','Rafael'];
- surnames text[] := array['Dela Cruz','Reyes','Santos','Cruz'];
+ surnames text[] := array['Dela Cruz','Reyes','Santos','Cruz','Garcia','Mendoza','Bautista'];
  rating text;
 begin
  insert into public.registration_settings(season_id,league_id,is_open,deadline,fee_halalas,require_documents)
@@ -105,7 +105,10 @@ begin
   (1,'Riyadh Royals',4,'Division B','approved'),
   (2,'Jeddah Aces',5,'Division C','submitted'),
   (3,'Dammam Warriors',6,'Open','returned'),
-  (4,'Khobar Falcons',6,'Division C','draft')
+  (4,'Khobar Falcons',6,'Division C','draft'),
+  (5,'Taif Titans',5,'Division B','approved'),
+  (6,'Yanbu Kings',6,'Division B','approved'),
+  (7,'Hail Hawks',4,'Division B','approved')
  ) as examples(number,name,manager_number,division_name,status) loop
   team_uuid:=('80000000-0000-4000-8000-'||lpad(fixture.number::text,12,'0'))::uuid;
   registration_uuid:=('b0000000-0000-4000-8000-'||lpad(fixture.number::text,12,'0'))::uuid;
@@ -151,5 +154,33 @@ begin
  -- A second assessment demonstrates append-only rating history.
  insert into public.player_ratings(id,league_id,player_id,rating,effective_from,set_by,reason)
  values('a0000000-0000-4000-8000-000000009999',l,'90000000-0000-4000-8000-000000000105','C','2026-10-02 00:00:00+00',commissioner,'Fictional demo follow-up assessment') on conflict(id) do nothing;
+end;
+$$;
+
+-- A Division B round-robin and a welcome announcement. The schedule is added only
+-- while the division has none, so a commissioner's own schedule is never duplicated.
+do $$
+declare
+ l uuid := '00000000-0000-4000-8000-000000000001';
+ s uuid := '50000000-0000-4000-8000-000000000001';
+ commissioner uuid := '30000000-0000-4000-8000-000000000001';
+ division_uuid uuid;
+begin
+ select id into strict division_uuid from public.divisions where league_id=l and season_id=s and name='Division B';
+ if not exists(select 1 from public.games where league_id=l and division_id=division_uuid) then
+  insert into public.games(id,league_id,season_id,division_id,home_season_team_id,away_season_team_id,round,scheduled_at,venue,created_by)
+  select ('c0000000-0000-4000-8000-'||lpad(fixture.number::text,12,'0'))::uuid,l,s,division_uuid,
+   ('b0000000-0000-4000-8000-'||lpad(fixture.home::text,12,'0'))::uuid,('b0000000-0000-4000-8000-'||lpad(fixture.away::text,12,'0'))::uuid,
+   fixture.round,fixture.starts_at,'Main court',commissioner
+  from (values
+   (1,1,1,7,'2026-10-23 16:00:00+00'::timestamptz),(2,1,5,6,'2026-10-23 17:30:00+00'::timestamptz),
+   (3,2,6,1,'2026-10-30 16:00:00+00'::timestamptz),(4,2,7,5,'2026-10-30 17:30:00+00'::timestamptz),
+   (5,3,1,5,'2026-11-06 16:00:00+00'::timestamptz),(6,3,6,7,'2026-11-06 17:30:00+00'::timestamptz)
+  ) as fixture(number,round,home,away,starts_at)
+  on conflict(id) do nothing;
+ end if;
+ insert into public.announcements(id,league_id,title,body,created_by)
+ values('d0000000-0000-4000-8000-000000000001',l,'Welcome to Sindikato Cup 2026','Games start on Friday, 23 October. Please arrive 30 minutes before tip-off.',commissioner)
+ on conflict(id) do nothing;
 end;
 $$;

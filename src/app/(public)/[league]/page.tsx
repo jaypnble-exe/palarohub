@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseConfig } from "@/lib/supabase/env";
 import { SeasonList } from "@/components/admin/season-list";
+import { AnnouncementList } from "@/components/schedule/announcement-list";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -26,13 +27,14 @@ export default async function PublicLeaguePage({
   const seasonText = await getTranslations("Seasons");
   const { data: seasons, error: seasonError } = await supabase
     .from("seasons")
-    .select("id,name,status,start_date,end_date,divisions(name,max_rating)")
+    .select("id,name,status,start_date,end_date,divisions(id,name,max_rating)")
     .eq("league_id", league.id)
     .eq("status", "published")
     .order("start_date", { ascending: false });
   if (seasonError) throw new Error("Unable to load published seasons.");
   const registrationText = await getTranslations("Registration");
-  const [settings, teams] = await Promise.all([
+  const scheduleText = await getTranslations("Schedule");
+  const [settings, teams, announcements] = await Promise.all([
     supabase
       .from("registration_settings")
       .select("season_id")
@@ -43,15 +45,47 @@ export default async function PublicLeaguePage({
       .from("published_season_teams")
       .select("id,team_name,division_name,season_id")
       .eq("league_id", league.id),
+    supabase
+      .from("announcements")
+      .select("id,title,body,created_at,season_id,division_id")
+      .eq("league_id", league.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
   ]);
-  if (settings.error || teams.error)
-    throw new Error("Unable to load public registrations.");
+  if (settings.error || teams.error || announcements.error)
+    throw new Error("Unable to load public league details.");
+  // Signed-in members may also read draft-season posts; keep this page public-only.
+  const divisionLabels = new Map(
+    (seasons ?? []).flatMap((season) =>
+      season.divisions.map((division) => [
+        division.id,
+        `${season.name} · ${division.name}`,
+      ]),
+    ),
+  );
+  const publicAnnouncements = announcements.data
+    .filter((item) => !item.division_id || divisionLabels.has(item.division_id))
+    .slice(0, 5)
+    .map((item) => ({
+      id: item.id,
+      title: item.title,
+      body: item.body,
+      createdAt: item.created_at,
+      audience: item.division_id
+        ? (divisionLabels.get(item.division_id) ?? null)
+        : null,
+    }));
   return (
     <main className="space-y-5 py-12">
       <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
         {sport(league.sport)}
       </p>
       <h1 className="text-4xl font-bold tracking-tight">{league.name}</h1>
+      <Button asChild>
+        <Link href={`/${slug}/schedule`}>
+          {scheduleText("viewPublicSchedule")}
+        </Link>
+      </Button>
       {settings.data?.map((setting) => (
         <Button key={setting.season_id} asChild variant="outline">
           <Link href={`/${slug}/register/${setting.season_id}`}>
@@ -60,6 +94,14 @@ export default async function PublicLeaguePage({
           </Link>
         </Button>
       ))}
+      {publicAnnouncements.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="font-display text-2xl font-semibold">
+            {scheduleText("announcements")}
+          </h2>
+          <AnnouncementList announcements={publicAnnouncements} />
+        </section>
+      )}
       <section className="space-y-4">
         <h2 className="font-display text-2xl font-semibold">
           {registrationText("teams")}

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { requireUser, isPlatformAdmin } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
 import { Dashboard } from "@/components/admin/dashboard";
+import { scheduleOverview } from "@/lib/schedule-data";
 
 export default async function CommissionerHome({
   params,
@@ -85,6 +86,9 @@ export default async function CommissionerHome({
   ]);
   if (counts.some((result) => result.error))
     throw new Error("Unable to load registration tasks.");
+  const unscheduled = (await scheduleOverview(supabase, league.id)).filter(
+    (division) => division.teamCount >= 2 && division.gameCount === 0,
+  ).length;
   const isDemo = Boolean(
     settings &&
     typeof settings === "object" &&
@@ -105,6 +109,7 @@ export default async function CommissionerHome({
         registrations: counts[0].count ?? 0,
         changes: counts[1].count ?? 0,
         unrated: counts[2].count ?? 0,
+        unscheduled,
       }}
     />
   );

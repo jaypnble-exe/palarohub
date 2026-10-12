@@ -1,5 +1,12 @@
 type IconName =
-  "home" | "leagues" | "public" | "arrow" | "check" | "add" | "seasons";
+  | "home"
+  | "leagues"
+  | "public"
+  | "arrow"
+  | "check"
+  | "add"
+  | "seasons"
+  | "schedule";
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />,
@@ -24,6 +31,12 @@ const paths: Record<IconName, React.ReactNode> = {
     <>
       <rect x="3" y="5" width="18" height="16" rx="2" />
       <path d="M7 3v4M17 3v4M3 11h18" />
+    </>
+  ),
+  schedule: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </>
   ),
 };

@@ -185,7 +185,7 @@ commissioner-only writes, rating snapshots, database rules and roster validation
 atomic wizard saves, and immutable published seasons and divisions.
 
 `pnpm test` covers rule defaults and invalid values, reserved slugs, safe auth
-redirects, language-cookie validation, translation parity, and email form behavior.
+redirects, and email form behavior.
 It also covers custom rating labels, rating limits, season validation, and the
 four-step wizard's copy, validation, and publication flows.
 
@@ -259,4 +259,40 @@ isolated local app using a temporary test account, removed afterward. The test
 app left the running cloud app and `.env.local` unchanged. Browser visual QA
 remains unverified.
 
-Next: **Phase 1, step 4 — round-robin schedule generation and announcements**.
+Phase 1, step 4 adds division schedules and announcements. `/admin/[league]/schedule`
+lists each published division with its approved teams and games. A three-step
+wizard makes a round robin (once, or twice with home and away swapped): pick game
+days, start times, and courts, check the preview, and save. Games are placed in
+round order, earliest slot first, and a team never plays twice on one day; the
+preview warns when games run past the season end. Staff can move, postpone (with
+or without a new date), cancel, or add single games, and replace an unplayed
+schedule after confirming. The pairing and placement logic is pure and
+unit-tested in `src/lib/domain/round-robin.ts`; the server recomputes the
+schedule from the submitted setup rather than trusting client games.
+
+`games` pair two approved season teams from the same division of a published
+season; a trigger enforces this and keeps teams and rounds fixed after creation.
+There are no direct client writes: `save_division_schedule`, `add_game`, and
+`update_game` authorize staff, lock the league, and commit atomically. Replacing
+a schedule is refused once any game has a status beyond scheduled, postponed, or
+cancelled, so step 5's played games will block it automatically. The public
+reads games only through the `published_games` view (team-name snapshots, no
+creator IDs). Commissioners and staff post announcements to the whole league or
+one division at `/admin/[league]/announcements`; posts for draft-season divisions
+stay private. `/[league]/schedule` shows the public schedule by date in Riyadh
+time with season and division filters and WhatsApp/Facebook sharing, and the
+public league page shows the latest announcements. The commissioner to-do list
+counts divisions that have teams but no schedule.
+
+The demo seed adds three approved Division B teams, a six-game Division B round
+robin, and a welcome announcement; reseeding never duplicates a schedule. The
+51 schedule pgTAP checks cover RLS, cross-tenant isolation, role limits,
+unapproved or foreign teams, atomic replacement, postponement rules, and public
+visibility; they passed against Supabase Cloud in a rolled-back transaction.
+The migration and demo seed are applied to cloud and types were regenerated from
+it. An HTTP check of the production build against cloud confirmed the public
+schedule (Riyadh times, team names, sharing) and the announcement on the public
+league page, and that signed-out visitors are sent to login from admin pages.
+Signed-in screens and browser visual QA remain unverified.
+
+Next: **Phase 1, step 5 — digital scorebook with offline sync, game approval, and PDF scoresheet**.

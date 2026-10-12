@@ -12,7 +12,12 @@ interface DashboardProps {
   members: { id: string; name: string; roles: string[] }[];
   isDemo: boolean;
   canManage: boolean;
-  tasks: { registrations: number; changes: number; unrated: number };
+  tasks: {
+    registrations: number;
+    changes: number;
+    unrated: number;
+    unscheduled: number;
+  };
   seasons: {
     id: string;
     name: string;
@@ -38,6 +43,7 @@ export async function Dashboard({
   const sports = await getTranslations("Sports");
   const seasonText = await getTranslations("Seasons");
   const registrationText = await getTranslations("Registration");
+  const scheduleText = await getTranslations("Schedule");
   const publicPath = `/${league.slug}`;
   const links = [
     {
@@ -50,6 +56,12 @@ export async function Dashboard({
       href: `/admin/${league.slug}/seasons`,
       label: seasonText("title"),
       icon: "seasons" as const,
+      current: false,
+    },
+    {
+      href: `/admin/${league.slug}/schedule`,
+      label: scheduleText("title"),
+      icon: "schedule" as const,
       current: false,
     },
     {
@@ -126,6 +138,9 @@ export async function Dashboard({
           </p>
           <p>{registrationText("changeCount", { count: tasks.changes })}</p>
           <p>{registrationText("ratingCount", { count: tasks.unrated })}</p>
+          <p>
+            {scheduleText("unscheduledCount", { count: tasks.unscheduled })}
+          </p>
           <Button asChild>
             <Link href={`/admin/${league.slug}/registrations`}>
               {registrationText("reviewInbox")}
@@ -140,6 +155,16 @@ export async function Dashboard({
             <Button asChild variant="outline">
               <Link href={`/admin/${league.slug}/players`}>
                 {registrationText("players")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/admin/${league.slug}/schedule`}>
+                {scheduleText("title")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/admin/${league.slug}/announcements`}>
+                {scheduleText("announcements")}
               </Link>
             </Button>
             {canManage && (
