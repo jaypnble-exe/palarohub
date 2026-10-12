@@ -30,7 +30,9 @@ export async function updateSession(request: NextRequest) {
       },
     });
     const { data, error } = await supabase.auth.getClaims();
-    signedIn = !error && Boolean(data?.claims?.sub);
+    // Anonymous scorer-device sessions do not unlock account pages.
+    signedIn =
+      !error && Boolean(data?.claims?.sub) && !data?.claims?.is_anonymous;
   }
   // Refresh responses and signed-in screens must never be shared by a CDN.
   response.headers.set("Cache-Control", "private, no-store");

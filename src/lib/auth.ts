@@ -11,7 +11,8 @@ export const getAuth = cache(async () => {
     data: { user },
     error,
   } = await supabase.auth.getUser();
-  if (error || !user) return null;
+  // Anonymous sessions belong to scorer devices; everywhere else they count as signed out.
+  if (error || !user || user.is_anonymous) return null;
   return { supabase, user };
 });
 

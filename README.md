@@ -295,4 +295,33 @@ schedule (Riyadh times, team names, sharing) and the announcement on the public
 league page, and that signed-out visitors are sent to login from admin pages.
 Signed-in screens and browser visual QA remain unverified.
 
-Next: **Phase 1, step 5 — digital scorebook with offline sync, game approval, and PDF scoresheet**.
+Phase 1, step 5 (digital scorebook) is being built in parts.
+
+**5a — basketball rules engine.** `src/lib/sports/basketball/` defines every
+scorer action as a strictly validated event (roster snapshot, check-in, game
+jersey, starters, officials, periods, clock, score, foul, substitution, timeout,
+optional stats, possession, final buzzer, and `void` corrections). The pure
+reducer derives score by period, player fouls, foul-outs and ejections (FIBA
+defaults: league foul limit; 2 technicals, 2 unsportsmanlike, or one of each; 1
+disqualifying; coach out after 2 bench technicals), team fouls and penalty
+(overtime counts with the last quarter), timeouts per half and per overtime,
+playing time from the game clock, and box scores. It never throws on a bad
+event: duplicates are dropped and events that no longer apply after a
+correction are logged as ignored with a reason. `validateEvent` uses the same
+rules so the scorer screen can block a tap before it is saved.
+
+**5b — scorer access and the event log.** Scorers need no account: the device
+signs in anonymously and a 6-digit, 24-hour game PIN (salted hash only, locked
+after 10 wrong tries) makes it the one official scorer device; claiming on
+another device takes over. Staff can claim without a PIN. `game_events` is
+append-only; `record_game_events` saves batches atomically, ignores re-sent
+events, and refuses reused IDs or sequence numbers with different content. The
+first event marks the game in progress, which also locks it against schedule
+changes. `scorer_game_setup` returns the game, rules (division over season),
+and accepted roster snapshots for offline caching. Anonymous sessions cannot
+enroll in leagues, and the app treats them as signed out outside the scorer
+screen. Anonymous sign-ins must be enabled in the Supabase dashboard
+(Authentication → Sign In / Providers). The 56 scoring pgTAP checks pass in the
+in-memory test database; the migration is not yet applied to cloud.
+
+Next: **5c — scorer screen**, then 5d offline sync and 5e game review, approval, and PDF.

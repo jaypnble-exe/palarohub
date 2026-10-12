@@ -151,6 +151,171 @@ export type Database = {
           },
         ];
       };
+      game_events: {
+        Row: {
+          clock_ms: number | null;
+          created_at: string;
+          created_by: string;
+          game_id: string;
+          id: string;
+          league_id: string;
+          occurred_at: string;
+          payload: Json;
+          period: number | null;
+          sequence: number;
+          type: string;
+        };
+        Insert: {
+          clock_ms?: number | null;
+          created_at?: string;
+          created_by: string;
+          game_id: string;
+          id: string;
+          league_id: string;
+          occurred_at: string;
+          payload: Json;
+          period?: number | null;
+          sequence: number;
+          type: string;
+        };
+        Update: {
+          clock_ms?: number | null;
+          created_at?: string;
+          created_by?: string;
+          game_id?: string;
+          id?: string;
+          league_id?: string;
+          occurred_at?: string;
+          payload?: Json;
+          period?: number | null;
+          sequence?: number;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "game_events_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "game_events_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_events_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      game_scorer_access: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          expires_at: string;
+          failed_attempts: number;
+          game_id: string;
+          league_id: string;
+          pin_hash: string;
+          pin_salt: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          expires_at: string;
+          failed_attempts?: number;
+          game_id: string;
+          league_id: string;
+          pin_hash: string;
+          pin_salt: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string;
+          failed_attempts?: number;
+          game_id?: string;
+          league_id?: string;
+          pin_hash?: string;
+          pin_salt?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "game_scorer_access_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "game_scorer_access_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_scorer_access_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      game_scorers: {
+        Row: {
+          game_id: string;
+          granted_at: string;
+          league_id: string;
+          revoked_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          game_id: string;
+          granted_at?: string;
+          league_id: string;
+          revoked_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          game_id?: string;
+          granted_at?: string;
+          league_id?: string;
+          revoked_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "game_scorers_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_scorers_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "game_scorers_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       games: {
         Row: {
           away_season_team_id: string;
@@ -1106,6 +1271,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      claim_scorer_access: {
+        Args: { p_game_id: string; p_pin?: string };
+        Returns: string;
+      };
       create_league_with_commissioner: {
         Args: {
           commissioner_email: string;
@@ -1123,9 +1292,17 @@ export type Database = {
         Args: { p_league_id: string; p_name: string };
         Returns: string;
       };
+      create_scorer_pin: {
+        Args: { p_game_id: string; p_league_id: string };
+        Returns: string;
+      };
       join_league_registration: {
         Args: { p_league_id: string; p_season_id: string };
         Returns: undefined;
+      };
+      record_game_events: {
+        Args: { p_events: Json; p_game_id: string };
+        Returns: number;
       };
       registration_player_catalog: {
         Args: {
@@ -1183,6 +1360,10 @@ export type Database = {
           p_submit?: boolean;
         };
         Returns: string;
+      };
+      scorer_game_setup: {
+        Args: { p_game_id: string };
+        Returns: Json;
       };
       set_player_checks: {
         Args: {
