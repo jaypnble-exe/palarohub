@@ -2,15 +2,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { createClient } from "@/lib/supabase/browser";
 import { toRecordedEvent } from "@/lib/game-events";
+import type { ScorebookStore } from "@/lib/offline/scorebook-store";
 import type { GameEventEnvelope } from "@/lib/sports/types";
 
 type Client = ReturnType<typeof createClient>;
 type LoggedEvent = GameEventEnvelope & { type: string; payload: object };
+export type PendingEvent<E> = { event: E; period: number | null };
 
 /**
- * synced: everything is saved. saving: sending now. retrying: no connection
- * yet, will retry. replaced: another device took over. closed: the game was
- * submitted. conflict: the server has different events; reload to continue.
+ * synced: everything is saved. saving: sending now. retrying: saved on this
+ * device, will send when possible. replaced: another device took over.
+ * closed: the game was submitted. conflict: the server has different events.
  */
 export type SyncStatus =
   "synced" | "saving" | "retrying" | "replaced" | "closed" | "conflict";
@@ -18,19 +20,23 @@ export type SyncStatus =
 const RETRY_MS = 4000;
 
 /**
- * The game's event list as this device knows it: saved events plus events
- * still being sent. Sends in order, in batches, and retries until saved.
+ * The game's event list as this device knows it. Each new action is written
+ * to the device store, then sent in order, in batches, until the server has it.
  */
 export function useEventLog<E extends LoggedEvent>(
   supabase: Client,
   gameId: string,
-  saved: readonly E[],
+  initial: { events: readonly E[]; pending: readonly PendingEvent<E>[] },
+  store: ScorebookStore,
 ) {
-  const [events, setEvents] = useState<E[]>(() => [...saved]);
-  const [pending, setPending] = useState<{ event: E; period: number | null }[]>(
-    [],
+  const [events, setEvents] = useState<E[]>(() => [...initial.events]);
+  const [pending, setPending] = useState<PendingEvent<E>[]>(() => [
+    ...initial.pending,
+  ]);
+  const [status, setStatus] = useState<SyncStatus>(() =>
+    initial.pending.length ? "saving" : "synced",
   );
-  const [status, setStatus] = useState<SyncStatus>("synced");
+  const [storageFailed, setStorageFailed] = useState(false);
   const sending = useRef(false);
   const stopped = useRef(false);
   const queue = useRef(pending);
@@ -57,15 +63,17 @@ export function useEventLog<E extends LoggedEvent>(
     }
     sending.current = false;
     if (!error) {
-      const sent = new Set(batch.map(({ event }) => event.id));
-      const left = queue.current.filter(({ event }) => !sent.has(event.id));
+      const sent = batch.map(({ event }) => event.id);
+      const done = new Set(sent);
+      const left = queue.current.filter(({ event }) => !done.has(event.id));
+      store.markSynced(sent).catch(() => setStorageFailed(true));
       setPending((current) =>
-        current.filter(({ event }) => !sent.has(event.id)),
+        current.filter(({ event }) => !done.has(event.id)),
       );
       setStatus(left.length ? "saving" : "synced");
       return;
     }
-    if (error.code === "42501") {
+    if (error.message.includes("scorer_required")) {
       stopped.current = true;
       setStatus("replaced");
     } else if (error.message.includes("game_not_open")) {
@@ -74,8 +82,11 @@ export function useEventLog<E extends LoggedEvent>(
     } else if (error.code === "23505" || error.code === "23514") {
       stopped.current = true;
       setStatus("conflict");
-    } else setStatus("retrying");
-  }, [supabase, gameId]);
+    } else {
+      // Offline, an expired session, or a server hiccup: keep it on the device and retry.
+      setStatus("retrying");
+    }
+  }, [supabase, gameId, store]);
 
   // Keep sending while anything is pending; retry on reconnect or a timer.
   useEffect(() => {
@@ -93,7 +104,7 @@ export function useEventLog<E extends LoggedEvent>(
     };
   }, [pending, status, flush]);
 
-  // Warn before closing the page while events are not saved yet.
+  // Warn before closing while anything is unsynced, even though the device has a copy.
   useEffect(() => {
     if (!pending.length) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();
@@ -102,12 +113,16 @@ export function useEventLog<E extends LoggedEvent>(
   }, [pending.length]);
 
   /** Adds an event; `period` is stored with it for reports and queries. */
-  const append = useCallback((event: E, period: number | null) => {
-    if (stopped.current) return false;
-    setEvents((current) => [...current, event]);
-    setPending((current) => [...current, { event, period }]);
-    return true;
-  }, []);
+  const append = useCallback(
+    (event: E, period: number | null) => {
+      if (stopped.current) return false;
+      store.addEvent(gameId, event, period).catch(() => setStorageFailed(true));
+      setEvents((current) => [...current, event]);
+      setPending((current) => [...current, { event, period }]);
+      return true;
+    },
+    [store, gameId],
+  );
 
-  return { events, append, status, unsaved: pending.length };
+  return { events, append, status, unsaved: pending.length, storageFailed };
 }

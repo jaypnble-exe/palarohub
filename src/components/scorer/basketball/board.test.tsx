@@ -17,6 +17,7 @@ import {
   type BasketballEvent,
 } from "@/lib/sports/basketball";
 import type { createClient } from "@/lib/supabase/browser";
+import { createMemoryScorebookStore } from "@/lib/offline/scorebook-store";
 import { BasketballScorebook } from "./board";
 
 afterEach(() => {
@@ -100,12 +101,19 @@ function client(
 function renderBoard(
   saved: BasketballEvent[] = [],
   supabase = client().supabase,
+  store = createMemoryScorebookStore(),
 ) {
   render(
     <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
-      <BasketballScorebook supabase={supabase} setup={setup} saved={saved} />
+      <BasketballScorebook
+        supabase={supabase}
+        store={store}
+        setup={setup}
+        log={{ events: saved, pending: [], conflicts: [], alreadySaved: [] }}
+      />
     </NextIntlClientProvider>,
   );
+  return store;
 }
 const sentTypes = (rpc: ReturnType<typeof vi.fn>) =>
   rpc.mock.calls.flatMap(([, args]) =>
@@ -268,5 +276,97 @@ describe("basketball scorer screen", () => {
     expect(
       within(screen.getByRole("banner")).queryByText("2"),
     ).not.toBeInTheDocument();
+  });
+
+  it("saves each action on the device, then marks it synced", async () => {
+    const offline = client({
+      error: { message: "TypeError: Failed to fetch" },
+    });
+    const store = renderBoard(startedGame(), offline.supabase);
+    tapPlayer("Royal 1");
+    fireEvent.click(screen.getByRole("button", { name: "+2" }));
+    await waitFor(() =>
+      expect(store.dump().map((row) => row.state)).toEqual(["pending"]),
+    );
+    cleanup();
+    const online = client();
+    const again = renderBoard(startedGame(), online.supabase);
+    tapPlayer("Royal 1");
+    fireEvent.click(screen.getByRole("button", { name: "+3" }));
+    await waitFor(() =>
+      expect(again.dump().map((row) => row.state)).toEqual(["synced"]),
+    );
+  });
+
+  it("sends actions left on this device from an earlier visit", async () => {
+    const leftover = {
+      id: id("f", 1),
+      sequence: 100,
+      clockMs: null,
+      createdAt: "2026-10-23T16:05:00.000Z",
+      type: "timeout",
+      payload: { team: "home" },
+    } as BasketballEvent;
+    const { rpc, supabase } = client();
+    render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
+        <BasketballScorebook
+          supabase={supabase}
+          store={createMemoryScorebookStore()}
+          setup={setup}
+          log={{
+            events: [...startedGame(), leftover],
+            pending: [{ event: leftover, period: 1 }],
+            conflicts: [],
+            alreadySaved: [],
+          }}
+        />
+      </NextIntlClientProvider>,
+    );
+    await waitFor(() => expect(sentTypes(rpc)).toEqual(["timeout"]));
+    expect(rpc.mock.calls[0][1].p_events[0]).toMatchObject({
+      id: leftover.id,
+      period: 1,
+    });
+    expect(
+      within(homePanel()).getByRole("button", { name: en.Scorer.timeout }),
+    ).toBeInTheDocument();
+  });
+
+  it("sets aside actions another device already recorded over, without deleting them", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    const clash = {
+      id: id("f", 2),
+      sequence: 2,
+      clockMs: null,
+      createdAt: "2026-10-23T16:05:00.000Z",
+      type: "timeout",
+      payload: { team: "away" },
+    } as BasketballEvent;
+    const store = createMemoryScorebookStore();
+    await store.addEvent(setup.gameId, clash, 1);
+    render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
+        <BasketballScorebook
+          supabase={client().supabase}
+          store={store}
+          setup={setup}
+          log={{
+            events: startedGame(),
+            pending: [],
+            conflicts: [clash],
+            alreadySaved: [],
+          }}
+        />
+      </NextIntlClientProvider>,
+    );
+    expect(
+      screen.getByText(/1 action on this device could not be sent/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: en.Scorer.setAside }));
+    await waitFor(() =>
+      expect(screen.queryByText(/could not be sent/)).not.toBeInTheDocument(),
+    );
+    expect(store.dump()).toMatchObject([{ id: clash.id, state: "discarded" }]);
   });
 });

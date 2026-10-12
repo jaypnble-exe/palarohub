@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations } from "next-intl/server";
 import { Scorebook } from "@/components/scorer/scorebook";
+import { OfflineShell } from "@/components/scorer/offline-shell";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Scorer");
@@ -19,7 +20,9 @@ export default async function ScorePage({
   if (!z.uuid().safeParse(gameId).success) notFound();
   return (
     <main className="fixed inset-0 z-50 overflow-auto bg-background">
-      <Scorebook gameId={gameId} />
+      <OfflineShell>
+        <Scorebook gameId={gameId} />
+      </OfflineShell>
     </main>
   );
 }

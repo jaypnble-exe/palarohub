@@ -687,6 +687,13 @@
       "freeThrows": "FT",
       "fouls": "Fouls",
       "total": "Team"
-    }
+    },
+    "openedOffline": "No connection. The scorebook opened from this device; actions are saved here and sent when the connection is back.",
+    "storageFailed": "This device cannot save actions (private browsing or full storage). Keep this page open until it says Synced.",
+    "conflicts": "{count, plural, one {# action on this device could not be sent because another device already recorded this game.} other {# actions on this device could not be sent because another device already recorded this game.}} Check the play-by-play and record anything missing again.",
+    "setAside": "Set these actions aside",
+    "confirmSetAside": "Set these actions aside? They stay on this device but will not be added to the game.",
+    "offlineNoCopy": "No connection, and this game has not been opened on this device before. Connect once to open the scorebook.",
+    "offlineClaim": "No connection. Connect to check the PIN; after that the scorebook also works offline."
   }
 }

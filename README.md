@@ -338,8 +338,22 @@ foul-outs, ejections, coach ejection, penalty, and players who must be
 substituted. Undo voids the last action; the play-by-play shows every action,
 corrections, and actions that no longer count (with the reason). After the final
 buzzer the box scores are shown. The sync badge shows Synced, Saving, or how many
-actions are waiting on this device; closing the page with unsaved actions asks
-first; if another device takes over, this one stops recording. Unsaved actions
-are kept in memory only until 5d stores them on the device.
+actions are saved on this device; closing the page with unsynced actions asks
+first; if another device takes over, this one stops recording.
 
-Next: **5d — offline storage and sync**, then 5e game review, approval, and PDF.
+**5d — offline scoring.** Every action is written to the device (IndexedDB via
+Dexie, `src/lib/offline/`) before it is sent, and marked synced once the server
+confirms it, so actions survive reloads, closed browsers, and lost connections.
+Opening a game merges the server's events with this device's unsent actions:
+actions the server already has (a lost reply) are recognised, and actions whose
+number another device already used are not sent; the scorer can set them aside,
+which keeps them on the device. Without a connection the scorebook opens from
+the device copy of the setup and events (the game must have been opened online
+once) and sends everything when the connection returns. A Serwist service
+worker (`src/app/sw.ts`, served at `/serwist/sw.js`) is registered for `/score/`
+only: scorer pages are network-first with an offline fallback and the app's own
+static files are cached. Commissioner pages and Supabase API responses are
+never cached. It never reloads the page on reconnect. The worker is disabled in
+`pnpm dev`; test offline behaviour with `pnpm build && pnpm start`.
+
+Next: **5e — game review, commissioner approval, suspensions, and PDF scoresheet**.

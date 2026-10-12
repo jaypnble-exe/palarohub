@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { createClient } from "@/lib/supabase/browser";
 import type { ScorerSetup } from "@/lib/game-events";
+import type { Reconciled } from "@/lib/offline/reconcile";
+import type { ScorebookStore } from "@/lib/offline/scorebook-store";
 import {
   inPenalty,
   lastUndoableEvent,
@@ -48,16 +50,21 @@ const syncTone: { [key in SyncStatus]: string } = {
 
 export function BasketballScorebook({
   supabase,
+  store,
   setup,
-  saved,
+  log: initial,
+  openedOffline = false,
 }: {
   supabase: ReturnType<typeof createClient>;
+  store: ScorebookStore;
   setup: ScorerSetup;
-  saved: readonly BasketballEvent[];
+  log: Reconciled<BasketballEvent>;
+  openedOffline?: boolean;
 }) {
   const t = useTranslations("Scorer");
   const rules = setup.rules as BasketballRules;
-  const log = useEventLog(supabase, setup.gameId, saved);
+  const log = useEventLog(supabase, setup.gameId, initial, store);
+  const [conflicts, setConflicts] = useState(initial.conflicts);
   const state = useMemo(
     () => reduceBasketballGame(log.events, rules),
     [log.events, rules],
@@ -184,6 +191,44 @@ export function BasketballScorebook({
         >
           {t(`blocked.${log.status}`)}
         </p>
+      )}
+      {openedOffline && log.status !== "synced" && (
+        <p
+          role="status"
+          className="rounded-xl bg-accent p-3 text-sm font-semibold"
+        >
+          {t("openedOffline")}
+        </p>
+      )}
+      {log.storageFailed && (
+        <p
+          role="alert"
+          className="rounded-xl bg-orange-soft p-3 font-semibold text-orange-dark"
+        >
+          {t("storageFailed")}
+        </p>
+      )}
+      {conflicts.length > 0 && (
+        <div
+          role="alert"
+          className="space-y-3 rounded-xl border-2 border-destructive bg-card p-4"
+        >
+          <p className="font-semibold text-destructive">
+            {t("conflicts", { count: conflicts.length })}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (!window.confirm(t("confirmSetAside"))) return;
+              void store
+                .discard(conflicts.map((event) => event.id))
+                .finally(() => setConflicts([]));
+            }}
+          >
+            {t("setAside")}
+          </Button>
+        </div>
       )}
       {notice && (
         <p
