@@ -1,36 +1,47 @@
-import { z } from "zod";
 import type { SportModule } from "../types";
+import { basketballEventSchema, type BasketballEvent } from "./events";
+import {
+  reduceBasketballGame,
+  validateBasketballEvent,
+  type BasketballEventError,
+  type BasketballGameState,
+} from "./reducer";
+import {
+  basketballRulesSchema,
+  defaultBasketballRules,
+  type BasketballRules,
+} from "./rules";
 
-const timeoutsSchema = z.strictObject({
-  firstHalf: z.number().int().min(0).max(10).default(2),
-  secondHalf: z.number().int().min(0).max(10).default(3),
-  overtime: z.number().int().min(0).max(10).default(1),
-});
+export * from "./events";
+export * from "./reducer";
+export * from "./rules";
 
-export const basketballRulesSchema = z.strictObject({
-  foulOut: z.number().int().min(1).max(10).default(5),
-  teamBonusAfter: z.number().int().min(0).max(20).default(4),
-  quarters: z.number().int().min(1).max(8).default(4),
-  quarterMinutes: z.number().int().min(1).max(30).default(10),
-  overtimeMinutes: z.number().int().min(1).max(15).default(5),
-  timeouts: timeoutsSchema.prefault({}),
-});
-
-export type BasketballRules = z.infer<typeof basketballRulesSchema>;
-export const defaultBasketballRules = Object.freeze(
-  basketballRulesSchema.parse({}),
-);
-
-// No basketball event vocabulary or game reducer is implemented in this phase.
-export const basketball: SportModule<BasketballRules, never, never> = {
+export const basketball: SportModule<
+  BasketballRules,
+  BasketballEvent,
+  BasketballGameState,
+  BasketballEventError
+> = {
   sport: "basketball",
-  eventSchemas: {},
+  eventSchema: basketballEventSchema,
   rulesSchema: basketballRulesSchema,
   defaultRules: defaultBasketballRules,
-  reduceGame: () => {
-    throw new Error("Basketball game reducer is not implemented yet.");
-  },
-  stats: [],
+  reduceGame: reduceBasketballGame,
+  validateEvent: validateBasketballEvent,
+  stats: [
+    { key: "points", labelKey: "points" },
+    { key: "fieldGoals", labelKey: "fieldGoals" },
+    { key: "threePointers", labelKey: "threePointers" },
+    { key: "freeThrows", labelKey: "freeThrows" },
+    { key: "fouls", labelKey: "fouls" },
+    { key: "minutes", labelKey: "minutes" },
+    { key: "rebound", labelKey: "rebounds" },
+    { key: "assist", labelKey: "assists" },
+    { key: "steal", labelKey: "steals" },
+    { key: "block", labelKey: "blocks" },
+    { key: "turnover", labelKey: "turnovers" },
+  ],
+  // Standings arrive in Phase 1, step 6.
   standingsPoints: () => {
     throw new Error("Basketball standings are not implemented yet.");
   },
@@ -40,6 +51,14 @@ export const basketball: SportModule<BasketballRules, never, never> = {
     scorer: null,
     tv: null,
     pdf: null,
-    flashes: [],
+    flashes: [
+      "madeThree",
+      "foulWarning",
+      "fouledOut",
+      "ejected",
+      "teamPenalty",
+      "timeout",
+      "substitution",
+    ],
   },
 };
