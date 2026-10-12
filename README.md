@@ -212,7 +212,7 @@ An anonymous cloud API and HTTP check verified that the published Sindikato Cup
 Phase 1, step 1: Google/email-link auth, server/browser/session-refresh clients,
 protected admin/team routes, profiles, leagues, memberships, RLS, seed, generated
 database types, shadcn-compatible UI components, league creation, league placeholders,
-and cookie-based English/Tagalog translations.
+and English UI text via next-intl.
 
 Only the basketball module interface and rules schema are present. Event reduction,
 statistics, standings calculations, scoring UI, TV, and PDFs are deliberately

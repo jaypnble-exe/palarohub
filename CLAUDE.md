@@ -39,7 +39,7 @@ Roles are **per league** (a person can hold different roles in different leagues
 - **Supabase Auth**: Google sign-in + email magic link only. **No phone/SMS login** for now.
 - **PWA**: Serwist (service worker) + Dexie (IndexedDB) for offline scoring
 - **@react-pdf/renderer** for PDF scoresheets
-- **next-intl** for English / Tagalog
+- **next-intl** for UI text (English only; no other languages planned)
 - **Sentry** (free tier) for error tracking
 - **Vercel** for hosting, deployed from GitHub
 
@@ -86,7 +86,7 @@ src/
       volleyball/               # later
     offline/                    # Dexie db, sync queue
     validation/                 # zod schemas
-  messages/                     # next-intl: en.json, tl.json
+  messages/                     # next-intl: en.json (English only)
 supabase/
   migrations/                   # SQL migrations (source of truth for schema + RLS)
   seed.sql                      # demo league, teams, players for local dev
@@ -228,7 +228,7 @@ Replaces the paper scoresheet at the scorer's table. Must be faster than writing
 - **Phone-first.** Design for a 380px-wide screen before desktop.
 - Big tap targets, one primary action per screen, icons always with labels.
 - Plain words, no jargon ("Teams waiting for approval", not "Pending registrations").
-- Every user-facing string goes through next-intl (`en` and `tl`). No hard-coded UI text.
+- Every user-facing string goes through next-intl (`en.json`). No hard-coded UI text. English is the only language; do not add Tagalog or other translations.
 - Multi-field setup uses step-by-step wizards with sensible defaults and "copy from last season".
 - Confirm before destructive actions; prefer undo.
 - Commissioner home is a to-do list (approvals, unpaid teams, missing referees, appeals).

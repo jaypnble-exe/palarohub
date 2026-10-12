@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getAuth } from "@/lib/auth";
 import { signOut } from "@/app/auth/actions";
-import { LanguageSwitcher } from "./language-switcher";
 import { Button } from "./ui/button";
 
 export async function SiteHeader() {
@@ -21,7 +20,6 @@ export async function SiteHeader() {
             ),
           })}
         </Link>
-        <LanguageSwitcher />
         {auth && (
           <nav
             aria-label={t("navigation")}
