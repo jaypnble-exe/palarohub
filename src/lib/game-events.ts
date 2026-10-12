@@ -47,9 +47,20 @@ export function toRecordedEvent(
   };
 }
 
+const scorerPaymentSchema = z.object({
+  quotaHalalas: z.number().int(),
+  paidHalalas: z.number().int(),
+  finesHalalas: z.number().int(),
+  gamesTotal: z.number().int(),
+  /** Earlier games; the game about to start is added by the scorer screen. */
+  gamesPlayed: z.number().int(),
+});
+export type ScorerPayment = z.output<typeof scorerPaymentSchema>;
+
 const scorerTeamSchema = z.object({
   seasonTeamId: z.uuid(),
   name: z.string(),
+  payment: scorerPaymentSchema.nullable().default(null),
   players: z.array(
     z.object({
       playerId: z.uuid(),
@@ -66,6 +77,7 @@ export const scorerSetupSchema = z
     gameId: z.uuid(),
     leagueId: z.uuid(),
     leagueName: z.string(),
+    paymentPolicy: z.enum(["warn", "block"]).catch("warn").default("warn"),
     seasonName: z.string(),
     divisionName: z.string(),
     sport: z.enum(supportedSports),

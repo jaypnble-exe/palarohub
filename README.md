@@ -393,4 +393,22 @@ phone-first (points for/against appear on wider screens). Standings are
 computed on request; no new tables or migrations. Snapshotting final standings
 when a season closes needs a season "closed" status, which does not exist yet.
 
-Next: **Phase 1, step 7 — team payment tracking**.
+Phase 1, step 7 adds team payment tracking. Each approved team has one
+append-only ledger (`team_ledger`) of payments (cash, bank transfer, STC Pay,
+other), fines (technical, no-show, other), and reversals that cancel a mistaken
+entry with a reason; nothing is edited or deleted. Money is integer halalas.
+`src/lib/domain/payments.ts` is the single place balances are worked out:
+balance = fee + fines − payments, and a team is behind when it has paid less
+than its fines plus its fee share for the games counted (fee × played ÷
+scheduled, rounded up to the halala), so teams may pay in full or per game.
+Staff record and correct entries at `/admin/[league]/payments` (teams behind
+listed first) and per team; the commissioner sets the league rule: warn or
+block. The database supplies only totals (`private.team_payment_totals`); the
+scorer device runs the same domain rules, counting the game about to start: it
+warns, or under "block" disables tip-off until the payment is recorded. The
+commissioner to-do list counts teams behind; team managers see their own status
+and history on their registration page. The 34 payment pgTAP checks pass in the
+in-memory test database (336 in all); the migration is not yet applied to cloud.
+
+That completes Phase 1 (pilot season MVP). Next: browser QA on a tablet and
+phone, then Phase 2 (TV scoreboard, live dashboard, public live scores).

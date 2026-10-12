@@ -22,6 +22,7 @@ import {
 } from "@/lib/sports/basketball";
 import { Button } from "@/components/ui/button";
 import { isNetworkError } from "@/lib/offline/network";
+import { paymentStatus } from "@/lib/domain/payments";
 import { useEventLog, type SyncStatus } from "../use-event-log";
 import {
   formatClock,
@@ -154,6 +155,25 @@ export function BasketballScorebook({
   const blocked =
     review !== "open" ||
     ["replaced", "closed", "conflict"].includes(log.status);
+  // Payment check for this game: earlier games plus the one about to start.
+  const behind = useMemo(
+    () =>
+      sides.flatMap((side) => {
+        const payment = setup.teams[side].payment;
+        if (!payment) return [];
+        const status = paymentStatus({
+          quotaHalalas: payment.quotaHalalas,
+          paidHalalas: payment.paidHalalas,
+          finesHalalas: payment.finesHalalas,
+          gamesTotal: payment.gamesTotal,
+          gamesCounted: payment.gamesPlayed + 1,
+        });
+        return status.behind
+          ? [{ side, behindByHalalas: status.behindByHalalas }]
+          : [];
+      }),
+    [setup.teams],
+  );
   const suspended = useMemo(
     () =>
       new Set(
@@ -337,6 +357,8 @@ export function BasketballScorebook({
           record={record}
           disabled={blocked}
           suspended={suspended}
+          behind={behind}
+          blockUnpaid={setup.paymentPolicy === "block"}
         />
       )}
 

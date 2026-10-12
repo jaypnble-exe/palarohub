@@ -18,6 +18,7 @@ interface DashboardProps {
     unrated: number;
     unscheduled: number;
     toApprove: number;
+    behind: number;
   };
   seasons: {
     id: string;
@@ -46,6 +47,7 @@ export async function Dashboard({
   const registrationText = await getTranslations("Registration");
   const scheduleText = await getTranslations("Schedule");
   const reviewText = await getTranslations("Review");
+  const paymentText = await getTranslations("Payments");
   const publicPath = `/${league.slug}`;
   const links = [
     {
@@ -144,6 +146,7 @@ export async function Dashboard({
             {scheduleText("unscheduledCount", { count: tasks.unscheduled })}
           </p>
           <p>{reviewText("approvalCount", { count: tasks.toApprove })}</p>
+          <p>{paymentText("behindCount", { count: tasks.behind })}</p>
           <div className="flex flex-wrap gap-3">
             <Button asChild>
               <Link href={`/admin/${league.slug}/registrations`}>
@@ -153,6 +156,11 @@ export async function Dashboard({
             <Button asChild variant={tasks.toApprove ? "default" : "outline"}>
               <Link href={`/admin/${league.slug}/games`}>
                 {reviewText("gamesTitle")}
+              </Link>
+            </Button>
+            <Button asChild variant={tasks.behind ? "default" : "outline"}>
+              <Link href={`/admin/${league.slug}/payments`}>
+                {paymentText("title")}
               </Link>
             </Button>
           </div>

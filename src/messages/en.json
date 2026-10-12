@@ -707,7 +707,10 @@
     "submitOffline": "No connection. Connect and send the game again.",
     "submitFailed": "Could not send the game. Try again.",
     "reopened": "The commissioner reopened this game: “{comment}” Fix it (Undo removes the final buzzer), then end the game and send it again.",
-    "suspended": "Suspended"
+    "suspended": "Suspended",
+    "paymentWarning": "{team} is behind on payments by {amount}. The league allows the game; tell the commissioner.",
+    "paymentBlocked": "{team} is behind on payments by {amount}. League rule: they cannot play until it is paid.",
+    "tipOffPaymentHelp": "Ask the commissioner to record the payment, then reload this page."
   },
   "Review": {
     "gamesTitle": "Games to approve",
@@ -819,5 +822,79 @@
     "tiebreakNote": "Teams level on points are separated by the games between them (points, then point difference, then points scored), then by overall point difference and points scored.",
     "share": "Share the standings",
     "shareText": "Standings – {season}:"
+  },
+  "Payments": {
+    "title": "Payments",
+    "backToLeague": "Back to league home",
+    "backToPayments": "Back to payments",
+    "chooseSeason": "Choose season",
+    "teamTitle": "Payments",
+    "noTeams": "No approved teams in this season yet.",
+    "behindCount": "{count, plural, =0 {No teams are behind on payments} one {# team is behind on payments} other {# teams are behind on payments}}",
+    "paidOf": "Paid {paid} of {total}",
+    "behindBy": "Behind by {amount}",
+    "paidInFull": "Paid in full",
+    "upToDate": "Up to date",
+    "credit": "Paid in full ({amount} extra)",
+    "fee": "Fee",
+    "fines": "Fines",
+    "paid": "Paid",
+    "balance": "Still to pay",
+    "noSchedule": "No games scheduled yet, so only fines are due now.",
+    "perGame": "Per game: {amount}. {played} of {total} games played, so {due} is due now (fines included).",
+    "entryType": "What are you recording?",
+    "recordPayment": "Payment",
+    "addFine": "Fine",
+    "amount": "Amount (SAR)",
+    "method": "Paid by",
+    "fineReason": "Reason",
+    "paidOn": "Date paid",
+    "finedOn": "Date of the fine",
+    "note": "Note (optional)",
+    "methods": {
+      "cash": "Cash",
+      "bank_transfer": "Bank transfer",
+      "stc_pay": "STC Pay",
+      "other": "Other"
+    },
+    "reasons": {
+      "technical": "Technical foul",
+      "no_show": "No-show",
+      "other": "Other"
+    },
+    "savePayment": "Save payment",
+    "saveFine": "Save fine",
+    "saving": "Saving…",
+    "saved": "Saved.",
+    "history": "History",
+    "noEntries": "No payments or fines yet.",
+    "paymentLine": "Payment {amount} · {method}",
+    "fineLine": "Fine {amount} · {reason}",
+    "reversalLine": "Correction: {amount} cancelled",
+    "reversedNote": "Cancelled by a correction.",
+    "reverse": "This entry is wrong",
+    "reverseReason": "Why is it wrong?",
+    "reverseConfirm": "Cancel entry",
+    "cancel": "Keep it",
+    "confirmReverse": "Cancel this entry? It stays in the history with your reason.",
+    "policyTitle": "When a team is behind on payments",
+    "policy": {
+      "warn": "Warn the scorer",
+      "block": "Block the game"
+    },
+    "policyHelp": {
+      "warn": "The game can start; the scorer sees how much the team owes.",
+      "block": "The scorer cannot start the game until the payment is recorded."
+    },
+    "savePolicy": "Save rule",
+    "invalidAmount": "Enter an amount in SAR, for example 150 or 150.50.",
+    "invalidDate": "Pick today or an earlier date.",
+    "reasonRequired": "Write why the entry is wrong.",
+    "alreadyReversed": "This entry was already cancelled.",
+    "teamNotRegistered": "This team's registration is not approved yet.",
+    "teamNotFound": "This team or entry no longer exists.",
+    "notAllowed": "Only the commissioner and league staff can do this.",
+    "invalidForm": "Something is not right. Check the form and try again.",
+    "saveFailed": "Could not save. Check your connection and try again."
   }
 }

@@ -269,6 +269,13 @@ export type Database = {
             referencedColumns: ["id", "league_id"];
           },
           {
+            foreignKeyName: "game_results_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
             foreignKeyName: "game_results_league_id_fkey";
             columns: ["league_id"];
             isOneToOne: false;
@@ -318,6 +325,13 @@ export type Database = {
             columns: ["game_id", "league_id"];
             isOneToOne: false;
             referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_reviews_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
             referencedColumns: ["id", "league_id"];
           },
           {
@@ -1257,6 +1271,13 @@ export type Database = {
             referencedColumns: ["id", "league_id"];
           },
           {
+            foreignKeyName: "suspensions_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
             foreignKeyName: "suspensions_league_id_fkey";
             columns: ["league_id"];
             isOneToOne: false;
@@ -1267,8 +1288,92 @@ export type Database = {
             foreignKeyName: "suspensions_player_id_league_id_fkey";
             columns: ["player_id", "league_id"];
             isOneToOne: false;
+            referencedRelation: "league_player_catalog";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "suspensions_player_id_league_id_fkey";
+            columns: ["player_id", "league_id"];
+            isOneToOne: false;
             referencedRelation: "players";
             referencedColumns: ["id", "league_id"];
+          },
+        ];
+      };
+      team_ledger: {
+        Row: {
+          amount_halalas: number;
+          created_at: string;
+          fine_reason: string | null;
+          id: string;
+          kind: string;
+          league_id: string;
+          method: string | null;
+          note: string;
+          paid_on: string;
+          recorded_by: string;
+          reverses_id: string | null;
+          season_id: string;
+          season_team_id: string;
+        };
+        Insert: {
+          amount_halalas: number;
+          created_at?: string;
+          fine_reason?: string | null;
+          id?: string;
+          kind: string;
+          league_id: string;
+          method?: string | null;
+          note?: string;
+          paid_on: string;
+          recorded_by: string;
+          reverses_id?: string | null;
+          season_id: string;
+          season_team_id: string;
+        };
+        Update: {
+          amount_halalas?: number;
+          created_at?: string;
+          fine_reason?: string | null;
+          id?: string;
+          kind?: string;
+          league_id?: string;
+          method?: string | null;
+          note?: string;
+          paid_on?: string;
+          recorded_by?: string;
+          reverses_id?: string | null;
+          season_id?: string;
+          season_team_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "team_ledger_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_ledger_recorded_by_fkey";
+            columns: ["recorded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_ledger_reverses_id_fkey";
+            columns: ["reverses_id"];
+            isOneToOne: false;
+            referencedRelation: "team_ledger";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_ledger_season_team_id_league_id_season_id_fkey";
+            columns: ["season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
           },
         ];
       };
@@ -1333,13 +1438,13 @@ export type Database = {
       };
       published_games: {
         Row: {
-          away_season_team_id: string | null;
           away_score: number | null;
+          away_season_team_id: string | null;
           away_team_name: string | null;
           division_id: string | null;
           division_name: string | null;
-          home_season_team_id: string | null;
           home_score: number | null;
+          home_season_team_id: string | null;
           home_team_name: string | null;
           id: string | null;
           league_id: string | null;
@@ -1505,6 +1610,19 @@ export type Database = {
         Args: { p_events: Json; p_game_id: string };
         Returns: number;
       };
+      record_ledger_entry: {
+        Args: {
+          p_amount_halalas: number;
+          p_fine_reason: string | null;
+          p_kind: string;
+          p_league_id: string;
+          p_method: string | null;
+          p_note: string;
+          p_paid_on: string;
+          p_season_team_id: string;
+        };
+        Returns: string;
+      };
       registration_player_catalog: {
         Args: {
           p_league_id: string;
@@ -1524,6 +1642,10 @@ export type Database = {
           p_registration_id: string;
           p_roster: Json;
         };
+        Returns: string;
+      };
+      reverse_ledger_entry: {
+        Args: { p_entry_id: string; p_league_id: string; p_note: string };
         Returns: string;
       };
       review_roster_change: {
@@ -1567,6 +1689,10 @@ export type Database = {
         Returns: string;
       };
       scorer_game_setup: { Args: { p_game_id: string }; Returns: Json };
+      set_payment_policy: {
+        Args: { p_league_id: string; p_policy: string };
+        Returns: undefined;
+      };
       set_player_checks: {
         Args: {
           p_documents_present: boolean;

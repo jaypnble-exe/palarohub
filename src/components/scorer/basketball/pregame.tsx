@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import {
   sides,
   type BasketballGameState,
@@ -17,6 +17,8 @@ export function Pregame({
   record,
   disabled,
   suspended,
+  behind = [],
+  blockUnpaid = false,
 }: {
   state: BasketballGameState;
   teamNames: Record<Side, string>;
@@ -24,12 +26,38 @@ export function Pregame({
   disabled: boolean;
   /** Players serving a suspension; they cannot be marked present. */
   suspended: ReadonlySet<string>;
+  /** Teams behind on payments for this game. */
+  behind?: readonly { side: Side; behindByHalalas: number }[];
+  /** League rule: teams that are behind cannot play. */
+  blockUnpaid?: boolean;
 }) {
   const t = useTranslations("Scorer");
-  const ready = sides.every((side) => state.teams[side].startersSet);
+  const format = useFormatter();
+  const blockedByPayment = blockUnpaid && behind.length > 0;
+  const ready =
+    sides.every((side) => state.teams[side].startersSet) && !blockedByPayment;
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground">{t("pregameHelp")}</p>
+      {behind.map(({ side, behindByHalalas }) => (
+        <p
+          key={side}
+          role="alert"
+          className={
+            blockUnpaid
+              ? "rounded-xl bg-destructive p-4 font-semibold text-white"
+              : "rounded-xl bg-orange-soft p-4 font-semibold text-orange-dark"
+          }
+        >
+          {t(blockUnpaid ? "paymentBlocked" : "paymentWarning", {
+            team: teamNames[side],
+            amount: format.number(behindByHalalas / 100, {
+              style: "currency",
+              currency: "SAR",
+            }),
+          })}
+        </p>
+      ))}
       <div className="grid gap-3 md:grid-cols-2">
         {sides.map((side) => (
           <TeamSetup
@@ -54,7 +82,7 @@ export function Pregame({
       </Button>
       {!ready && (
         <p className="text-center text-sm text-muted-foreground">
-          {t("tipOffHelp")}
+          {t(blockedByPayment ? "tipOffPaymentHelp" : "tipOffHelp")}
         </p>
       )}
     </div>

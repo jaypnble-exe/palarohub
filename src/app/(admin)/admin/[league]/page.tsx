@@ -4,6 +4,7 @@ import { requireUser, isPlatformAdmin } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
 import { Dashboard } from "@/components/admin/dashboard";
 import { scheduleOverview } from "@/lib/schedule-data";
+import { seasonPayments } from "@/lib/payments-data";
 
 export default async function CommissionerHome({
   params,
@@ -91,6 +92,15 @@ export default async function CommissionerHome({
   ]);
   if (counts.some((result) => result.error))
     throw new Error("Unable to load registration tasks.");
+  const behind = (
+    await Promise.all(
+      (seasons ?? [])
+        .filter((season) => season.status === "published")
+        .map((season) => seasonPayments(supabase, league.id, season.id)),
+    )
+  )
+    .flat()
+    .filter((team) => team.status.behind).length;
   const unscheduled = (await scheduleOverview(supabase, league.id)).filter(
     (division) => division.teamCount >= 2 && division.gameCount === 0,
   ).length;
@@ -115,6 +125,7 @@ export default async function CommissionerHome({
         changes: counts[1].count ?? 0,
         unrated: counts[3].count ?? 0,
         toApprove: counts[2].count ?? 0,
+        behind,
         unscheduled,
       }}
     />

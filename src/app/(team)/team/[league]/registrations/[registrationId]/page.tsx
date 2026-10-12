@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { RegistrationDetails } from "@/components/registration/details";
 import { RegistrationWizard } from "@/components/registration/wizard";
 import { RosterChangeForm } from "@/components/registration/change-form";
+import { seasonPayments } from "@/lib/payments-data";
+import { PaymentSummary } from "@/components/payments/payment-summary";
+import { LedgerList } from "@/components/payments/ledger-list";
 export default async function ManagerRegistrationPage({
   params,
 }: {
@@ -32,6 +35,16 @@ export default async function ManagerRegistrationPage({
     .eq("season_id", data.season.id)
     .order("name");
   if (error) throw new Error("Unable to load divisions.");
+  const [payments] =
+    data.registration.status === "approved"
+      ? await seasonPayments(
+          data.supabase,
+          data.league.id,
+          data.season.id,
+          registrationId,
+        )
+      : [];
+  const paymentText = await getTranslations("Payments");
   const pendingChange = data.changes.find(
     (change) => change.status === "submitted",
   );
@@ -44,6 +57,15 @@ export default async function ManagerRegistrationPage({
         {data.registration.team_name}
       </h1>
       <RegistrationDetails data={data} />
+      {payments && (
+        <section className="space-y-3">
+          <h2 className="font-display text-2xl font-semibold">
+            {paymentText("teamTitle")}
+          </h2>
+          <PaymentSummary team={payments} />
+          <LedgerList slug={slug} entries={payments.entries} canEdit={false} />
+        </section>
+      )}
       {editable ? (
         <section className="space-y-5">
           <h2 className="font-display text-2xl font-semibold">

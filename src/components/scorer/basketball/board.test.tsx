@@ -38,6 +38,7 @@ const setup: ScorerSetup = {
   gameId: id("9", 1),
   leagueId: id("8", 1),
   leagueName: "Sindikato",
+  paymentPolicy: "warn",
   seasonName: "Cup",
   divisionName: "Division B",
   sport: "basketball",
@@ -49,11 +50,13 @@ const setup: ScorerSetup = {
     home: {
       seasonTeamId: id("7", 1),
       name: "Royals",
+      payment: null,
       players: roster("1", "Royal"),
     },
     away: {
       seasonTeamId: id("7", 2),
       name: "Hawks",
+      payment: null,
       players: roster("2", "Hawk"),
     },
   },
@@ -512,5 +515,64 @@ describe("basketball scorer screen", () => {
     expect(
       within(panel).getAllByRole("button", { name: en.Scorer.markHere }),
     ).toHaveLength(5);
+  });
+
+  function withPayment(policy: "warn" | "block"): ScorerSetup {
+    return {
+      ...setup,
+      paymentPolicy: policy,
+      teams: {
+        ...setup.teams,
+        // 1,800 over 12 games: 300 paid covers two games, not the third.
+        home: {
+          ...setup.teams.home,
+          payment: {
+            quotaHalalas: 180000,
+            paidHalalas: 30000,
+            finesHalalas: 0,
+            gamesTotal: 12,
+            gamesPlayed: 2,
+          },
+        },
+      },
+    };
+  }
+  function renderPregame(custom: ScorerSetup) {
+    render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
+        <BasketballScorebook
+          supabase={client().supabase}
+          store={createMemoryScorebookStore()}
+          setup={custom}
+          log={{
+            events: startedGame().slice(0, -1),
+            pending: [],
+            conflicts: [],
+            alreadySaved: [],
+          }}
+        />
+      </NextIntlClientProvider>,
+    );
+  }
+
+  it("warns the scorer about a team behind on payments but allows tip-off", () => {
+    renderPregame(withPayment("warn"));
+    expect(
+      screen.getByText(/Royals is behind on payments by SAR\s?150\.00/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: en.Scorer.tipOff }),
+    ).toBeEnabled();
+  });
+
+  it("blocks tip-off when the league blocks teams that are behind", () => {
+    renderPregame(withPayment("block"));
+    expect(
+      screen.getByText(/cannot play until it is paid/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: en.Scorer.tipOff }),
+    ).toBeDisabled();
+    expect(screen.getByText(en.Scorer.tipOffPaymentHelp)).toBeInTheDocument();
   });
 });
