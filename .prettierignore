@@ -1,0 +1,6 @@
+node_modules
+.next
+coverage
+pnpm-lock.yaml
+CLAUDE.md
+next-env.d.ts
