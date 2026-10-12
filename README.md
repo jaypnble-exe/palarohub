@@ -321,7 +321,25 @@ changes. `scorer_game_setup` returns the game, rules (division over season),
 and accepted roster snapshots for offline caching. Anonymous sessions cannot
 enroll in leagues, and the app treats them as signed out outside the scorer
 screen. Anonymous sign-ins must be enabled in the Supabase dashboard
-(Authentication → Sign In / Providers). The 56 scoring pgTAP checks pass in the
-in-memory test database; the migration is not yet applied to cloud.
+(Authentication → Sign In / Providers). The migration is applied to cloud and
+the 56 scoring pgTAP checks passed there in a rolled-back transaction.
 
-Next: **5c — scorer screen**, then 5d offline sync and 5e game review, approval, and PDF.
+**5c — scorer screen.** On each scheduled or in-progress game, staff open
+**Scorer PIN** to make a PIN, show a QR code (the PIN travels in the link's
+`#fragment`, which never reaches the server, and is removed from the address
+bar), send the link on WhatsApp, or score on their own device. Once a game is in
+progress its schedule edits are hidden. `/score/[gameId]` is full screen with no
+site navigation. Pre-game: mark who is here, change jerseys for this game, pick
+each starting five, record officials, and tip off. During the game: score bar
+with clock, team fouls, penalty, and timeouts; on-court players as big buttons;
+one tap opens made/missed shots, fouls, and substitution. Team buttons cover
+timeouts, bench technicals, and the possession arrow. Alerts show the 4th foul,
+foul-outs, ejections, coach ejection, penalty, and players who must be
+substituted. Undo voids the last action; the play-by-play shows every action,
+corrections, and actions that no longer count (with the reason). After the final
+buzzer the box scores are shown. The sync badge shows Synced, Saving, or how many
+actions are waiting on this device; closing the page with unsaved actions asks
+first; if another device takes over, this one stops recording. Unsaved actions
+are kept in memory only until 5d stores them on the device.
+
+Next: **5d — offline storage and sync**, then 5e game review, approval, and PDF.

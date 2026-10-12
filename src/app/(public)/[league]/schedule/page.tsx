@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseConfig } from "@/lib/supabase/env";
 import { getSiteUrl } from "@/lib/auth";
-import type { GameStatus } from "@/lib/validation/schedule";
+import type { GameLifecycleStatus } from "@/lib/validation/schedule";
 import { Button } from "@/components/ui/button";
 import { ShareButtons } from "@/components/share-buttons";
 import { GameList } from "@/components/schedule/game-list";
@@ -62,7 +62,7 @@ export default async function PublicSchedulePage({
       round: game.round,
       scheduledAt: game.scheduled_at,
       venue: game.venue ?? "",
-      status: (game.status ?? "scheduled") as GameStatus,
+      status: (game.status ?? "scheduled") as GameLifecycleStatus,
       homeName: game.home_team_name ?? "",
       awayName: game.away_team_name ?? "",
       divisionName: division ? undefined : (game.division_name ?? undefined),

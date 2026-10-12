@@ -11,6 +11,12 @@ import { ShareButtons } from "@/components/share-buttons";
 import { GameList } from "@/components/schedule/game-list";
 import { GameEditor } from "@/components/schedule/game-editor";
 import { AddGameForm } from "@/components/schedule/add-game-form";
+import { ScorerAccess } from "@/components/schedule/scorer-access";
+import {
+  canBeScored,
+  isSchedulable,
+  type GameStatus,
+} from "@/lib/validation/schedule";
 
 export default async function DivisionSchedulePage({
   params,
@@ -72,7 +78,23 @@ export default async function DivisionSchedulePage({
       )}
       <GameList
         games={games}
-        actions={(game) => <GameEditor slug={slug} game={game} />}
+        actions={(game) => (
+          <div className="space-y-3">
+            {canBeScored(game.status) && (
+              <ScorerAccess
+                slug={slug}
+                gameId={game.id}
+                siteUrl={getSiteUrl()}
+              />
+            )}
+            {isSchedulable(game.status) && (
+              <GameEditor
+                slug={slug}
+                game={{ ...game, status: game.status as GameStatus }}
+              />
+            )}
+          </div>
+        )}
       />
     </main>
   );

@@ -5,8 +5,16 @@ const venue = z.string().trim().max(80);
 const unique = <T>(values: readonly T[]) =>
   new Set(values).size === values.length;
 
+/** Statuses staff can set from the schedule. */
 export const gameStatuses = ["scheduled", "postponed", "cancelled"] as const;
 export type GameStatus = (typeof gameStatuses)[number];
+/** Every status a game can have, including scoring and review. */
+export type GameLifecycleStatus =
+  GameStatus | "in_progress" | "submitted" | "approved";
+export const isSchedulable = (status: GameLifecycleStatus) =>
+  (gameStatuses as readonly string[]).includes(status);
+export const canBeScored = (status: GameLifecycleStatus) =>
+  status === "scheduled" || status === "in_progress";
 
 export const scheduleSetupSchema = z.strictObject({
   divisionId: uuid,
@@ -71,5 +79,6 @@ export type AnnouncementInput = z.output<typeof announcementSchema>;
 export interface ScheduleActionResult {
   success?: true;
   count?: number;
+  pin?: string;
   error?: string;
 }

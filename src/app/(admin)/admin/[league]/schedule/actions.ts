@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getLeagueAccess } from "@/lib/league-access";
 import { buildSchedule } from "@/lib/domain/round-robin";
@@ -21,6 +22,7 @@ function failure(error: {
     ["published_season_required", "seasonNotPublished"],
     ["game_locked", "gameLocked"],
     ["game_not_found", "gameNotFound"],
+    ["game_not_open", "gameNotOpen"],
   ] as const)
     if (error.message.includes(marker)) return { error: key };
   if (error.code === "42501") return { error: "notAllowed" };
@@ -117,4 +119,20 @@ export async function addGame(
   if (error) return failure(error);
   refresh(slug);
   return { success: true };
+}
+
+/** A new 6-digit PIN for the scorer's device; shown once, stored hashed. */
+export async function createScorerPin(
+  slug: string,
+  gameId: string,
+): Promise<ScheduleActionResult> {
+  if (!z.uuid().safeParse(gameId).success) return { error: "invalidForm" };
+  const { supabase, league, canView } = await getLeagueAccess(slug);
+  if (!canView) return { error: "notAllowed" };
+  const { data, error } = await supabase.rpc("create_scorer_pin", {
+    p_league_id: league.id,
+    p_game_id: gameId,
+  });
+  if (error) return failure(error);
+  return { success: true, pin: data };
 }

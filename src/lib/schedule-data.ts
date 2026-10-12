@@ -1,6 +1,6 @@
 import "server-only";
 import type { createClient } from "./supabase/server";
-import type { GameStatus } from "./validation/schedule";
+import type { GameLifecycleStatus } from "./validation/schedule";
 
 type Client = Awaited<ReturnType<typeof createClient>>;
 
@@ -9,7 +9,7 @@ export interface ScheduleGame {
   round: number | null;
   scheduledAt: string | null;
   venue: string;
-  status: GameStatus;
+  status: GameLifecycleStatus;
   homeName: string;
   awayName: string;
   divisionName?: string;
@@ -104,7 +104,7 @@ export async function divisionSchedule(
       round: game.round,
       scheduledAt: game.scheduled_at,
       venue: game.venue,
-      status: game.status as GameStatus,
+      status: game.status as GameLifecycleStatus,
       homeName: names.get(game.home_season_team_id) ?? "",
       awayName: names.get(game.away_season_team_id) ?? "",
     })),

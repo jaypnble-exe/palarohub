@@ -207,6 +207,13 @@ export type Database = {
             referencedColumns: ["id", "league_id"];
           },
           {
+            foreignKeyName: "game_events_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
             foreignKeyName: "game_events_league_id_fkey";
             columns: ["league_id"];
             isOneToOne: false;
@@ -262,6 +269,13 @@ export type Database = {
             referencedColumns: ["id", "league_id"];
           },
           {
+            foreignKeyName: "game_scorer_access_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
             foreignKeyName: "game_scorer_access_league_id_fkey";
             columns: ["league_id"];
             isOneToOne: false;
@@ -298,6 +312,13 @@ export type Database = {
             columns: ["game_id", "league_id"];
             isOneToOne: false;
             referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_scorers_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
             referencedColumns: ["id", "league_id"];
           },
           {
@@ -1361,10 +1382,7 @@ export type Database = {
         };
         Returns: string;
       };
-      scorer_game_setup: {
-        Args: { p_game_id: string };
-        Returns: Json;
-      };
+      scorer_game_setup: { Args: { p_game_id: string }; Returns: Json };
       set_player_checks: {
         Args: {
           p_documents_present: boolean;
