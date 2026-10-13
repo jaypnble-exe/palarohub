@@ -3,6 +3,7 @@
 import { useId } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { defaultBasketballRules } from "./index";
 
 export function BasketballRulesFields({
@@ -27,6 +28,14 @@ export function BasketballRulesFields({
     value.timeouts && typeof value.timeouts === "object"
       ? (value.timeouts as Record<string, unknown>)
       : {};
+  const shotClock = {
+    ...defaultBasketballRules.shotClock,
+    ...(value.shotClock && typeof value.shotClock === "object"
+      ? (value.shotClock as Record<string, unknown>)
+      : {}),
+  } as typeof defaultBasketballRules.shotClock;
+  const setShotClock = (next: Partial<typeof shotClock>) =>
+    onChange?.({ ...value, shotClock: { ...shotClock, ...next } });
   return (
     <fieldset disabled={disabled} className="grid gap-4 sm:grid-cols-2">
       <legend className="sr-only">{t("title")}</legend>
@@ -77,6 +86,45 @@ export function BasketballRulesFields({
           />
         </div>
       ))}
+      <div className="space-y-4 rounded-xl border bg-background p-4 sm:col-span-2">
+        <Switch
+          label={t("shotClock")}
+          description={t("shotClockHelp")}
+          checked={shotClock.enabled}
+          disabled={disabled}
+          onChange={(enabled) => setShotClock({ enabled })}
+        />
+        {shotClock.enabled && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {(
+              [
+                ["seconds", 10, 35],
+                ["resetSeconds", 1, 35],
+              ] as const
+            ).map(([key, min, max]) => (
+              <div key={key} className="space-y-2">
+                <label
+                  htmlFor={`${prefix}-${key}`}
+                  className="text-sm font-semibold"
+                >
+                  {t(key === "seconds" ? "shotClockSeconds" : "shotClockReset")}
+                </label>
+                <Input
+                  id={`${prefix}-${key}`}
+                  type="number"
+                  min={min}
+                  max={max}
+                  step={1}
+                  value={shotClock[key]}
+                  onChange={(event) =>
+                    setShotClock({ [key]: Number(event.target.value) })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </fieldset>
   );
 }

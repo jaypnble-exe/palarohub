@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireUser, isPlatformAdmin } from "@/lib/auth";
+import { groupMemberships } from "@/lib/league-list";
+import { displayNameOf } from "@/lib/user-name";
+import { LeagueCard } from "@/components/leagues/league-card";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import type { Database } from "@/lib/supabase/database.types";
-import { cardVariants } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
+import { PageHeader } from "@/components/ui/page-header";
 
+/** Where people land after signing in: every league they belong to. */
 export default async function MyLeaguesPage({
   searchParams,
 }: {
@@ -18,78 +23,40 @@ export default async function MyLeaguesPage({
     .eq("user_id", user.id);
   if (error) throw new Error("Unable to load memberships.");
   const t = await getTranslations("MyLeagues");
-  const roles = await getTranslations("Roles");
   const admin = await isPlatformAdmin();
-  type Role = Database["public"]["Enums"]["league_role"];
-  type LeagueCard = { name: string; slug: string; roles: Role[] };
-  const leagues = new Map<string, LeagueCard>();
-  for (const membership of data ?? []) {
-    const league = membership.leagues;
-    if (!league) continue;
-    const item: LeagueCard = leagues.get(league.id) ?? {
-      name: league.name,
-      slug: league.slug,
-      roles: [],
-    };
-    item.roles.push(membership.role);
-    leagues.set(league.id, item);
-  }
+  const leagues = groupMemberships(data ?? []);
   const params = await searchParams;
+  const name = displayNameOf(user).split(/\s+/)[0];
   return (
-    <main className="space-y-6 py-10">
-      <h1 className="text-3xl font-bold">{t("title")}</h1>
+    <main className="mx-auto max-w-2xl space-y-6 py-8">
+      <PageHeader
+        eyebrow={name ? t("greeting", { name }) : undefined}
+        title={t("title")}
+        description={t(leagues.length ? "intro" : "introEmpty")}
+      />
       {params.error === "signOutFailed" && (
-        <p role="alert" className="text-destructive">
-          {t("signOutFailed")}
-        </p>
+        <Alert tone="danger">{t("signOutFailed")}</Alert>
       )}
-      <div className="flex flex-wrap gap-3">
-        {admin && (
-          <Button asChild>
-            <Link href="/admin">{t("create")}</Link>
-          </Button>
-        )}
-        <Button asChild variant="outline">
-          <Link href="/leagues/password">{t("changePassword")}</Link>
-        </Button>
-      </div>
-      {!leagues.size ? (
-        <div className={cardVariants({ padding: "lg" })}>
-          <p className="font-medium">{t("empty")}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{t("emptyHelp")}</p>
-        </div>
+      {!leagues.length ? (
+        <EmptyState
+          icon="leagues"
+          title={t("empty")}
+          description={t("emptyHelp")}
+        />
       ) : (
         <ul className="space-y-4">
-          {[...leagues.entries()].map(([id, league]) => (
-            <li key={id} className={cn(cardVariants(), "space-y-4")}>
-              <div>
-                <h2 className="text-xl font-semibold">{league.name}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {league.roles.map((role) => roles(role)).join(", ")}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <Link
-                    href={
-                      league.roles.some(
-                        (role) =>
-                          role === "commissioner" || role === "league_staff",
-                      )
-                        ? `/admin/${league.slug}`
-                        : `/team/${league.slug}`
-                    }
-                  >
-                    {t("open")}
-                  </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href={`/${league.slug}`}>{t("publicPage")}</Link>
-                </Button>
-              </div>
-            </li>
+          {leagues.map((league) => (
+            <LeagueCard key={league.id} league={league} />
           ))}
         </ul>
+      )}
+      {admin && (
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/admin">
+            <Icon name="add" className="size-5" />
+            {t("create")}
+          </Link>
+        </Button>
       )}
     </main>
   );

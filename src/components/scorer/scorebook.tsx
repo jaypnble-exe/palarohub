@@ -18,6 +18,32 @@ import { getSportModule } from "@/lib/sports/registry";
 import type { BasketballEvent } from "@/lib/sports/basketball";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Icon } from "@/components/ui/icon";
+
+/** The calm full-screen frame for the scorebook's first screens. */
+function Frame({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("Scorer");
+  return (
+    <div className="flex min-h-full flex-col bg-navy text-on-dark">
+      <div className="flex items-center gap-2.5 px-5 py-4">
+        <span
+          aria-hidden="true"
+          className="grid size-9 place-items-center rounded-xl bg-primary text-white"
+        >
+          <Icon name="games" className="size-5" />
+        </span>
+        <span className="font-display text-2xl font-bold tracking-wide uppercase">
+          {t("pageTitle")}
+        </span>
+      </div>
+      <div className="flex flex-1 items-start justify-center px-4 pb-10 sm:items-center">
+        <div className="w-full max-w-md rounded-3xl bg-background p-6 text-foreground shadow-2xl sm:p-8">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 import { BasketballScorebook } from "./basketball/board";
 
 type Stage =
@@ -52,6 +78,8 @@ export function Scorebook({ gameId }: { gameId: string }) {
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  /** Signed in with an account (league staff), not an anonymous scorer device. */
+  const [staff, setStaff] = useState(false);
 
   /** Merges server events with unsent actions saved on this device. */
   const ready = useCallback(
@@ -143,6 +171,21 @@ export function Scorebook({ gameId }: { gameId: string }) {
     );
   }, [supabase, gameId, store, ready]);
 
+  /** Whether this device is the game's official scorer right now. */
+  const isScorer = useCallback(
+    async (userId: string) => {
+      const { data, error } = await supabase
+        .from("game_scorers")
+        .select("user_id")
+        .eq("game_id", gameId)
+        .eq("user_id", userId)
+        .is("revoked_at", null)
+        .maybeSingle();
+      return !error && Boolean(data);
+    },
+    [supabase, gameId],
+  );
+
   const claim = useCallback(
     async (code: string | null) => {
       const { data, error } = await supabase.rpc("claim_scorer_access", {
@@ -181,8 +224,19 @@ export function Scorebook({ gameId }: { gameId: string }) {
         }
         user = anonymous.data.user;
       }
+      setStaff(!user.is_anonymous);
       const first = await fromServer();
       if (first === "offline") return offline();
+      // Staff can open any game, but only the official scorer device records.
+      // A game still open for scoring asks first, so opening it never takes
+      // over from the scorer at the table by accident.
+      if (
+        first?.kind === "ready" &&
+        !user.is_anonymous &&
+        ["scheduled", "in_progress"].includes(first.setup.status) &&
+        !(await isScorer(user.id))
+      )
+        return show({ kind: "pin", staff: true, message: "staffNotScorer" });
       if (first) return show(first);
       if (fromLink) {
         const problem = await claim(fromLink);
@@ -202,7 +256,7 @@ export function Scorebook({ gameId }: { gameId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [supabase, fromServer, fromDevice, claim]);
+  }, [supabase, fromServer, fromDevice, claim, isScorer]);
 
   async function unlock(code: string | null) {
     setBusy(true);
@@ -215,76 +269,128 @@ export function Scorebook({ gameId }: { gameId: string }) {
         kind: "pin",
         message:
           problem ?? (loaded === "offline" ? "offlineClaim" : "setupFailed"),
-        staff: stage.kind === "pin" && stage.staff,
+        staff: stage.kind === "pin" ? stage.staff : staff,
       });
+  }
+
+  /** After another device took over: staff take it back, a scorer needs a new PIN. */
+  function takeOver() {
+    setPin("");
+    if (staff) void unlock(null);
+    else setStage({ kind: "pin", staff: false, message: "replacedNeedPin" });
   }
 
   if (stage.kind === "loading")
     return (
-      <p role="status" className="p-8 text-center text-lg">
-        {t("opening")}
-      </p>
+      <Frame>
+        <div className="flex flex-col items-center gap-4 py-6 text-center">
+          <span className="grid size-16 animate-pulse place-items-center rounded-full bg-orange-soft text-orange-dark motion-reduce:animate-none">
+            <Icon name="games" className="size-8" />
+          </span>
+          <p role="status" className="text-lg font-semibold">
+            {t("opening")}
+          </p>
+        </div>
+      </Frame>
     );
   if (stage.kind === "error")
     return (
-      <div className="mx-auto max-w-md space-y-4 p-8 text-center">
-        <p role="alert" className="text-lg font-semibold">
-          {t(stage.message)}
-        </p>
-        <Button type="button" onClick={() => window.location.reload()}>
-          {t("tryAgain")}
-        </Button>
-      </div>
+      <Frame>
+        <div className="space-y-5 text-center">
+          <span className="mx-auto grid size-14 place-items-center rounded-full bg-destructive-soft text-destructive">
+            <Icon name="alert" className="size-7" />
+          </span>
+          <p role="alert" className="text-lg font-semibold">
+            {t(stage.message)}
+          </p>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => window.location.reload()}
+          >
+            {t("tryAgain")}
+          </Button>
+        </div>
+      </Frame>
     );
   if (stage.kind === "pin")
     return (
-      <form
-        className="mx-auto max-w-sm space-y-5 p-8"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          void unlock(pin);
-        }}
-      >
-        <h1 className="font-display text-3xl font-semibold">
-          {t("enterPinTitle")}
-        </h1>
-        <p className="text-muted-foreground">{t("enterPinHelp")}</p>
-        <label htmlFor="scorer-pin" className="sr-only">
-          {t("pinLabel")}
-        </label>
-        <Input
-          id="scorer-pin"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          value={pin}
-          onChange={(event) =>
-            setPin(event.target.value.replace(/\D/g, "").slice(0, 6))
-          }
-          className="text-center font-display text-4xl tracking-[0.4em]"
-        />
-        {stage.message && (
-          <p role="alert" className="text-sm text-destructive">
-            {t(stage.message)}
-          </p>
-        )}
-        <Button className="w-full" disabled={busy || pin.length !== 6}>
-          {t("unlock")}
-        </Button>
-        {stage.staff && (
+      <Frame>
+        <form
+          className="space-y-5"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            void unlock(pin);
+          }}
+        >
+          <div className="space-y-2 text-center">
+            <span className="mx-auto grid size-14 place-items-center rounded-full bg-orange-soft text-orange-dark">
+              <Icon name={stage.staff ? "games" : "lock"} className="size-7" />
+            </span>
+            <h1 className="font-display text-3xl font-semibold tracking-wide uppercase">
+              {t(stage.staff ? "staffTitle" : "enterPinTitle")}
+            </h1>
+            {!stage.staff && (
+              <p className="text-muted-foreground">{t("enterPinHelp")}</p>
+            )}
+          </div>
+          {stage.message && (
+            <p
+              role={stage.message === "staffNotScorer" ? undefined : "alert"}
+              className={
+                stage.message === "staffNotScorer"
+                  ? "rounded-xl bg-accent p-3 text-sm font-semibold"
+                  : "rounded-xl bg-destructive-soft p-3 text-sm font-semibold text-destructive"
+              }
+            >
+              {t(stage.message)}
+            </p>
+          )}
+          {/* League staff score with their account; the PIN is for scorer devices. */}
+          {stage.staff && (
+            <>
+              <Button
+                type="button"
+                className="min-h-14 w-full text-lg"
+                disabled={busy}
+                onClick={() => void unlock(null)}
+              >
+                {t(busy ? "checkingPin" : "scoreHere")}
+              </Button>
+              <p className="border-t pt-4 text-center text-sm font-semibold text-muted-foreground">
+                {t("orEnterPin")}
+              </p>
+            </>
+          )}
+          <label htmlFor="scorer-pin" className="sr-only">
+            {t("pinLabel")}
+          </label>
+          <Input
+            id="scorer-pin"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={pin}
+            onChange={(event) =>
+              setPin(event.target.value.replace(/\D/g, "").slice(0, 6))
+            }
+            placeholder="••••••"
+            autoFocus={!stage.staff}
+            className="min-h-20 text-center font-display text-5xl tracking-[0.35em] placeholder:text-border"
+          />
           <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={busy}
-            onClick={() => void unlock(null)}
+            variant={stage.staff ? "outline" : "default"}
+            className="min-h-14 w-full text-lg"
+            disabled={busy || pin.length !== 6}
           >
-            {t("scoreHere")}
+            {t(busy && !stage.staff ? "checkingPin" : "unlock")}
           </Button>
-        )}
-        <p className="text-sm text-muted-foreground">{t("takeOverNote")}</p>
-      </form>
+          <p className="text-center text-sm text-muted-foreground">
+            {t("takeOverNote")}
+          </p>
+        </form>
+      </Frame>
     );
   if (stage.setup.sport === "basketball")
     return (
@@ -295,6 +401,7 @@ export function Scorebook({ gameId }: { gameId: string }) {
         log={stage.log}
         openedOffline={stage.offline}
         reopenComment={stage.reopenComment}
+        onTakeOver={takeOver}
       />
     );
   return null;

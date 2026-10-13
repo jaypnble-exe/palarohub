@@ -81,3 +81,30 @@ body {
     outline-color: var(--primary);
   }
 }
+
+/* Scrolls without showing a scrollbar, e.g. the scorer's action sheets. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* TV flashes slide up from the bottom strip; still for reduced motion. */
+@keyframes flash-in {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@utility animate-flash-in {
+  animation: flash-in 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}

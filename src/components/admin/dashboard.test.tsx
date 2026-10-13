@@ -234,11 +234,10 @@ describe("commissioner home", () => {
   });
 
   it("offers the scorer PIN for games later today", async () => {
-    const soon = new Date(new Date().getTime() + 30 * 60_000);
-    // Keep the game on today's Riyadh date even late in the evening.
-    const riyadhHour = (soon.getUTCHours() + 3) % 24;
-    const scheduledAt =
-      riyadhHour < 23 ? soon.toISOString() : new Date().toISOString();
+    // Midday in Riyadh, so "today" never crosses midnight while the test runs.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-13T09:00:00Z"));
+    const scheduledAt = "2026-10-13T16:00:00.000Z";
     render(
       await Dashboard({
         ...props,
@@ -250,6 +249,7 @@ describe("commissioner home", () => {
     expect(
       within(next).getByRole("link", { name: en.AdminHome.scorerPin }),
     ).toHaveAttribute("href", "/admin/sindikato/schedule/d1");
+    vi.useRealTimers();
   });
 
   it("puts the registration link on the home screen while teams can register", async () => {

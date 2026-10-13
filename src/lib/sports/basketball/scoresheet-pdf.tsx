@@ -3,7 +3,8 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { GameRecord } from "@/lib/game-record";
 import { sides, type FoulKind, type Side } from "./events";
 import { boxScore, timeoutGroup } from "./reducer";
-import { scoresheetMarks } from "./scoresheet-data";
+import { scoresheetMarks, type FoulMark } from "./scoresheet-data";
+import { formatClock } from "./live-score";
 
 type Translate = (
   key: string,
@@ -15,10 +16,32 @@ const foulLetter: Record<FoulKind, string> = {
   technical: "T",
   unsportsmanlike: "U",
   disqualifying: "D",
+  fighting: "F",
 };
 
+/** "P2" with the quarter under it, as written in a foul box. */
+function FoulBox({ mark, letter }: { mark?: FoulMark; letter?: string }) {
+  return (
+    <View style={styles.box}>
+      <Text style={{ fontSize: 7 }}>
+        {mark
+          ? `${letter ?? foulLetter[mark.kind]}${mark.freeThrows || ""}`
+          : ""}
+      </Text>
+      <Text style={{ fontSize: 4.5, color: "#555" }}>
+        {mark ? `Q${mark.period}` : ""}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  page: { padding: 24, fontSize: 8, fontFamily: "Helvetica", color: "#14213d" },
+  page: {
+    padding: 20,
+    fontSize: 7.5,
+    fontFamily: "Helvetica",
+    color: "#14213d",
+  },
   title: { fontSize: 14, fontFamily: "Helvetica-Bold" },
   muted: { color: "#555" },
   row: { flexDirection: "row" },
@@ -28,7 +51,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   final: { fontSize: 18, fontFamily: "Helvetica-Bold", textAlign: "right" },
-  team: { marginTop: 8, borderWidth: 1, borderColor: "#14213d", padding: 6 },
+  team: { marginTop: 5, borderWidth: 1, borderColor: "#14213d", padding: 5 },
   teamTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", marginBottom: 4 },
   th: {
     fontFamily: "Helvetica-Bold",
@@ -36,18 +59,18 @@ const styles = StyleSheet.create({
     borderColor: "#14213d",
     paddingBottom: 2,
   },
-  cell: { paddingVertical: 1.5 },
+  cell: { paddingVertical: 0.5 },
   box: {
-    width: 12,
-    height: 11,
+    width: 15,
+    height: 13,
     borderWidth: 0.75,
     borderColor: "#14213d",
     marginRight: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
     textAlign: "center",
-    fontSize: 7,
-    paddingTop: 1.5,
   },
-  section: { marginTop: 8 },
+  section: { marginTop: 5 },
   sectionTitle: { fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 3 },
   runningCell: {
     width: 26,
@@ -59,7 +82,7 @@ const styles = StyleSheet.create({
     fontSize: 6.5,
   },
   signatures: {
-    marginTop: 18,
+    marginTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
   },
@@ -73,9 +96,9 @@ const styles = StyleSheet.create({
 
 const col = {
   jersey: { width: "6%" },
-  name: { width: "30%" },
+  name: { width: "28%" },
   starter: { width: "6%", textAlign: "center" as const },
-  fouls: { width: "28%" },
+  fouls: { width: "30%" },
   minutes: { width: "6%", textAlign: "right" as const },
   points: { width: "8%", textAlign: "right" as const },
   shots: { width: "16%", textAlign: "right" as const },
@@ -86,12 +109,14 @@ function TeamPanel({
   side,
   label,
   fouls,
+  benchFouls,
   t,
 }: {
   record: GameRecord;
   side: Side;
   label: string;
   fouls: ReturnType<typeof scoresheetMarks>["fouls"][Side];
+  benchFouls: ReturnType<typeof scoresheetMarks>["bench"][Side];
   t: Translate;
 }) {
   const { rules, state } = record;
@@ -110,6 +135,10 @@ function TeamPanel({
       <Text style={styles.teamTitle}>
         {label}: {record.teamNames[side]} — {team.score}
       </Text>
+      <Text style={[styles.muted, { marginBottom: 3 }]}>
+        {t("coach")}: {team.coach || "—"} · {t("assistantCoach")}:{" "}
+        {team.assistantCoach || "—"}
+      </Text>
       <View style={[styles.row, styles.th]}>
         <Text style={col.jersey}>{t("no")}</Text>
         <Text style={col.name}>{t("player")}</Text>
@@ -126,18 +155,22 @@ function TeamPanel({
             <Text style={col.jersey}>{row.jersey}</Text>
             <Text style={col.name}>
               {row.name}
+              {team.captainId === row.playerId ? ` (${t("captainShort")})` : ""}
               {row.disqualified ? ` (${t(row.disqualified)})` : ""}
             </Text>
-            <Text style={col.starter}>{row.starter ? "X" : ""}</Text>
+            {/* X: started. x: came in later. */}
+            <Text style={col.starter}>
+              {row.starter
+                ? "X"
+                : team.players[row.playerId]?.entered
+                  ? "x"
+                  : ""}
+            </Text>
             <View style={[col.fouls, styles.row]}>
               {Array.from(
                 { length: Math.max(rules.foulOut, marks.length) },
                 (_, i) => (
-                  <Text key={i} style={styles.box}>
-                    {marks[i]
-                      ? `${foulLetter[marks[i].kind]}${marks[i].period}`
-                      : ""}
-                  </Text>
+                  <FoulBox key={i} mark={marks[i]} />
                 ),
               )}
             </View>
@@ -168,6 +201,40 @@ function TeamPanel({
             .join("  ")}
         </Text>
       </View>
+      {team.timeouts.length > 0 && (
+        <Text style={styles.muted}>
+          {t("timeoutTimes")}:{" "}
+          {team.timeouts
+            .map(
+              (timeout) =>
+                `${timeout.period <= rules.quarters ? `Q${timeout.period}` : `OT${timeout.period - rules.quarters}`} ${formatClock(timeout.clockMs)}`,
+            )
+            .join(" · ")}
+        </Text>
+      )}
+      <View style={[styles.row, { marginTop: 3, alignItems: "center" }]}>
+        <Text style={{ width: "28%" }}>{t("coachFouls")}</Text>
+        <View style={styles.row}>
+          {Array.from({ length: Math.max(3, benchFouls.length) }, (_, i) => {
+            const mark = benchFouls[i];
+            return (
+              <FoulBox
+                key={i}
+                mark={mark}
+                letter={
+                  mark
+                    ? mark.kind === "technical"
+                      ? mark.offender === "coach"
+                        ? "C"
+                        : "B"
+                      : foulLetter[mark.kind]
+                    : undefined
+                }
+              />
+            );
+          })}
+        </View>
+      </View>
       <Text style={styles.muted}>
         {t("totals", {
           points: totals.points,
@@ -175,6 +242,9 @@ function TeamPanel({
           bench: team.benchTechnicals,
         })}
         {team.coachEjected ? ` · ${t("coachEjected")}` : ""}
+        {team.shotClockViolations
+          ? ` · ${t("shotClockViolations", { count: team.shotClockViolations })}`
+          : ""}
       </Text>
     </View>
   );
@@ -186,11 +256,14 @@ export function BasketballScoresheet({
   when,
   approvedAt,
   t,
+  time = (iso) => iso.slice(11, 16),
 }: {
   record: GameRecord;
   when: string;
   approvedAt: string;
   t: Translate;
+  /** Clock time of day, e.g. "7:02 PM", in the league's time zone. */
+  time?: (iso: string) => string;
 }) {
   const { state, rules, teamNames } = record;
   const marks = scoresheetMarks(state, record.events);
@@ -216,6 +289,12 @@ export function BasketballScoresheet({
               {when}
               {record.game.venue ? ` · ${record.game.venue}` : ""}
             </Text>
+            <Text style={styles.muted}>
+              {t("startEnd", {
+                start: state.startedAt ? time(state.startedAt) : "—",
+                end: state.endedAt ? time(state.endedAt) : "—",
+              })}
+            </Text>
           </View>
           <View>
             <Text style={styles.final}>
@@ -234,6 +313,7 @@ export function BasketballScoresheet({
             side={side}
             label={t(side === "home" ? "teamA" : "teamB")}
             fouls={marks.fouls[side]}
+            benchFouls={marks.bench[side]}
             t={t}
           />
         ))}
@@ -287,11 +367,27 @@ export function BasketballScoresheet({
             <View key={side} style={{ marginBottom: 4 }}>
               <Text style={styles.muted}>{teamNames[side]}</Text>
               <View style={[styles.row, { flexWrap: "wrap" }]}>
-                {marks.running[side].map((mark, index) => (
-                  <Text key={index} style={styles.runningCell}>
-                    {mark.total} #{mark.jersey}
-                  </Text>
-                ))}
+                {marks.running[side].map((mark, index) => {
+                  const next = marks.running[side][index + 1];
+                  // Each period's last score is underlined, as on paper.
+                  const last = !next || next.period !== mark.period;
+                  return (
+                    <Text
+                      key={index}
+                      style={[
+                        styles.runningCell,
+                        last
+                          ? { borderBottomWidth: 2, borderColor: "#14213d" }
+                          : {},
+                      ]}
+                    >
+                      {mark.total} {mark.points === 1 ? "•" : ""}
+                      {mark.points === 3 ? "(" : ""}
+                      {mark.jersey}
+                      {mark.points === 3 ? ")" : ""}
+                    </Text>
+                  );
+                })}
               </View>
             </View>
           ))}
@@ -304,7 +400,13 @@ export function BasketballScoresheet({
           </Text>
           <Text>
             {t("scorer")}: {officials?.scorer || "—"} · {t("timekeeper")}:{" "}
-            {officials?.timekeeper || "—"}
+            {officials?.timekeeper || "—"} · {t("shotClockOperator")}:{" "}
+            {officials?.shotClockOperator || "—"}
+          </Text>
+          <Text>
+            {t("arrowAtEnd", {
+              team: state.possession ? teamNames[state.possession] : "—",
+            })}
           </Text>
           <Text style={[styles.muted, { marginTop: 4 }]}>
             {t("approved", { date: approvedAt })} · {t("legend")}
@@ -312,14 +414,40 @@ export function BasketballScoresheet({
         </View>
 
         <View style={styles.signatures} wrap={false}>
-          <Text style={styles.signature}>{t("refereeSignature")}</Text>
-          <Text style={styles.signature}>
-            {t("captainSignature", { team: teamNames.home })}
-          </Text>
-          <Text style={styles.signature}>
-            {t("captainSignature", { team: teamNames.away })}
-          </Text>
+          {(
+            [
+              ["referee", t("refereeSignature")],
+              ["homeCaptain", t("captainSignature", { team: teamNames.home })],
+              ["awayCaptain", t("captainSignature", { team: teamNames.away })],
+            ] as const
+          ).map(([role, label]) => {
+            const confirmed = state.confirmations.find(
+              (entry) => entry.role === role,
+            );
+            return (
+              <View key={role} style={styles.signature}>
+                <Text>{label}</Text>
+                {confirmed && (
+                  <Text style={styles.muted}>
+                    {t("confirmedDigitally", {
+                      name: confirmed.name,
+                      time: time(confirmed.at),
+                    })}
+                  </Text>
+                )}
+              </View>
+            );
+          })}
         </View>
+        {state.protests.map((protest, index) => (
+          <Text
+            key={index}
+            style={{ marginTop: 6, fontFamily: "Helvetica-Bold" }}
+          >
+            {t("underProtest", { team: teamNames[protest.team] })}
+            {protest.note ? `: ${protest.note}` : ""}
+          </Text>
+        ))}
       </Page>
     </Document>
   );

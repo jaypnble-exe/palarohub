@@ -1,9 +1,16 @@
-import type { BasketballEvent, FoulKind, Side } from "./events";
+import type { BasketballEvent, BenchOffender, FoulKind, Side } from "./events";
 import type { BasketballGameState } from "./reducer";
 
 export interface FoulMark {
   kind: FoulKind;
   period: number;
+  /** Free throws awarded for it: the 2 in P2. */
+  freeThrows: number;
+}
+
+/** A foul on the coach (C) or the bench (B), for the coach's foul boxes. */
+export interface BenchFoulMark extends FoulMark {
+  offender: BenchOffender;
 }
 
 export interface RunningScoreMark {
@@ -27,6 +34,7 @@ export function scoresheetMarks(
     home: {},
     away: {},
   };
+  const bench: Record<Side, BenchFoulMark[]> = { home: [], away: [] };
   const running: Record<Side, RunningScoreMark[]> = { home: [], away: [] };
   const totals: Record<Side, number> = { home: 0, away: 0 };
   let period = 0;
@@ -35,9 +43,19 @@ export function scoresheetMarks(
     const event = byId.get(entry.eventId);
     if (!event) continue;
     if (event.type === "period_start") period++;
-    if (event.type === "foul" && event.payload.playerId) {
-      const list = (fouls[event.payload.team][event.payload.playerId] ??= []);
-      list.push({ kind: event.payload.kind, period });
+    if (event.type === "foul") {
+      const mark = {
+        kind: event.payload.kind,
+        period,
+        freeThrows: event.payload.freeThrows ?? 0,
+      };
+      if (event.payload.playerId)
+        (fouls[event.payload.team][event.payload.playerId] ??= []).push(mark);
+      else
+        bench[event.payload.team].push({
+          ...mark,
+          offender: event.payload.offender ?? "coach",
+        });
     }
     if (event.type === "score" && event.payload.made) {
       const side = event.payload.team;
@@ -50,5 +68,5 @@ export function scoresheetMarks(
       });
     }
   }
-  return { fouls, running };
+  return { fouls, bench, running };
 }

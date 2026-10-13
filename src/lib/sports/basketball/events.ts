@@ -8,8 +8,19 @@ export const foulKinds = [
   "technical",
   "unsportsmanlike",
   "disqualifying",
+  // F on the scoresheet: leaving the bench area during a fight.
+  "fighting",
 ] as const;
 export type FoulKind = (typeof foulKinds)[number];
+/** Who a team foul without a player is charged to: C or B on the scoresheet. */
+export const benchOffenders = ["coach", "bench"] as const;
+export type BenchOffender = (typeof benchOffenders)[number];
+export const confirmationRoles = [
+  "referee",
+  "homeCaptain",
+  "awayCaptain",
+] as const;
+export type ConfirmationRole = (typeof confirmationRoles)[number];
 export const statKinds = [
   "rebound",
   "assist",
@@ -62,6 +73,17 @@ export const basketballEventSchema = z.discriminatedUnion("type", [
       referees: z.array(name).max(3),
       scorer: name.nullable(),
       timekeeper: name.nullable(),
+      shotClockOperator: name.nullable().optional(),
+    }),
+  ),
+  // Head coach, assistant coach and captain, as written at the top of the scoresheet.
+  event(
+    "team_staff",
+    z.strictObject({
+      team: side,
+      coach: name.nullable(),
+      assistantCoach: name.nullable(),
+      captainId: playerId.nullable(),
     }),
   ),
   event("period_start", empty),
@@ -77,7 +99,8 @@ export const basketballEventSchema = z.discriminatedUnion("type", [
       made: z.boolean(),
     }),
   ),
-  // playerId null is a coach or bench technical, charged to the team.
+  // playerId null is a coach (C) or bench (B) foul, charged to the team.
+  // freeThrows is what the opponents shoot for it: P2 on the scoresheet.
   event(
     "foul",
     z
@@ -85,8 +108,14 @@ export const basketballEventSchema = z.discriminatedUnion("type", [
         team: side,
         playerId: playerId.nullable(),
         kind: z.enum(foulKinds),
+        freeThrows: z.number().int().min(0).max(3).optional(),
+        offender: z.enum(benchOffenders).optional(),
       })
-      .refine((foul) => foul.playerId || foul.kind === "technical"),
+      .refine((foul) =>
+        foul.playerId
+          ? foul.offender === undefined
+          : foul.kind !== "personal" && foul.kind !== "unsportsmanlike",
+      ),
   ),
   event(
     "substitution",
@@ -99,7 +128,29 @@ export const basketballEventSchema = z.discriminatedUnion("type", [
     "stat",
     z.strictObject({ team: side, playerId, kind: z.enum(statKinds) }),
   ),
+  // Sets the possession arrow by hand, to correct it.
   event("possession", z.strictObject({ team: side })),
+  // The team that won the opening jump ball; the arrow then points to the other.
+  event("jump_ball_won", z.strictObject({ team: side })),
+  // A jump-ball situation (held ball, ball stuck on the rim): the arrow's team
+  // gets the ball and the arrow flips.
+  event("alternating_possession", z.strictObject({ team: side })),
+  // The shot clock is reset to this many seconds (24, 14, or what is left).
+  event(
+    "shot_clock",
+    z.strictObject({ seconds: z.number().int().min(0).max(35) }),
+  ),
+  event("shot_clock_violation", z.strictObject({ team: side })),
+  // Referee and captains confirm the result on the scorer's device.
+  event(
+    "confirmation",
+    z.strictObject({ role: z.enum(confirmationRoles), name }),
+  ),
+  // A captain signs "under protest"; the note says why.
+  event(
+    "protest",
+    z.strictObject({ team: side, note: z.string().trim().max(500) }),
+  ),
   event("game_end", empty),
   // Corrections never delete: a void hides one earlier event.
   event("void", z.strictObject({ eventId: z.uuid() })),

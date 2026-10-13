@@ -1,46 +1,39 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getAuth } from "@/lib/auth";
-import { signOut } from "@/app/auth/actions";
-import { Button } from "./ui/button";
+import { displayNameOf } from "@/lib/user-name";
+import { AccountMenu } from "./account-menu";
+import { SignInLink } from "./sign-in-link";
+import { Icon } from "./ui/icon";
 
+/** One compact row: the brand, and the account menu or a sign-in link. */
 export async function SiteHeader() {
   const t = await getTranslations("Header");
   const auth = await getAuth();
+  const email = auth?.user.email ?? "";
+  const name = auth ? displayNameOf(auth.user) : "";
   return (
     <header className="bg-navy text-on-dark">
-      <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-5 py-4">
+      <div className="mx-auto flex min-h-16 max-w-4xl items-center justify-between gap-3 px-5 py-2">
         <Link
-          href="/"
-          className="flex min-h-11 items-center font-display text-2xl font-bold uppercase tracking-wide"
+          href={auth ? "/leagues" : "/"}
+          aria-label={t("home")}
+          className="flex min-h-11 items-center gap-2.5 rounded-xl"
         >
-          {t.rich("brand", {
-            accent: (chunks) => (
-              <span className="ml-1.5 text-primary">{chunks}</span>
-            ),
-          })}
-        </Link>
-        {auth && (
-          <nav
-            aria-label={t("navigation")}
-            className="flex w-full flex-wrap items-center justify-between gap-2 border-t border-white/15 pt-2 text-on-dark-muted"
+          <span
+            aria-hidden="true"
+            className="grid size-9 place-items-center rounded-xl bg-primary text-white"
           >
-            <Button
-              variant="ghost"
-              className="min-h-11 px-3 py-2 text-sm hover:bg-white/10"
-              asChild
-            >
-              <Link href="/leagues">{t("myLeagues")}</Link>
-            </Button>
-            <form action={signOut}>
-              <Button
-                variant="ghost"
-                className="min-h-11 px-3 py-2 text-sm hover:bg-white/10"
-              >
-                {t("signOut")}
-              </Button>
-            </form>
-          </nav>
+            <Icon name="games" className="size-5" />
+          </span>
+          <span className="font-display text-2xl leading-none font-bold tracking-wide uppercase">
+            {t("name")}
+          </span>
+        </Link>
+        {auth ? (
+          <AccountMenu name={name} email={email} />
+        ) : (
+          <SignInLink label={t("signIn")} />
         )}
       </div>
     </header>

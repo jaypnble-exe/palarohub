@@ -133,8 +133,11 @@ describe("season setup wizard", () => {
     await next(en.Seasons.divisions);
     await next(en.Seasons.rules);
     await next(en.Seasons.review);
+    expect(
+      screen.getByRole("radio", { name: new RegExp(en.Seasons.draftChoice) }),
+    ).toBeChecked();
     fireEvent.click(
-      screen.getByRole("checkbox", { name: new RegExp(en.Seasons.publishNow) }),
+      screen.getByRole("radio", { name: new RegExp(en.Seasons.publishNow) }),
     );
     fireEvent.click(screen.getByRole("button", { name: en.Seasons.publish }));
     await waitFor(() =>

@@ -4,7 +4,8 @@ import { Icon } from "./icon";
 /**
  * Numbered steps with short labels, e.g. Team → Players → Send. Steps
  * before `current` show a check; with `onSelect` they can be tapped to go
- * back. A `current` past the last step marks everything done.
+ * back. A `current` past the last step marks everything done. With more
+ * than three steps, phones name only the current one.
  */
 export function Stepper({
   label,
@@ -42,10 +43,12 @@ export function Stepper({
             >
               {done ? <Icon name="check" className="size-4" /> : index + 1}
             </span>
+            {/* On narrow phones only the current step is named; the rest keep their number. */}
             <span
               className={cn(
                 "text-sm font-semibold",
                 !done && !active && "text-muted-foreground",
+                !active && steps.length > 3 && "sr-only sm:not-sr-only",
               )}
             >
               {step}

@@ -15,6 +15,8 @@ import { Chip } from "@/components/ui/chip";
 import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { formatSar } from "@/lib/format";
+import { Icon } from "@/components/ui/icon";
+import { TeamStaff } from "./team-staff";
 
 /** Attendance, game jerseys, starting fives, officials, and tip-off. */
 export function Pregame({
@@ -39,12 +41,62 @@ export function Pregame({
 }) {
   const t = useTranslations("Scorer");
   const format = useFormatter();
-  const blockedByPayment = blockUnpaid && behind.length > 0;
-  const ready =
-    sides.every((side) => state.teams[side].startersSet) && !blockedByPayment;
+  const present = sides.reduce(
+    (sum, side) =>
+      sum +
+      state.teams[side].playerIds.filter(
+        (id) => state.teams[side].players[id].present,
+      ).length,
+    0,
+  );
+  const startersDone = sides.filter(
+    (side) => state.teams[side].startersSet,
+  ).length;
+  const checklist = [
+    { key: "checkPresent", done: present > 0, values: { count: present } },
+    {
+      key: "checkStarters",
+      done: startersDone === sides.length,
+      values: { count: startersDone },
+    },
+    {
+      key: "checkOfficials",
+      done: Boolean(state.officials),
+      values: { count: 0 },
+    },
+  ];
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground">{t("pregameHelp")}</p>
+      <div className="space-y-3">
+        <p className="text-muted-foreground">{t("pregameHelp")}</p>
+        <ol className="grid gap-2 sm:grid-cols-3">
+          {checklist.map((item, index) => (
+            <li
+              key={item.key}
+              className={cn(
+                "flex items-center gap-3 rounded-xl border-2 p-3 text-sm font-semibold",
+                item.done
+                  ? "border-success/40 bg-success-soft text-success"
+                  : "border-border bg-card",
+              )}
+            >
+              <span
+                className={cn(
+                  "grid size-7 shrink-0 place-items-center rounded-full text-xs font-bold",
+                  item.done ? "bg-success text-white" : "bg-accent",
+                )}
+              >
+                {item.done ? (
+                  <Icon name="check" className="size-4" />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              {t(item.key, item.values)}
+            </li>
+          ))}
+        </ol>
+      </div>
       {behind.map(({ side, behindByHalalas }) => (
         <Alert
           key={side}
@@ -71,19 +123,6 @@ export function Pregame({
         ))}
       </div>
       <Officials state={state} record={record} disabled={disabled} />
-      <Button
-        type="button"
-        className="w-full text-lg"
-        disabled={disabled || !ready}
-        onClick={() => record("period_start", {})}
-      >
-        {t("tipOff")}
-      </Button>
-      {!ready && (
-        <p className="text-center text-sm text-muted-foreground">
-          {t(blockedByPayment ? "tipOffPaymentHelp" : "tipOffHelp")}
-        </p>
-      )}
     </div>
   );
 }
@@ -110,20 +149,53 @@ function TeamSetup({
   );
   const [editing, setEditing] = useState<string>();
   const [jersey, setJersey] = useState("");
+  const absent = team.playerIds.filter(
+    (id) => !team.players[id].present && !suspended.has(id),
+  );
+  const presentCount = team.playerIds.filter(
+    (id) => team.players[id].present,
+  ).length;
   return (
     <section
-      className={cn(cardVariants({ padding: "sm" }), "space-y-3")}
+      className={cn(
+        cardVariants({ padding: "sm" }),
+        "space-y-3 border-t-4",
+        side === "home" ? "border-t-primary" : "border-t-navy",
+      )}
       aria-label={name}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <h2 className="truncate text-lg font-semibold">{name}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("presentCount", {
-            count: team.playerIds.filter((id) => team.players[id].present)
-              .length,
-          })}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-bold">{name}</h2>
+          <p className="text-sm text-muted-foreground">
+            {t("presentCount", { count: presentCount })}
+            {" · "}
+            {t("startersPicked", {
+              count: team.startersSet ? 5 : starters.length,
+            })}
+          </p>
+        </div>
+        {absent.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-11 px-3 py-1 text-sm"
+            disabled={disabled}
+            onClick={() => {
+              for (const id of absent)
+                if (!record("checkin", { team: side, playerId: id })) break;
+            }}
+          >
+            {t("markAllHere", { count: absent.length })}
+          </Button>
+        )}
       </div>
+      <TeamStaff
+        side={side}
+        state={state}
+        record={record}
+        disabled={disabled}
+      />
       {!team.playerIds.length && (
         <p className="text-sm text-destructive">{t("noRoster")}</p>
       )}
@@ -132,7 +204,13 @@ function TeamSetup({
           const line = team.players[id];
           const starting = starters.includes(id);
           return (
-            <li key={id} className="flex flex-wrap items-center gap-2 py-2">
+            <li
+              key={id}
+              className={cn(
+                "flex flex-wrap items-center gap-2 py-2",
+                !line.present && "opacity-80",
+              )}
+            >
               {editing === id ? (
                 <form
                   className="flex items-center gap-2"
@@ -256,6 +334,9 @@ function Officials({
   const [timekeeper, setTimekeeper] = useState(
     state.officials?.timekeeper ?? "",
   );
+  const [shotClockOperator, setShotClockOperator] = useState(
+    state.officials?.shotClockOperator ?? "",
+  );
   const [saved, setSaved] = useState(false);
   return (
     <details
@@ -274,6 +355,7 @@ function Officials({
               referees: referees.map((name) => name.trim()).filter(Boolean),
               scorer: scorer.trim() || null,
               timekeeper: timekeeper.trim() || null,
+              shotClockOperator: shotClockOperator.trim() || null,
             }),
           );
         }}
@@ -323,6 +405,20 @@ function Officials({
             value={timekeeper}
             maxLength={100}
             onChange={(event) => setTimekeeper(event.target.value)}
+          />
+        </div>
+        <div className="space-y-1">
+          <label
+            htmlFor="official-shot-clock"
+            className="text-sm font-semibold"
+          >
+            {t("shotClockOperator")}
+          </label>
+          <Input
+            id="official-shot-clock"
+            value={shotClockOperator}
+            maxLength={100}
+            onChange={(event) => setShotClockOperator(event.target.value)}
           />
         </div>
         <Button variant="outline" disabled={disabled} className="sm:col-span-2">

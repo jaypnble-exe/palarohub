@@ -25,6 +25,13 @@ export interface DivisionOverview {
   seasonName: string;
   teamCount: number;
   gameCount: number;
+  /** Games with an approved result. */
+  playedCount: number;
+  liveCount: number;
+  /** Finished games waiting for the commissioner's approval. */
+  toApproveCount: number;
+  /** When the next scheduled game starts, if any. */
+  nextAt: string | null;
 }
 
 /** Published-season divisions with their approved-team and game counts. */
@@ -44,12 +51,17 @@ export async function scheduleOverview(
       .select("division_id")
       .eq("league_id", leagueId)
       .eq("status", "approved"),
-    supabase.from("games").select("division_id").eq("league_id", leagueId),
+    supabase
+      .from("games")
+      .select("division_id,status,scheduled_at")
+      .eq("league_id", leagueId)
+      .neq("status", "cancelled"),
   ]);
   if (seasons.error || teams.error || games.error)
     throw new Error("Unable to load schedules.");
   const count = (rows: { division_id: string }[], id: string) =>
     rows.filter((row) => row.division_id === id).length;
+  const now = new Date().toISOString();
   return seasons.data.flatMap((season) =>
     [...season.divisions]
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -60,6 +72,29 @@ export async function scheduleOverview(
         seasonName: season.name,
         teamCount: count(teams.data, division.id),
         gameCount: count(games.data, division.id),
+        playedCount: count(
+          games.data.filter((game) => game.status === "approved"),
+          division.id,
+        ),
+        liveCount: count(
+          games.data.filter((game) => game.status === "in_progress"),
+          division.id,
+        ),
+        toApproveCount: count(
+          games.data.filter((game) => game.status === "submitted"),
+          division.id,
+        ),
+        nextAt:
+          games.data
+            .filter(
+              (game) =>
+                game.division_id === division.id &&
+                game.status === "scheduled" &&
+                game.scheduled_at &&
+                game.scheduled_at >= now,
+            )
+            .map((game) => game.scheduled_at as string)
+            .sort()[0] ?? null,
       })),
   );
 }

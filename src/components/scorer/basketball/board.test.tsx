@@ -115,6 +115,7 @@ function renderBoard(
   saved: BasketballEvent[] = [],
   supabase = client().supabase,
   store = createMemoryScorebookStore(),
+  onTakeOver?: () => void,
 ) {
   render(
     <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
@@ -123,6 +124,7 @@ function renderBoard(
         store={store}
         setup={setup}
         log={{ events: saved, pending: [], conflicts: [], alreadySaved: [] }}
+        onTakeOver={onTakeOver}
       />
     </NextIntlClientProvider>,
   );
@@ -179,6 +181,36 @@ describe("basketball scorer screen", () => {
     expect(sentTypes(rpc).filter((type) => type === "checkin")).toHaveLength(
       12,
     );
+  });
+
+  it("checks a whole team in with one tap", async () => {
+    const { rpc, supabase } = client();
+    renderBoard([], supabase);
+    await waitFor(() => expect(sentTypes(rpc)).toEqual(["roster", "roster"]));
+    const panel = screen.getByRole("region", { name: "Royals" });
+    fireEvent.click(
+      within(panel).getByRole("button", { name: /Mark all \d+ here/ }),
+    );
+    expect(
+      within(panel).queryAllByRole("button", { name: en.Scorer.markHere }),
+    ).toHaveLength(0);
+    expect(
+      within(panel).getAllByRole("button", { name: en.Scorer.starter }),
+    ).toHaveLength(6);
+    await waitFor(() =>
+      expect(sentTypes(rpc).filter((type) => type === "checkin")).toHaveLength(
+        6,
+      ),
+    );
+  });
+
+  it("shows what Undo will take back", () => {
+    renderBoard(startedGame());
+    tapPlayer("Royal 1");
+    fireEvent.click(screen.getByRole("button", { name: "+3" }));
+    expect(
+      screen.getByRole("button", { name: en.Scorer.undo }),
+    ).toHaveTextContent("#4 Royal 1 +3");
   });
 
   it("scores in two taps and undoes the last action", async () => {
@@ -272,6 +304,159 @@ describe("basketball scorer screen", () => {
       await screen.findByText(en.Scorer.blocked.replaced),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: en.Scorer.undo })).toBeDisabled();
+  });
+
+  it("asks for the shooter and each free throw after a shooting foul", () => {
+    renderBoard(startedGame());
+    tapPlayer("Royal 1");
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Shooting foul, 2 free throws",
+      }),
+    );
+    const panel = () =>
+      screen.getByRole("region", { name: "Free throws for Hawks" });
+    expect(panel()).toHaveTextContent("Hawks: 2 free throws to shoot");
+    fireEvent.click(within(panel()).getByRole("button", { name: "#4 Hawk 1" }));
+    fireEvent.click(
+      within(panel()).getByRole("button", { name: en.Scorer.freeThrowMade }),
+    );
+    expect(panel()).toHaveTextContent("Hawks: 1 free throw to shoot");
+    fireEvent.click(
+      within(panel()).getByRole("button", { name: en.Scorer.freeThrowMissed }),
+    );
+    expect(
+      screen.queryByRole("region", { name: "Free throws for Hawks" }),
+    ).toBeNull();
+    expect(
+      within(screen.getByRole("banner")).getByText("1"),
+    ).toBeInTheDocument();
+  });
+
+  it("charges coach and bench fouls separately and ejects the coach", () => {
+    renderBoard(startedGame());
+    const open = () =>
+      fireEvent.click(
+        within(homePanel()).getByRole("button", {
+          name: en.Scorer.benchTechnical,
+        }),
+      );
+    open();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Coach technical \(C\)/ }),
+    );
+    open();
+    fireEvent.click(
+      screen.getByRole("button", { name: /Coach technical \(C\)/ }),
+    );
+    expect(
+      screen.getByText("The Royals coach is ejected."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the running score like the paper sheet", () => {
+    renderBoard(startedGame());
+    tapPlayer("Royal 1");
+    fireEvent.click(screen.getByRole("button", { name: "+3" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Scorer.showRunningScore }),
+    );
+    const sheet = screen.getByRole("region", { name: en.Scorer.runningScore });
+    expect(within(sheet).getByLabelText("3: #4, 3 points")).toBeInTheDocument();
+  });
+
+  it("runs a shot clock when the league uses one and asks at zero", () => {
+    const shotClockSetup = {
+      ...setup,
+      rules: {
+        ...defaultBasketballRules,
+        shotClock: { enabled: true, seconds: 24, resetSeconds: 14 },
+      },
+    };
+    const events = startedGame();
+    const next = events.length;
+    const at = (n: number) => `2026-10-23T16:0${n}:00.000Z`;
+    events.push(
+      {
+        id: id("e", next + 1),
+        sequence: next + 1,
+        clockMs: 600_000,
+        createdAt: at(1),
+        type: "clock_start",
+        payload: {},
+      } as BasketballEvent,
+      // 25 seconds later the clock is stopped: the 24-second shot clock ran out.
+      {
+        id: id("e", next + 2),
+        sequence: next + 2,
+        clockMs: 575_000,
+        createdAt: at(2),
+        type: "clock_stop",
+        payload: {},
+      } as BasketballEvent,
+    );
+    render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
+        <BasketballScorebook
+          supabase={client().supabase}
+          store={createMemoryScorebookStore()}
+          setup={shotClockSetup}
+          log={{ events, pending: [], conflicts: [], alreadySaved: [] }}
+        />
+      </NextIntlClientProvider>,
+    );
+    const question = screen.getByRole("alertdialog", {
+      name: en.Scorer.shotClockExpired,
+    });
+    fireEvent.click(
+      within(question).getByRole("button", { name: "Violation: Hawks" }),
+    );
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset 14" }));
+    expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
+  });
+
+  it("sets the arrow from the opening tip and flips it on a jump ball", () => {
+    renderBoard(startedGame());
+    const tip = screen.getByRole("region", {
+      name: en.Scorer.openingTipTitle,
+    });
+    fireEvent.click(within(tip).getByRole("button", { name: "Royals" }));
+    expect(
+      screen.getByText(
+        "Royals won the opening tip. The possession arrow now points to Hawks.",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Jump ball: Hawks ball by the arrow",
+      }),
+    );
+    expect(
+      screen.getByText(
+        "Jump ball: Hawks get the ball. The arrow now points to Royals.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Jump ball: Royals ball by the arrow",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets this device take the game back", async () => {
+    const { supabase } = client({
+      error: { code: "42501", message: "scorer_required" },
+    });
+    const onTakeOver = vi.fn();
+    renderBoard(startedGame(), supabase, undefined, onTakeOver);
+    tapPlayer("Royal 1");
+    fireEvent.click(screen.getByRole("button", { name: "+2" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: en.Scorer.takeOverAgain }),
+    );
+    expect(onTakeOver).toHaveBeenCalledOnce();
   });
 
   it("removes an older action from the play-by-play after confirming", () => {

@@ -10,6 +10,7 @@ describe("basketball rule defaults", () => {
       quarterMinutes: 10,
       overtimeMinutes: 5,
       timeouts: { firstHalf: 2, secondHalf: 3, overtime: 1 },
+      shotClock: { enabled: false, seconds: 24, resetSeconds: 14 },
     });
     expect(defaultBasketballRules).toEqual(basketballRulesSchema.parse({}));
   });

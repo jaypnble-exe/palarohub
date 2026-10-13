@@ -200,6 +200,33 @@ describe("backups", () => {
     expect(screen.queryByText(/sign-in link/i)).not.toBeInTheDocument();
   });
 
+  it("names each screen so people know where they are", () => {
+    renderLogin();
+    expect(
+      screen.getByRole("heading", { name: en.Login.welcomeBack }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: en.Login.signUpTab }));
+    expect(
+      screen.getByRole("heading", { name: en.Login.createAccount }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(en.Login.createAccountHelp)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: en.Login.forgotPassword }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: en.Login.signInTab }));
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Login.forgotPassword }),
+    );
+    expect(
+      screen.getByRole("heading", { name: en.Login.resetTitle }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Login.backToSignIn }),
+    );
+    expect(
+      screen.getByRole("heading", { name: en.Login.welcomeBack }),
+    ).toBeInTheDocument();
+  });
   it("starts new team managers on creating an account", () => {
     render(
       <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
@@ -207,8 +234,8 @@ describe("backups", () => {
       </NextIntlClientProvider>,
     );
     expect(
-      screen.getByRole("button", { name: en.Login.signUpTab }),
-    ).toHaveAttribute("aria-pressed", "true");
+      screen.getByRole("heading", { name: en.Login.createAccount }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(en.Login.name)).toBeInTheDocument();
   });
 });
@@ -220,10 +247,6 @@ it("writes a static preview for visual checks when asked", () => {
     renderToStaticMarkup(
       <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
         <main className="mx-auto w-full max-w-md space-y-7 py-10">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{en.Login.title}</h1>
-            <p className="text-muted-foreground">{en.Login.intro}</p>
-          </div>
           <LoginForm next="/leagues" />
         </main>
       </NextIntlClientProvider>,

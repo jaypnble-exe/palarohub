@@ -15,9 +15,9 @@ import {
 } from "@/lib/validation/auth";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ChipGroup } from "@/components/ui/chip";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Icon } from "@/components/ui/icon";
 
 type Mode = "signIn" | "signUp" | "reset";
 
@@ -80,26 +80,19 @@ export function LoginForm({
   }
 
   const passwordMode = mode === "signIn" || mode === "signUp";
+  const heading = {
+    signIn: ["welcomeBack", "welcomeBackHelp"],
+    signUp: ["createAccount", "createAccountHelp"],
+    reset: ["resetTitle", "resetHelp"],
+  } as const;
   return (
-    <div className="space-y-5">
-      {passwordMode && (
-        <ChipGroup
-          label={t("mode")}
-          stretch
-          value={mode}
-          onChange={switchTo}
-          options={[
-            { value: "signIn", label: t("signInTab") },
-            { value: "signUp", label: t("signUpTab") },
-          ]}
-        />
-      )}
-      {!passwordMode && (
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold">{t("resetTitle")}</h2>
-          <p className="text-sm text-muted-foreground">{t("resetHelp")}</p>
-        </div>
-      )}
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="font-display text-3xl font-semibold tracking-wide uppercase">
+          {t(heading[mode][0])}
+        </h1>
+        <p className="text-muted-foreground">{t(heading[mode][1])}</p>
+      </div>
       <form
         className="space-y-4"
         noValidate
@@ -171,6 +164,17 @@ export function LoginForm({
                 {t(showPassword ? "hidePassword" : "showPassword")}
               </Button>
             </div>
+            {mode === "signIn" && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="min-h-11 text-sm font-semibold text-orange-dark hover:underline"
+                  onClick={() => switchTo("reset")}
+                >
+                  {t("forgotPassword")}
+                </button>
+              </div>
+            )}
           </Field>
         )}
         <Button type="submit" disabled={busy} className="w-full">
@@ -190,26 +194,28 @@ export function LoginForm({
           {t("error" in result ? result.error : (result.message ?? "done"))}
         </Alert>
       )}
-      <div className="flex flex-col items-start gap-1 text-sm">
-        {mode !== "signIn" && (
+      {passwordMode && (
+        <p className="flex flex-wrap items-center justify-center gap-x-2 border-t border-border pt-5 text-sm text-muted-foreground">
+          {t(mode === "signIn" ? "newHere" : "haveAccount")}
           <button
             type="button"
-            className="min-h-11 font-semibold text-orange-dark hover:underline"
-            onClick={() => switchTo("signIn")}
+            className="min-h-11 font-bold text-orange-dark hover:underline"
+            onClick={() => switchTo(mode === "signIn" ? "signUp" : "signIn")}
           >
-            {t("backToSignIn")}
+            {t(mode === "signIn" ? "signUpTab" : "signInTab")}
           </button>
-        )}
-        {mode !== "reset" && (
-          <button
-            type="button"
-            className="min-h-11 font-semibold text-orange-dark hover:underline"
-            onClick={() => switchTo("reset")}
-          >
-            {t("forgotPassword")}
-          </button>
-        )}
-      </div>
+        </p>
+      )}
+      {mode === "reset" && (
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-orange-dark hover:underline"
+          onClick={() => switchTo("signIn")}
+        >
+          <Icon name="back" className="size-4" />
+          {t("backToSignIn")}
+        </button>
+      )}
     </div>
   );
 }

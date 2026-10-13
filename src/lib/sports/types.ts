@@ -37,6 +37,17 @@ export interface GameSummary {
   }[];
 }
 
+/**
+ * The score of a game so far, for schedules, dashboards and live lists. The
+ * status is a message key under "LiveStatus" (e.g. "basketball.quarter"), so
+ * shared screens can show "Q3 · 4:12" without knowing the sport.
+ */
+export interface LiveScore {
+  homeScore: number;
+  awayScore: number;
+  status: { key: string; values?: Record<string, string | number> };
+}
+
 /** Sport-specific event payloads and rules stay inside each module. */
 export interface SportModule<Rules, Event, State, EventError = string> {
   sport: Sport;
@@ -52,6 +63,8 @@ export interface SportModule<Rules, Event, State, EventError = string> {
     state: State,
     teamNames: Record<"home" | "away", string>,
   ): GameSummary | null;
+  /** The score and where the game stands, at any point in the game. */
+  liveScore(state: State, rules: Rules): LiveScore;
   stats: readonly StatDefinition[];
   standingsPoints(result: GameResult): number;
   /** Applied in order to teams level on standings points. */

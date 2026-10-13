@@ -1,0 +1,13 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set search_path=public,extensions;
+select no_plan();
+select ok(private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1}}'),'rules without a shot clock stay valid');
+select ok(private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1},"shotClock":{"enabled":true,"seconds":24,"resetSeconds":14}}'),'a 24/14 shot clock is valid');
+select ok(private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1},"shotClock":{"enabled":false,"seconds":24,"resetSeconds":14}}'),'a switched-off shot clock is valid');
+select ok(not private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1},"shotClock":{"enabled":true,"seconds":14,"resetSeconds":24}}'),'the shorter reset cannot be longer than the shot clock');
+select ok(not private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1},"shotClock":{"enabled":true,"seconds":60,"resetSeconds":14}}'),'shot clock length is bounded');
+select ok(not private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1},"shotClock":{"enabled":"yes","seconds":24,"resetSeconds":14}}'),'enabled must be true or false');
+select ok(not private.valid_basketball_rules('{"foulOut":5,"teamBonusAfter":4,"quarters":4,"quarterMinutes":10,"overtimeMinutes":5,"timeouts":{"firstHalf":2,"secondHalf":3,"overtime":1},"shotClock":{"enabled":true,"seconds":24,"resetSeconds":14,"horn":true}}'),'unknown shot clock settings are rejected');
+select * from finish();
+rollback;

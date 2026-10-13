@@ -98,13 +98,38 @@ export function describeEvent(
         player: who(event.payload.team, event.payload.playerId),
         points: event.payload.points,
       });
-    case "foul":
-      return event.payload.playerId
-        ? t("log.foul", {
-            kind: t(`foulKind.${event.payload.kind}`),
-            player: who(event.payload.team, event.payload.playerId),
-          })
-        : t("log.benchTechnical", { team: teamNames[event.payload.team] });
+    case "foul": {
+      const shots = event.payload.freeThrows
+        ? ` ${t("log.freeThrows", { count: event.payload.freeThrows })}`
+        : "";
+      return (
+        (event.payload.playerId
+          ? t("log.foul", {
+              kind: t(`foulKind.${event.payload.kind}`),
+              player: who(event.payload.team, event.payload.playerId),
+            })
+          : t("log.benchFoul", {
+              kind: t(`foulKind.${event.payload.kind}`),
+              who: t(`offender.${event.payload.offender ?? "coach"}`),
+              team: teamNames[event.payload.team],
+            })) + shots
+      );
+    }
+    case "team_staff":
+      return t("log.teamStaff", { team: teamNames[event.payload.team] });
+    case "shot_clock":
+      return t("log.shotClock", { seconds: event.payload.seconds });
+    case "shot_clock_violation":
+      return t("log.shotClockViolation", {
+        team: teamNames[event.payload.team],
+      });
+    case "confirmation":
+      return t("log.confirmation", {
+        role: t(`confirmRole.${event.payload.role}`),
+        name: event.payload.name,
+      });
+    case "protest":
+      return t("log.protest", { team: teamNames[event.payload.team] });
     case "substitution":
       return t("log.substitution", {
         in: who(event.payload.team, event.payload.in),
@@ -119,9 +144,55 @@ export function describeEvent(
       });
     case "possession":
       return t("log.possession", { team: teamNames[event.payload.team] });
+    case "jump_ball_won":
+      return t("log.jumpBallWon", { team: teamNames[event.payload.team] });
+    case "alternating_possession":
+      return t("log.alternatingPossession", {
+        team: teamNames[event.payload.team],
+      });
     case "game_end":
       return t("log.gameEnd");
     case "void":
       return t("log.void");
   }
+}
+
+/** Words that belong to the surname that follows them: "Dela Cruz", "de los Santos". */
+const surnameParticles = new Set([
+  "da",
+  "de",
+  "del",
+  "dela",
+  "della",
+  "delos",
+  "di",
+  "dos",
+  "du",
+  "la",
+  "las",
+  "le",
+  "los",
+  "san",
+  "sta",
+  "sta.",
+  "santa",
+  "van",
+  "von",
+]);
+
+/**
+ * Splits a player's name for the scorer's tiles: the surname (shown big,
+ * like the back of a jersey) and the rest. "Juan Dela Cruz" gives
+ * { first: "Juan", last: "Dela Cruz" }; a single name is all surname.
+ */
+export function splitName(name: string) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 2) return { first: "", last: words[0] ?? "" };
+  let start = words.length - 1;
+  while (start > 1 && surnameParticles.has(words[start - 1].toLowerCase()))
+    start--;
+  return {
+    first: words.slice(0, start).join(" "),
+    last: words.slice(start).join(" "),
+  };
 }

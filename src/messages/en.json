@@ -1,19 +1,96 @@
 {
   "Home": {
-    "name": "Palaro Hub",
-    "tagline": "A home for Filipino community sports leagues in Saudi Arabia.",
-    "signIn": "Sign in"
+    "name": "PALAROS",
+    "tagline": "Registration, scoring, standings and payments for Filipino community sports leagues in Saudi Arabia. Made for phones, simple enough for everyone.",
+    "signIn": "Sign in",
+    "getStarted": "Get started",
+    "openLeagues": "Go to your leagues",
+    "eyebrow": "For Filipino leagues in Saudi Arabia",
+    "headline": "Run your league <accent>without the paperwork</accent>",
+    "sampleLabel": "Example of a live game score",
+    "live": "Live",
+    "samplePeriod": "Q3 · 4:12",
+    "sampleHome": "Riyadh Royals",
+    "sampleAway": "Jeddah Kings",
+    "sampleBonus": "Kings in the bonus",
+    "sampleFoul": "#7 Juan · 4th foul",
+    "featuresTitle": "Everything in one place",
+    "featuresIntro": "No more paper scoresheets, group-chat sign-ups or standings worked out by hand.",
+    "features": {
+      "register": {
+        "title": "Team registration",
+        "body": "Share one link. Managers register their team and roster, and player ratings are checked automatically."
+      },
+      "score": {
+        "title": "Digital scoresheet",
+        "body": "Score every point, foul and timeout in a tap or two. It keeps working without internet and prints the official scoresheet."
+      },
+      "standings": {
+        "title": "Automatic standings",
+        "body": "Approve a result and the standings update by themselves, with the tiebreakers already worked out."
+      },
+      "schedule": {
+        "title": "Schedules in minutes",
+        "body": "Make a round-robin schedule for each division, then adjust dates, times and courts."
+      },
+      "payments": {
+        "title": "Team payments",
+        "body": "Track full or per-game payments in SAR, add fines, and see which teams are behind."
+      },
+      "share": {
+        "title": "Public league page",
+        "body": "Fans follow schedules, results and standings, and share them on WhatsApp and Facebook."
+      }
+    },
+    "stepsTitle": "How it works",
+    "steps": {
+      "setUp": {
+        "title": "Set up your season",
+        "body": "The commissioner adds divisions, rules, the fee and the registration deadline."
+      },
+      "invite": {
+        "title": "Teams sign up",
+        "body": "Send the registration link. Approve teams or send them back with a note."
+      },
+      "play": {
+        "title": "Play and keep score",
+        "body": "The scorer unlocks each game with a PIN. Results, standings and payments stay up to date."
+      }
+    },
+    "audienceTitle": "Made for everyone in the league",
+    "audience": {
+      "commissioners": {
+        "title": "Commissioners",
+        "body": "A to-do list of what needs you: approvals, unpaid teams and results to check."
+      },
+      "managers": {
+        "title": "Team managers",
+        "body": "Register, manage your roster and see your games and payments."
+      },
+      "scorers": {
+        "title": "Scorers",
+        "body": "No account needed. Enter the game PIN and start scoring."
+      },
+      "fans": {
+        "title": "Players and fans",
+        "body": "Schedules, scores and standings, open to everyone."
+      }
+    },
+    "ctaTitle": "Ready for your next season?",
+    "ctaBody": "Create your account in a minute. Your commissioner can add you to their league.",
+    "footer": "Made for Filipino community leagues in Saudi Arabia."
   },
   "Header": {
-    "brand": "Palaro <accent>Hub</accent>",
-    "name": "Palaro Hub",
+    "name": "PALAROS",
     "navigation": "Your account",
-    "myLeagues": "My leagues",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "home": "PALAROS home",
+    "accountMenu": "Account menu for {name}",
+    "switchLeague": "Switch league",
+    "changePassword": "Change password",
+    "signIn": "Sign in"
   },
   "Login": {
-    "title": "Sign in",
-    "intro": "Sign in with your email and password, or create an account.",
     "email": "Email address",
     "or": "or",
     "google": "Continue with Google",
@@ -22,9 +99,8 @@
     "tooManyRequests": "Too many tries. Please wait a moment and try again.",
     "googleFailed": "Google sign-in is unavailable. Try your email instead.",
     "callbackFailed": "This link has expired or could not be verified. Please try again.",
-    "mode": "Sign in or create an account",
-    "signInTab": "I have an account",
-    "signUpTab": "I'm new",
+    "signInTab": "Sign in",
+    "signUpTab": "Create an account",
     "name": "Your name",
     "nameRequired": "Enter your name.",
     "password": "Password",
@@ -38,7 +114,7 @@
     "resetButton": "Send reset link",
     "working": "Please wait…",
     "forgotPassword": "Forgot password?",
-    "backToSignIn": "Back to sign in with password",
+    "backToSignIn": "Back to sign in",
     "resetTitle": "Reset your password",
     "resetHelp": "We will email you a link to choose a new password.",
     "invalidForm": "Check the details and try again.",
@@ -59,17 +135,31 @@
     "passwordSaved": "Password saved. Use it next time you sign in.",
     "backToLeagues": "Back to my leagues",
     "registeringFor": "You're registering a team for {season}. New here? Create your account below; it takes a minute.",
-    "registeringTeam": "You're registering a team. New here? Create your account below; it takes a minute."
+    "registeringTeam": "You're registering a team. New here? Create your account below; it takes a minute.",
+    "welcomeBack": "Welcome back",
+    "welcomeBackHelp": "Sign in with your email and password.",
+    "createAccount": "Create your account",
+    "createAccountHelp": "It takes a minute. You don't choose a role here: your league gives you access.",
+    "welcome": "Your league, <accent>all in one place</accent>",
+    "benefitOne": "Register your team and roster from your phone.",
+    "benefitTwo": "Follow your games, results and standings.",
+    "benefitThree": "See what you have paid and what is left.",
+    "newHere": "New to PALAROS?",
+    "haveAccount": "Already have an account?"
   },
   "MyLeagues": {
-    "title": "My leagues",
+    "title": "Your leagues",
     "create": "Create league",
     "empty": "You have not joined a league yet.",
-    "emptyHelp": "Ask your commissioner to add the email you used to sign in.",
-    "open": "Open league",
-    "publicPage": "Public page",
+    "emptyHelp": "Ask your commissioner for the registration link, or to add the email you signed in with.",
+    "publicPage": "View public page",
     "signOutFailed": "We could not sign you out. Please try again.",
-    "changePassword": "Change password"
+    "greeting": "Hi, {name}",
+    "intro": "Choose a league to open.",
+    "introEmpty": "Leagues you join will show up here.",
+    "yourRoles": "Your roles",
+    "openDashboard": "Open dashboard",
+    "openTeam": "Manage my team"
   },
   "Roles": {
     "commissioner": "Commissioner",
@@ -257,9 +347,24 @@
     }
   },
   "Access": {
-    "title": "You do not have access to this page.",
-    "description": "Ask your commissioner to check your role in this league.",
-    "back": "Back to my leagues"
+    "title": "How do I get access?",
+    "intro": "Everyone uses the same account. What you can do depends on your league.",
+    "manager": {
+      "title": "Team managers",
+      "body": "Open the registration link from your commissioner and create your account. Registering your team makes you its manager."
+    },
+    "commissioner": {
+      "title": "Commissioners",
+      "body": "Create your account, then ask the PALAROS team to set up your league with your email. It appears under Your leagues."
+    },
+    "scorer": {
+      "title": "Scorers",
+      "body": "No account needed. Open the scorer link or enter the game PIN from your commissioner."
+    },
+    "fan": {
+      "title": "Players and fans",
+      "body": "No account needed. Open your league's page to see schedules, scores and standings."
+    }
   },
   "NotFound": {
     "title": "Page not found",
@@ -309,7 +414,7 @@
     "maximum": "Max rating: {rating}",
     "rosterRange": "{min}–{max} players",
     "publishNow": "Publish this season",
-    "publishHelp": "Published seasons are public. Their setup is locked to preserve history. Leave this unchecked to save a draft.",
+    "publishHelp": "Teams and fans can see it and you can open registration. Divisions and rules are then locked to protect the season's history.",
     "invalidSetup": "Check the name, dates, divisions, player limits, and rules before continuing.",
     "back": "Back",
     "next": "Next",
@@ -336,9 +441,50 @@
     "backToSeasons": "Back to seasons",
     "leagueHome": "Back to league home",
     "ratingScale": "Rating scale",
-    "publishedLocked": "This season is published and its setup is locked.",
+    "publishedLocked": "This season is published, so its divisions and rules are locked to keep its history.",
     "inheritRules": "Uses the season rules",
-    "invalidDetails": "Enter a season name and valid start and end dates. The end date must come after the start date."
+    "invalidDetails": "Enter a season name and valid start and end dates. The end date must come after the start date.",
+    "progressLabel": "Season setup steps",
+    "stepDetails": "Details",
+    "stepDivisions": "Divisions",
+    "stepRules": "Rules",
+    "stepReview": "Review",
+    "copyLastTitle": "Start from last season",
+    "copyLastHelp": "Copies last season's divisions and game rules. You only add the new name and dates.",
+    "seasonLength": "{weeks, plural, one {# week} other {# weeks}} long",
+    "removeDivisionNamed": "Remove {name}",
+    "remove": "Remove",
+    "overrideRulesHelp": "For example, shorter quarters for a younger division.",
+    "ownRules": "Its own rules",
+    "whenDone": "When you finish",
+    "draftChoice": "Save as a draft",
+    "draftChoiceHelp": "Only your league officials can see it. Come back and change anything.",
+    "draftTitle": "This season is a draft",
+    "draftIntro": "Finish the steps below, then publish it to open registration and make schedules.",
+    "draftViewOnly": "This season is still a draft. Your commissioner is setting it up.",
+    "registrationShortcut": "Open registration, set the fee and share the link.",
+    "scheduleShortcut": "Schedule",
+    "scheduleShortcutHelp": "Make and adjust the games for each division.",
+    "teamsShortcut": "Teams",
+    "teamsShortcutHelp": "See who registered and who is waiting for review.",
+    "intro": "Set up each season's divisions and rules, then publish it to open registration.",
+    "emptyHelp": "A season holds its divisions, rules, teams, schedule and standings.",
+    "currentSeasons": "Current and upcoming",
+    "pastSeasons": "{count, plural, one {# past season} other {# past seasons}}",
+    "ratingScaleHelp": "The rating labels new seasons use, highest first.",
+    "phase": {
+      "draft": "Draft",
+      "upcoming": "Upcoming",
+      "inProgress": "In progress",
+      "finished": "Finished"
+    },
+    "nextFinishSetup": "Finish setup and publish",
+    "nextOpenRegistration": "Next: open registration",
+    "registrationOpenUntil": "Registration open until {date}",
+    "weekOf": "Week {current} of {total}",
+    "statTeams": "Teams",
+    "statWaiting": "To review",
+    "statGames": "Games played"
   },
   "BasketballRules": {
     "title": "Basketball rules",
@@ -349,7 +495,11 @@
     "overtimeMinutes": "Minutes per overtime",
     "firstHalf": "Timeouts in first half",
     "secondHalf": "Timeouts in second half",
-    "overtime": "Timeouts per overtime"
+    "overtime": "Timeouts per overtime",
+    "shotClock": "Use a shot clock",
+    "shotClockHelp": "The scorer gets reset buttons, and at zero the game clock stops and asks if it was a violation.",
+    "shotClockSeconds": "Shot clock seconds",
+    "shotClockReset": "Shorter reset (after an offensive rebound)"
   },
   "Registration": {
     "teams": "Teams",
@@ -416,9 +566,9 @@
     "allDivisionsEntered": "Your teams are already in every division this season.",
     "deadline": "Registration deadline (Saudi time)",
     "deadlineValue": "Deadline: {date} (Saudi time)",
-    "fee": "Team fee (SAR)",
+    "fee": "Fee per division",
     "feeValue": "Team fee: {amount}",
-    "feeHelp": "Enter the total season fee. Use 0 for a free season.",
+    "feeHelp": "What each team pays for each division it enters. Use 0 for a free season.",
     "rosterHelp": "Add your players and their jersey numbers. You can save a draft and finish later.",
     "reviewRegistration": "Review registration",
     "submissionHelp": "Your commissioner checks your roster and approves it, or sends it back with a note. You can change a returned roster until the deadline.",
@@ -454,10 +604,10 @@
     "suspended": "Suspended from playing",
     "saveChecks": "Save player checks",
     "openRegistration": "Accept team registrations",
-    "requireDocuments": "Require staff-verified documents",
+    "requireDocuments": "Require checked documents",
     "documentsHelp": "Record verification status only. Do not put ID or iqama numbers in names, reasons, or comments.",
-    "registrationSettingsHelp": "Registration settings are separate from the locked season rules. Existing registrations keep their original fee.",
-    "saveSettings": "Save registration settings",
+    "registrationSettingsHelp": "Changing the fee doesn't change teams that already registered; they keep the fee they signed up with.",
+    "saveSettings": "Save",
     "registrationSettings": "Registration settings",
     "publishFirst": "Publish the season before opening registration.",
     "shareRegistration": "Invite team managers",
@@ -573,7 +723,42 @@
     "takeBack": "Take back to edit",
     "takeBackHelp": "Spotted a mistake? Take it back, fix it and send it again before the deadline.",
     "takenBack": "Taken back. Make your changes and send it again.",
-    "returnedAfterDeadline": "The deadline has passed, but your commissioner sent this back, so you can still fix it and send it again."
+    "returnedAfterDeadline": "The deadline has passed, but your commissioner sent this back, so you can still fix it and send it again.",
+    "registrationPageIntro": "Open registration, set the deadline and fee, and send the link to team managers.",
+    "state": {
+      "open": {
+        "title": "Registration is open",
+        "body": "Teams can register until {deadline} (Saudi time). {days, plural, =0 {Closes today.} one {# day left.} other {# days left.}}"
+      },
+      "closed": {
+        "title": "Registration is closed",
+        "body": "Teams can't register yet. Turn on “Accept team registrations” below when you're ready."
+      },
+      "ended": {
+        "title": "The deadline has passed",
+        "body": "The deadline was {deadline}. Teams can no longer register. Set a later deadline to reopen."
+      },
+      "notSetUp": {
+        "title": "Registration isn't set up yet",
+        "body": "Choose a deadline and fee below, turn on registrations, then share the link."
+      }
+    },
+    "countRegistered": "Registered",
+    "countWaiting": "Waiting",
+    "countApproved": "Approved",
+    "shareRegistrationHelp": "Send this link to team managers. They create an account and register their team and roster.",
+    "linkNotOpen": "The link won't work until registration is open and before the deadline.",
+    "shareText": "Register your team for {season}:",
+    "settingsTitle": "Settings",
+    "openRegistrationHelp": "When this is on, team managers can register until the deadline.",
+    "quickDeadline": "Quick deadline",
+    "inOneWeek": "In 1 week",
+    "inTwoWeeks": "In 2 weeks",
+    "inOneMonth": "In 1 month",
+    "deadlineInvalid": "Choose a date and time for the deadline.",
+    "feeInvalid": "Enter an amount in SAR, like 1800 or 1800.50.",
+    "unsavedChanges": "You have unsaved changes",
+    "allSaved": "All changes saved"
   },
   "Share": {
     "copyLink": "Copy link",
@@ -682,7 +867,38 @@
     "saveFailed": "Could not save. Check your connection and try again.",
     "gameNotOpen": "This game is no longer open for scoring.",
     "finalResult": "{home} {homeScore} – {awayScore} {away}",
-    "standings": "Standings"
+    "standings": "Standings",
+    "resultsToApprove": "{count, plural, one {# result to approve} other {# results to approve}}",
+    "resultsToApproveHelp": "Scorers have sent these games. Approve them to update the standings.",
+    "reviewResults": "Review results",
+    "liveNow": "Live now",
+    "comingUp": "Coming up",
+    "nothingScheduled": "No upcoming games yet.",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "versus": "{home} vs {away}",
+    "byDivision": "Schedules by division",
+    "liveBadge": "Live",
+    "playedOf": "{played} of {total} games played",
+    "nextGame": "Next game: {when}",
+    "liveNoScore": "Game started",
+    "openGame": "Open game",
+    "games": "Games",
+    "showGames": "Show games",
+    "filter": {
+      "upcoming": "Upcoming ({count})",
+      "results": "Results ({count})",
+      "all": "All ({count})"
+    },
+    "noneIn": {
+      "upcoming": "No upcoming games.",
+      "results": "No results yet.",
+      "all": "No games yet."
+    },
+    "reviewResult": "Review and approve",
+    "viewResult": "View result",
+    "shareScheduleHelp": "Send fans and teams the public schedule for this division.",
+    "scoringOpensSoon": "Scoring opens on game day. A scorer PIN works for 24 hours."
   },
   "Announcements": {
     "heading": "Announcements",
@@ -750,7 +966,7 @@
       "conflict": "Stopped"
     },
     "blocked": {
-      "replaced": "Another device is now scoring this game. This device can no longer record actions.",
+      "replaced": "Another device is now scoring this game, so this one has stopped. Only one device can be the official scorer.",
       "closed": "This game has been submitted. No more actions can be recorded.",
       "conflict": "The saved game differs from this device. Reload the page to continue."
     },
@@ -777,23 +993,32 @@
       "clockRunning": "The clock is already running.",
       "clockStopped": "The clock is already stopped.",
       "voidTargetMissing": "That action no longer exists.",
-      "voidTargetInvalid": "That action was already removed."
+      "voidTargetInvalid": "That action was already removed.",
+      "notFinal": "This can only be done after the final buzzer.",
+      "shotClockOff": "This league does not use a shot clock.",
+      "arrowAlreadySet": "The possession arrow is already set. Use Jump ball, or set the arrow by hand.",
+      "arrowNotSet": "Set the possession arrow first: who won the opening tip?",
+      "notArrowTeam": "The arrow points to the other team."
     },
     "alert": {
       "foulWarning": "{player} has 4 fouls.",
       "fouledOut": "{player} has fouled out and must leave the game.",
       "ejected": "{player} is ejected and must leave the game.",
-      "coachEjected": "The {team} coach is ejected (2 technicals).",
+      "coachEjected": "The {team} coach is ejected.",
       "teamPenalty": "{team} is in the penalty: free throws on every foul.",
       "mustSubstitute": "Substitute {player} now.",
       "short": {
         "fouledOut": "fouled out",
         "ejected": "ejected"
-      }
+      },
+      "shotClockViolation": "Shot clock violation: {team} loses the ball.",
+      "openingTip": "{team} won the opening tip. The possession arrow now points to {other}.",
+      "jumpBall": "Jump ball: {team} get the ball. The arrow now points to {other}.",
+      "periodPossession": "{team} start this period with the ball (possession arrow). The arrow now points to {other}."
     },
     "playerLine": "{points} pts · {fouls} fouls",
     "timeout": "Timeout",
-    "benchTechnical": "Bench technical",
+    "benchTechnical": "Coach / bench foul",
     "confirmBenchTechnical": "Give a technical foul to the {team} coach or bench?",
     "possession": "Possession arrow",
     "bench": "{count, plural, one {Bench (# player)} other {Bench (# players)}}",
@@ -846,7 +1071,8 @@
       "personal": "Foul",
       "technical": "Technical",
       "unsportsmanlike": "Unsportsmanlike",
-      "disqualifying": "Disqualifying"
+      "disqualifying": "Disqualifying",
+      "fighting": "Fighting"
     },
     "statKind": {
       "rebound": "Rebound",
@@ -879,7 +1105,16 @@
       "possession": "Possession arrow: {team}",
       "gameEnd": "Final buzzer",
       "void": "Correction",
-      "removed": "Removed: {action}"
+      "removed": "Removed: {action}",
+      "freeThrows": "({count, plural, one {# free throw} other {# free throws}})",
+      "benchFoul": "{kind} ({who}): {team}",
+      "teamStaff": "{team} coaches and captain saved",
+      "shotClock": "Shot clock reset to {seconds}",
+      "shotClockViolation": "Shot clock violation: {team}",
+      "confirmation": "Confirmed by {role}: {name}",
+      "protest": "Game under protest: {team}",
+      "jumpBallWon": "Opening tip won by {team}",
+      "alternatingPossession": "Jump ball: {team} ball (arrow)"
     },
     "box": {
       "player": "Player",
@@ -911,7 +1146,100 @@
     "suspended": "Suspended",
     "paymentWarning": "{team} is behind on payments by {amount}. The league allows the game; tell the commissioner.",
     "paymentBlocked": "{team} is behind on payments by {amount}. League rule: they cannot play until it is paid.",
-    "tipOffPaymentHelp": "Ask the commissioner to record the payment, then reload this page."
+    "tipOffPaymentHelp": "Ask the commissioner to record the payment, then reload this page.",
+    "openScorebook": "Score game",
+    "makingPin": "Making a PIN…",
+    "onCourtCount": "{count} on court",
+    "clockRunning": "Clock running",
+    "clockStopped": "Clock stopped",
+    "possessionTo": "Arrow: {team}",
+    "checkPresent": "{count, plural, =0 {Mark players here} one {# player here} other {# players here}}",
+    "checkStarters": "{count, plural, =2 {Both starting fives set} other {Starting fives: # of 2}}",
+    "checkOfficials": "Officials (optional)",
+    "markAllHere": "Mark all {count} here",
+    "startersPicked": "{count} of 5 starters",
+    "madeShots": "Made",
+    "missedShots": "Missed",
+    "fouls": "Fouls",
+    "checkingPin": "Checking the PIN…",
+    "takeOverAgain": "Score on this device instead",
+    "reloadGame": "Reload the game",
+    "staffNotScorer": "You can see this game, but this device isn't its scorer yet. Start scoring here, or give a scorer the PIN.",
+    "replacedNeedPin": "Another device took over this game. Ask the commissioner for a new PIN to score here again.",
+    "staffTitle": "Score this game",
+    "orEnterPin": "Or enter a scorer PIN",
+    "offender": {
+      "coach": "coach",
+      "bench": "bench"
+    },
+    "confirmRole": {
+      "referee": "referee",
+      "homeCaptain": "home captain",
+      "awayCaptain": "away captain"
+    },
+    "plusFreeThrows": "{count, plural, one {+ # free throw} other {+ # free throws}}",
+    "shootingFoul": "Shooting foul",
+    "shootingFoulShots": "Shooting foul, {count, plural, one {# free throw} other {# free throws}}",
+    "freeThrowCount": "{count} FT",
+    "showRunningScore": "Running score",
+    "hideRunningScore": "Hide running score",
+    "runningScore": "Running score",
+    "runningScoreFor": "Running score for {team}",
+    "runningScoreKey": "Number = jersey · • free throw · circled = three",
+    "runningScoreMark": "{total}: #{jersey}, {points} points",
+    "benchFoulsTitle": "Coach and bench fouls: {team}",
+    "benchFoulsHelp": "C is the head coach's own technical, B is for the assistant or anyone else on the bench. The coach is out after 2 C or 3 in all.",
+    "coachFoulCount": "Coach (C): {coach} · Bench (B): {bench}",
+    "coachIsEjected": "Coach ejected",
+    "coachTechnical": "Coach technical (C)",
+    "benchTechnicalB": "Bench technical (B)",
+    "coachDisqualifying": "Coach disqualified (D)",
+    "benchDisqualifying": "Bench disqualified (D)",
+    "benchFighting": "Left the bench in a fight (F)",
+    "freeThrowsTitle": "Free throws for {team}",
+    "freeThrowsLeft": "{team}: {count, plural, one {# free throw} other {# free throws}} to shoot",
+    "whoShoots": "Who shoots? Tap the player, then each shot.",
+    "freeThrowMade": "Made",
+    "freeThrowMissed": "Missed",
+    "skipFreeThrows": "Skip",
+    "shotClockLabel": "Shot clock: {seconds} seconds",
+    "resetShotClock": "Reset {seconds}",
+    "shotClockExpired": "Shot clock",
+    "shotClockExpiredHelp": "The shot clock reached zero and the game clock stopped. Was it a violation? If the ball hit the rim or was in the air, choose no violation.",
+    "violationBy": "Violation: {team}",
+    "noViolation": "No violation, reset the shot clock",
+    "confirmTitle": "Confirm the result",
+    "confirmHelp": "Optional, like the signatures on the paper scoresheet. Each person types their name and taps Confirm.",
+    "confirmRefereeLabel": "Referee",
+    "confirmCaptainLabel": "{team} captain",
+    "confirmedBy": "Confirmed by {name} at {time}",
+    "typeName": "Name",
+    "confirm": "Confirm",
+    "underProtest": "{team} plays under protest",
+    "protestNote": "Why is {team} protesting? (optional)",
+    "recordProtest": "Record protest",
+    "protestRecorded": "{team} signed under protest",
+    "cancel": "Cancel",
+    "staffSummary": "Coach: {coach} · Captain: {captain}",
+    "headCoach": "Head coach",
+    "assistantCoach": "Assistant coach",
+    "captain": "Captain",
+    "noCaptain": "Choose the captain",
+    "saveStaff": "Save coaches and captain",
+    "staffSaved": "Saved",
+    "shotClockOperator": "Shot clock operator",
+    "teamStaffTitle": "Coaches and captain",
+    "openingTipTitle": "Who won the opening tip?",
+    "openingTipHelp": "The possession arrow then points to the other team, and the app flips it for you after every jump ball and at the start of each quarter.",
+    "openingTipLater": "Later",
+    "jumpBall": "Jump ball",
+    "jumpBallFor": "Jump ball: {team} ball by the arrow",
+    "jumpBallBall": "{team} ball",
+    "playerTile": "{player}, {points} pts, {fouls, plural, one {# foul} other {# fouls}}",
+    "pointsShort": "{points} pts",
+    "arrowBadge": "Arrow",
+    "arrowLabel": "Arrow",
+    "openTv": "Open TV scoreboard"
   },
   "Review": {
     "gamesTitle": "Games to approve",
@@ -964,7 +1292,7 @@
     "teamB": "Team B",
     "no": "No.",
     "player": "Player",
-    "starter": "Start",
+    "starter": "In",
     "fouls": "Fouls",
     "minutes": "Min",
     "points": "Pts",
@@ -987,10 +1315,21 @@
     "scorer": "Scorer",
     "timekeeper": "Timekeeper",
     "approved": "Approved by the league on {date}",
-    "legend": "Foul codes: P personal, T technical, U unsportsmanlike, D disqualifying; number = quarter",
+    "legend": "Fouls: P personal, T technical, U unsportsmanlike, D disqualifying, F fighting; C coach, B bench; the number is the free throws (P2), Q the quarter. In: X started, x came in. Running score: • free throw, (n) three, underline = end of quarter.",
     "winner": "Winner: {team}",
     "refereeSignature": "Referee",
-    "captainSignature": "Captain, {team}"
+    "captainSignature": "Captain, {team}",
+    "coach": "Coach",
+    "assistantCoach": "Assistant coach",
+    "captainShort": "CAP",
+    "timeoutTimes": "Timeouts taken (time left)",
+    "coachFouls": "Coach / bench fouls",
+    "shotClockViolations": "{count, plural, one {# shot clock violation} other {# shot clock violations}}",
+    "startEnd": "Started {start} · Ended {end}",
+    "shotClockOperator": "Shot clock",
+    "confirmedDigitally": "Confirmed on the scorer's device by {name} at {time}",
+    "underProtest": "{team} signed under protest",
+    "arrowAtEnd": "Possession arrow at the end: {team}"
   },
   "Standings": {
     "title": "Standings",
@@ -1144,5 +1483,85 @@
     "games": "Games",
     "payments": "Payments",
     "league": "League"
+  },
+  "Teams": {
+    "title": "Teams",
+    "intro": "{count, plural, one {# team} other {# teams}} registered in {season}.",
+    "seasonFilter": "Season",
+    "statusFilter": "Show teams",
+    "filter": {
+      "all": "All ({count})",
+      "waiting": "Waiting for review ({count})",
+      "approved": "Approved ({count})",
+      "notSent": "Not sent yet ({count})",
+      "rejected": "Rejected ({count})"
+    },
+    "tableLabel": "Teams in {season}",
+    "colTeam": "Team",
+    "colDivision": "Division",
+    "colPlayers": "Players",
+    "colStatus": "Status",
+    "colPayment": "Payment",
+    "open": "Open",
+    "openTeam": "Open {team}",
+    "phoneLine": "{division} · {count, plural, one {# player} other {# players}}",
+    "noManager": "No manager",
+    "noSeason": "No published season yet.",
+    "noTeams": "No teams have registered for this season yet.",
+    "noTeamsHelp": "Share the registration link from your home page so team managers can sign up.",
+    "noneInFilter": "No teams match this filter.",
+    "otherTeams": "{count, plural, one {# team} other {# teams}} in the league but not in this season"
+  },
+  "LiveStatus": {
+    "basketball": {
+      "pregame": "Before tip-off",
+      "quarter": "Q{period} · {clock} · Clock stopped",
+      "quarterRunning": "Q{period} · Clock running",
+      "overtime": "OT{number} · {clock} · Clock stopped",
+      "overtimeRunning": "OT{number} · Clock running",
+      "endOfQuarter": "End of Q{period}",
+      "halftime": "Halftime",
+      "endOfRegulation": "End of regulation",
+      "endOfOvertime": "End of OT{number}",
+      "final": "Final"
+    }
+  },
+  "Tv": {
+    "pageTitle": "TV scoreboard",
+    "loading": "Loading the scoreboard…",
+    "notFound": "This game is not available. Check the link with your league.",
+    "sportNotSupported": "This sport's TV scoreboard is coming soon.",
+    "reconnecting": "Reconnecting…",
+    "fullScreen": "Full screen",
+    "home": "Home",
+    "away": "Away",
+    "pregame": "Tip-off",
+    "final": "Final",
+    "tipOffAt": "Tip-off {time}",
+    "tipOffSoon": "Tip-off soon",
+    "fouls": "Fouls",
+    "timeouts": "Timeouts",
+    "bonus": "Bonus",
+    "arrow": "Arrow",
+    "possession": "Possession arrow: {team}",
+    "shotClock": "Shot clock",
+    "round": "Round {round}",
+    "halftime": "Halftime",
+    "endOf": "End of {period}",
+    "timeoutBanner": "Timeout",
+    "finalBanner": "Final · {team} win",
+    "poweredBy": "PALAROS",
+    "flash": {
+      "madeThree": "Three! #{jersey} {player}",
+      "foulWarning": "#{jersey} {player} · {fouls} fouls",
+      "fouledOut": "#{jersey} {player} fouled out",
+      "ejected": "#{jersey} {player} ejected",
+      "coachEjected": "{team} coach ejected",
+      "teamPenalty": "{team} in the penalty",
+      "timeout": "Timeout · {team}",
+      "substitution": "In · #{jersey} {player}",
+      "shotClockViolation": "Shot clock violation · {team}",
+      "jumpBall": "Jump ball · {team} ball"
+    }
   }
 }

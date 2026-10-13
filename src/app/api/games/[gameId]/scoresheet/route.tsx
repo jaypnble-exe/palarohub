@@ -39,6 +39,9 @@ export async function GET(
       when={record.game.scheduledAt ? dateTime(record.game.scheduledAt) : ""}
       approvedAt={dateTime(record.result.approved_at)}
       t={(key, values) => t(key, values)}
+      time={(value) =>
+        format.dateTime(new Date(value), { hour: "numeric", minute: "2-digit" })
+      }
     />,
   );
   const name = `${record.teamNames.home}-vs-${record.teamNames.away}`

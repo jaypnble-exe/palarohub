@@ -9,13 +9,17 @@ import { signInWithGoogle } from "@/app/auth/actions";
 import { Alert } from "@/components/ui/alert";
 import { isGoogleEnabled } from "@/lib/auth-settings";
 import { createClient } from "@/lib/supabase/server";
+import { AccessGuide } from "@/components/access-guide";
+import { cardVariants } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; new?: string }>;
 }) {
-  const { next: requestedNext, error } = await searchParams;
+  const { next: requestedNext, error, new: startNew } = await searchParams;
   const next = safeNextPath(requestedNext);
   if (await getAuth()) redirect(next);
   const t = await getTranslations("Login");
@@ -39,41 +43,68 @@ export default async function LoginPage({
   )
     ? error
     : undefined;
+  const benefits = ["benefitOne", "benefitTwo", "benefitThree"] as const;
   return (
-    <main className="mx-auto w-full max-w-md space-y-7 py-10">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground">{t("intro")}</p>
-      </div>
-      {errorKey && <Alert tone="danger">{t(errorKey)}</Alert>}
-      {configured ? (
-        <>
-          {seasonId && (
-            <Alert tone="info">
-              {season
-                ? t("registeringFor", { season: season.name })
-                : t("registeringTeam")}
-            </Alert>
-          )}
-          <LoginForm next={next} startNew={Boolean(seasonId)} />
-          {google && (
+    <main className="grid gap-8 py-8 md:grid-cols-[1fr_1.15fr] md:items-start md:py-12">
+      <div className="space-y-5">
+        {errorKey && <Alert tone="danger">{t(errorKey)}</Alert>}
+        {seasonId && configured && (
+          <Alert tone="info">
+            {season
+              ? t("registeringFor", { season: season.name })
+              : t("registeringTeam")}
+          </Alert>
+        )}
+        <div className={cn(cardVariants({ padding: "lg" }), "space-y-5")}>
+          {configured ? (
             <>
-              <p className="text-center text-sm text-muted-foreground">
-                {t("or")}
-              </p>
-              <form action={signInWithGoogle.bind(null, next)}>
-                <Button variant="outline" className="w-full">
-                  {t("google")}
-                </Button>
-              </form>
+              <LoginForm
+                next={next}
+                startNew={Boolean(seasonId) || startNew === "1"}
+              />
+              {google && (
+                <>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <span className="h-px flex-1 bg-border" />
+                    {t("or")}
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                  <form action={signInWithGoogle.bind(null, next)}>
+                    <Button variant="outline" className="w-full">
+                      {t("google")}
+                    </Button>
+                  </form>
+                </>
+              )}
             </>
+          ) : (
+            <Alert tone="warning">{t("unavailable")}</Alert>
           )}
-        </>
-      ) : (
-        <p role="status" className="rounded-xl border p-4">
-          {t("unavailable")}
-        </p>
-      )}
+        </div>
+      </div>
+      {/* Beside the form on wide screens; under it on phones. */}
+      <aside className="space-y-5 md:order-first">
+        <div className="hidden space-y-5 rounded-3xl bg-navy p-8 text-on-dark md:block">
+          <p className="font-display text-3xl leading-tight font-bold tracking-wide uppercase">
+            {t.rich("welcome", {
+              accent: (chunks) => (
+                <span className="text-primary">{chunks}</span>
+              ),
+            })}
+          </p>
+          <ul className="space-y-3">
+            {benefits.map((benefit) => (
+              <li key={benefit} className="flex items-start gap-3">
+                <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-primary text-white">
+                  <Icon name="check" className="size-4" />
+                </span>
+                <span className="text-on-dark-muted">{t(benefit)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {!seasonId && <AccessGuide />}
+      </aside>
     </main>
   );
 }

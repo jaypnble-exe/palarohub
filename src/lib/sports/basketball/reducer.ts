@@ -5,6 +5,8 @@ import {
   statKinds,
   type BasketballEvent,
   type BasketballEventOf,
+  type BenchOffender,
+  type ConfirmationRole,
   type FoulKind,
   type Side,
   type StatKind,
@@ -33,6 +35,8 @@ export interface PlayerLine {
   disqualified: Disqualification | null;
   stats: Record<StatKind, number>;
   playedMs: number;
+  /** Has played in this game: a starter, or came in as a substitute. */
+  entered: boolean;
 }
 
 export interface TeamState {
@@ -46,8 +50,16 @@ export interface TeamState {
   /** Keyed by foul period: overtime counts with the last quarter. */
   teamFouls: Record<number, number>;
   benchTechnicals: number;
+  /** Technical fouls charged to the head coach (C) and to the bench (B). */
+  coachFouls: Record<BenchOffender, number>;
   coachEjected: boolean;
   timeoutsUsed: Record<string, number>;
+  /** Each timeout's period and the game clock left, for the scoresheet. */
+  timeouts: { period: number; clockMs: number }[];
+  coach: string | null;
+  assistantCoach: string | null;
+  captainId: string | null;
+  shotClockViolations: number;
 }
 
 export type EffectKind =
@@ -60,7 +72,11 @@ export type EffectKind =
   | "timeout"
   | "substitution"
   | "periodEnd"
-  | "gameEnd";
+  | "gameEnd"
+  | "shotClockViolation"
+  | "openingTip"
+  | "jumpBall"
+  | "periodPossession";
 
 /** Moments worth an alert on the scorer screen or a flash on the TV. */
 export interface Effect {
@@ -90,7 +106,17 @@ export interface BasketballGameState {
     referees: string[];
     scorer: string | null;
     timekeeper: string | null;
+    shotClockOperator?: string | null;
   } | null;
+  /** Runs and stops with the game clock; only used when the league has one. */
+  shotClock: { remainingMs: number };
+  /** Free throws the next shooting team still has to take. */
+  freeThrowsDue: { team: Side; count: number } | null;
+  confirmations: { role: ConfirmationRole; name: string; at: string }[];
+  protests: { team: Side; note: string; at: string }[];
+  /** When the first period started and the final buzzer went (device time). */
+  startedAt: string | null;
+  endedAt: string | null;
   winner: Side | null;
   lastSequence: number;
   log: LogEntry[];
@@ -120,7 +146,12 @@ export type BasketballEventError =
   | "clockRunning"
   | "clockStopped"
   | "voidTargetMissing"
-  | "voidTargetInvalid";
+  | "voidTargetInvalid"
+  | "notFinal"
+  | "shotClockOff"
+  | "arrowAlreadySet"
+  | "arrowNotSet"
+  | "notArrowTeam";
 
 const zeroes = <K extends string>(keys: readonly K[]) =>
   Object.fromEntries(keys.map((key) => [key, 0])) as Record<K, number>;
@@ -135,8 +166,14 @@ function emptyTeam(): TeamState {
     pointsByPeriod: {},
     teamFouls: {},
     benchTechnicals: 0,
+    coachFouls: { coach: 0, bench: 0 },
     coachEjected: false,
     timeoutsUsed: {},
+    timeouts: [],
+    coach: null,
+    assistantCoach: null,
+    captainId: null,
+    shotClockViolations: 0,
   };
 }
 
@@ -148,11 +185,40 @@ export function initialBasketballState(): BasketballGameState {
     teams: { home: emptyTeam(), away: emptyTeam() },
     possession: null,
     officials: null,
+    shotClock: { remainingMs: 0 },
+    freeThrowsDue: null,
+    confirmations: [],
+    protests: [],
+    startedAt: null,
+    endedAt: null,
     winner: null,
     lastSequence: 0,
     log: [],
     effects: [],
   };
+}
+
+/** Full shot clock in milliseconds, or 0 when the league plays without one. */
+export function shotClockMs(rules: BasketballRules) {
+  return rules.shotClock?.enabled ? rules.shotClock.seconds * 1000 : 0;
+}
+
+/**
+ * Free throws a foul usually gives, as the scorer would write it: 1 for a
+ * technical, 2 for unsportsmanlike or disqualifying, 2 for a personal foul
+ * once the team is in the penalty, otherwise none. Shooting fouls are chosen
+ * by the scorer (P1, P2, P3).
+ */
+export function automaticFreeThrows(
+  state: BasketballGameState,
+  side: Side,
+  kind: FoulKind,
+  rules: BasketballRules,
+) {
+  if (kind === "technical") return 1;
+  if (kind === "unsportsmanlike" || kind === "disqualifying") return 2;
+  if (kind === "personal") return inPenalty(state, side, rules) ? 2 : 0;
+  return 0;
 }
 
 export function periodLengthMs(period: number, rules: BasketballRules) {
@@ -209,6 +275,8 @@ export function mustSubstitute(state: BasketballGameState, side: Side) {
   return team.onCourt.filter((id) => team.players[id]?.disqualified);
 }
 
+const otherSide = (side: Side): Side => (side === "home" ? "away" : "home");
+
 function player(state: BasketballGameState, side: Side, id: string) {
   return state.teams[side].players[id];
 }
@@ -232,7 +300,11 @@ function semanticError(
   rules: BasketballRules,
 ): BasketballEventError | null {
   const { phase } = state;
-  if (phase === "final" && event.type !== "officials") return "gameOver";
+  if (
+    phase === "final" &&
+    !["officials", "team_staff", "confirmation", "protest"].includes(event.type)
+  )
+    return "gameOver";
   switch (event.type) {
     case "roster":
       return phase === "pregame" ? null : "notPregame";
@@ -265,6 +337,19 @@ function semanticError(
     }
     case "officials":
       return null;
+    case "team_staff": {
+      const { team, captainId } = event.payload;
+      return captainId && !player(state, team, captainId)
+        ? "unknownPlayer"
+        : null;
+    }
+    case "confirmation":
+    case "protest":
+      return phase === "final" ? null : "notFinal";
+    case "shot_clock":
+    case "shot_clock_violation":
+      if (!rules.shotClock?.enabled) return "shotClockOff";
+      return phase === "live" ? null : "notLive";
     case "period_start":
       if (phase === "live") return "periodInProgress";
       if (phase === "pregame")
@@ -326,6 +411,13 @@ function semanticError(
         : "noTimeoutsLeft";
     case "possession":
       return null;
+    case "jump_ball_won":
+      if (phase !== "live") return "notLive";
+      return state.possession ? "arrowAlreadySet" : null;
+    case "alternating_possession":
+      if (phase !== "live") return "notLive";
+      if (!state.possession) return "arrowNotSet";
+      return state.possession === event.payload.team ? null : "notArrowTeam";
     case "game_end":
       if (phase === "live") return "periodInProgress";
       if (phase !== "break") return "notLive";
@@ -374,8 +466,14 @@ function creditPlayingTime(state: BasketballGameState, ms: number) {
 function syncClock(state: BasketballGameState, event: BasketballEvent) {
   if (state.phase !== "live" || event.clockMs === null) return;
   const remainingMs = Math.min(event.clockMs, state.clock.remainingMs);
-  if (state.clock.running)
-    creditPlayingTime(state, state.clock.remainingMs - remainingMs);
+  if (state.clock.running) {
+    const elapsed = state.clock.remainingMs - remainingMs;
+    creditPlayingTime(state, elapsed);
+    state.shotClock.remainingMs = Math.max(
+      0,
+      state.shotClock.remainingMs - elapsed,
+    );
+  }
   state.clock = { ...state.clock, remainingMs, asOf: event.createdAt };
 }
 
@@ -398,12 +496,27 @@ function applyFoul(
   event: BasketballEventOf<"foul">,
   rules: BasketballRules,
 ) {
-  const { team: side, playerId, kind } = event.payload;
+  const { team: side, playerId, kind, freeThrows } = event.payload;
   const team = state.teams[side];
   if (state.phase === "live" && state.clock.running) stopClock(state, event);
+  const opponent: Side = side === "home" ? "away" : "home";
+  state.freeThrowsDue = freeThrows
+    ? { team: opponent, count: freeThrows }
+    : null;
   if (!playerId) {
-    team.benchTechnicals++;
-    if (team.benchTechnicals === 2 && !team.coachEjected) {
+    // Older games recorded every bench technical as the coach's.
+    const offender = event.payload.offender ?? "coach";
+    if (kind === "technical") {
+      team.benchTechnicals++;
+      team.coachFouls[offender]++;
+    }
+    // FIBA: the coach is out after 2 of their own technicals (C), 3 in all
+    // with bench technicals (B), or a disqualifying or fighting foul of their own.
+    const out =
+      team.coachFouls.coach >= 2 ||
+      team.coachFouls.coach + team.coachFouls.bench >= 3 ||
+      (offender === "coach" && kind !== "technical");
+    if (out && !team.coachEjected) {
       team.coachEjected = true;
       effect(state, event, "coachEjected", side);
     }
@@ -412,9 +525,10 @@ function applyFoul(
   const line = team.players[playerId];
   line.fouls[kind]++;
   line.foulCount++;
-  const { technical, unsportsmanlike, disqualifying } = line.fouls;
+  const { technical, unsportsmanlike, disqualifying, fighting } = line.fouls;
   if (
     disqualifying >= 1 ||
+    fighting >= 1 ||
     technical >= 2 ||
     unsportsmanlike >= 2 ||
     technical + unsportsmanlike >= 2
@@ -463,6 +577,7 @@ function applyEvent(
             disqualified: null,
             stats: zeroes(statKinds),
             playedMs: 0,
+            entered: false,
           } satisfies PlayerLine,
         ]),
       );
@@ -490,7 +605,10 @@ function applyEvent(
     case "starters": {
       const team = state.teams[event.payload.team];
       for (const id of team.playerIds) team.players[id].starter = false;
-      for (const id of event.payload.playerIds) team.players[id].starter = true;
+      for (const id of event.payload.playerIds) {
+        team.players[id].starter = true;
+        team.players[id].entered = true;
+      }
       team.onCourt = [...event.payload.playerIds];
       team.startersSet = true;
       return;
@@ -498,9 +616,46 @@ function applyEvent(
     case "officials":
       state.officials = { ...event.payload };
       return;
+    case "team_staff": {
+      const team = state.teams[event.payload.team];
+      team.coach = event.payload.coach;
+      team.assistantCoach = event.payload.assistantCoach;
+      team.captainId = event.payload.captainId;
+      return;
+    }
+    case "confirmation":
+      state.confirmations = [
+        ...state.confirmations.filter(
+          (entry) => entry.role !== event.payload.role,
+        ),
+        { ...event.payload, at: event.createdAt },
+      ];
+      return;
+    case "protest":
+      state.protests.push({ ...event.payload, at: event.createdAt });
+      return;
+    case "shot_clock":
+      state.shotClock.remainingMs = event.payload.seconds * 1000;
+      return;
+    case "shot_clock_violation": {
+      state.teams[event.payload.team].shotClockViolations++;
+      if (state.clock.running) stopClock(state, event);
+      state.shotClock.remainingMs = shotClockMs(rules);
+      effect(state, event, "shotClockViolation", event.payload.team);
+      return;
+    }
     case "period_start":
       state.phase = "live";
       state.period++;
+      state.startedAt ??= event.createdAt;
+      state.shotClock.remainingMs = shotClockMs(rules);
+      state.freeThrowsDue = null;
+      // FIBA: every period after the first starts with the arrow's throw-in,
+      // and the arrow then points the other way.
+      if (state.period > 1 && state.possession) {
+        effect(state, event, "periodPossession", state.possession);
+        state.possession = otherSide(state.possession);
+      }
       state.clock = {
         running: false,
         remainingMs: periodLengthMs(state.period, rules),
@@ -511,6 +666,7 @@ function applyEvent(
       if (state.clock.running)
         creditPlayingTime(state, state.clock.remainingMs);
       state.phase = "break";
+      state.freeThrowsDue = null;
       state.clock = { running: false, remainingMs: 0, asOf: event.createdAt };
       effect(state, event, "periodEnd");
       return;
@@ -531,7 +687,13 @@ function applyEvent(
             ? line.twoPointers
             : line.threePointers;
       shots.attempted++;
+      if (points === 1 && state.freeThrowsDue?.team === side) {
+        const count = state.freeThrowsDue.count - 1;
+        state.freeThrowsDue = count > 0 ? { team: side, count } : null;
+      } else if (points > 1) state.freeThrowsDue = null;
       if (!made) return;
+      // A made field goal resets the shot clock for the other team.
+      if (points > 1) state.shotClock.remainingMs = shotClockMs(rules);
       shots.made++;
       line.points += points;
       team.score += points;
@@ -548,6 +710,7 @@ function applyEvent(
       team.onCourt = team.onCourt.map((id) =>
         id === event.payload.out ? event.payload.in : id,
       );
+      team.players[event.payload.in].entered = true;
       effect(
         state,
         event,
@@ -561,6 +724,10 @@ function applyEvent(
       const team = state.teams[event.payload.team];
       const group = timeoutGroup(state.period, rules);
       team.timeoutsUsed[group] = (team.timeoutsUsed[group] ?? 0) + 1;
+      team.timeouts.push({
+        period: state.period,
+        clockMs: state.clock.remainingMs,
+      });
       if (state.clock.running) stopClock(state, event);
       effect(state, event, "timeout", event.payload.team);
       return;
@@ -573,8 +740,18 @@ function applyEvent(
     case "possession":
       state.possession = event.payload.team;
       return;
+    case "jump_ball_won":
+      state.possession = otherSide(event.payload.team);
+      effect(state, event, "openingTip", event.payload.team);
+      return;
+    case "alternating_possession":
+      effect(state, event, "jumpBall", event.payload.team);
+      state.possession = otherSide(event.payload.team);
+      if (state.clock.running) stopClock(state, event);
+      return;
     case "game_end":
       state.phase = "final";
+      state.endedAt = event.createdAt;
       state.winner =
         state.teams.home.score > state.teams.away.score ? "home" : "away";
       effect(state, event, "gameEnd", state.winner);

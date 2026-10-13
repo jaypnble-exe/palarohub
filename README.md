@@ -1,4 +1,4 @@
-# Palaro Hub
+# PALAROS
 
 Community sports league management for Filipino leagues in Saudi Arabia.
 Read [CLAUDE.md](./CLAUDE.md) for the project's source of truth.

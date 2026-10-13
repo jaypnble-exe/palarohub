@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repository.
 
 ## Project overview
 
-**Palaro Hub** (palarohub.com) is a multi-tenant league management platform for Filipino community sports leagues in Saudi Arabia. Each commissioner runs their own league (tenant) on the same system.
+**PALAROS** (palarohub.com) is a multi-tenant league management platform for Filipino community sports leagues in Saudi Arabia. Each commissioner runs their own league (tenant) on the same system.
 
 **Basketball is the first sport. Volleyball comes next**, and other sports may follow. Build everything sport-aware from day one (see "Multi-sport design").
 
@@ -172,15 +172,17 @@ Replaces the paper scoresheet at the scorer's table. Must be faster than writing
 - Select the starting five per team.
 - Record referees and table officials (names).
 - Payment check: show if a team is behind on payments (warn or block, per league setting).
-- Optional captain and referee confirmation before tip-off.
+- Head coach, assistant coach and captain per team; shot clock operator with the officials.
 
 **During the game (one or two taps per action)**
 - **Score**: tap player → +1 / +2 / +3; missed shots optional (league setting for shooting stats).
-- **Foul**: tap player → personal, technical, unsportsmanlike, disqualifying. Coach/bench technicals are attributed to the team, not a player.
+- **Foul**: tap player → personal, technical, unsportsmanlike, disqualifying, fighting. Free throws awarded are recorded with the foul (P2, T1, U2): filled in automatically (penalty, technical, unsportsmanlike), chosen for shooting fouls, then the screen asks for the shooter and each shot.
+- **Coach / bench fouls**: charged to the team as C (head coach) or B (bench), D or F; the coach is ejected after 2 C, 3 C+B, or a D/F of their own (FIBA).
+- **Shot clock** (league setting, off by default): runs with the game clock, Reset 24/14 buttons, resets on a made field goal; at zero the game clock stops and the scorer confirms the violation (only the referee knows if the ball hit the rim).
 - **Substitution**: tap player out → tap player in. The app always knows the five players on court per team; block subs that would leave 4 or 6 on court.
 - **Timeout**: tap team; block when none are left.
 - **Clock and periods**: start/stop game clock, next quarter, halftime, overtime. Quarter length and number of periods come from league settings.
-- **Possession arrow** (if the league uses it).
+- **Possession arrow** (FIBA alternating possession): the scorer taps who won the opening tip and the arrow points to the other team; **Jump ball** gives the ball to the arrow's team and flips it; each later period starts with the arrow's throw-in and flips it automatically. It can still be set by hand to correct it.
 - **Optional stats** (league setting): rebounds, assists, steals, blocks, turnovers. Off by default to keep scoring fast.
 
 **Automatic alerts**
@@ -198,7 +200,8 @@ Replaces the paper scoresheet at the scorer's table. Must be faster than writing
 
 **Ending the game**
 - Final buzzer → review screen: final score, box score, fouls, any ejections.
-- Optional digital confirmation by referees/captains.
+- Optional digital confirmation by the referee and both captains, and "game under protest", before the scorer sends the game.
+- The scorer can show the running score (like the paper strip) at any time; the PDF scoresheet prints everything on the paper sheet on one page.
 - Scorer submits; the commissioner sees it as "finished, awaiting approval" and can approve or reopen it for correction.
 - On approval: standings, stats, and brackets update; suspensions from ejections are created; the official **PDF scoresheet** is generated in the familiar paper layout.
 
@@ -213,7 +216,7 @@ Replaces the paper scoresheet at the scorer's table. Must be faster than writing
 - Warn before closing the page if events are unsynced.
 
 ### Realtime: TV, dashboard, public live
-- TV display (`/tv/[gameId]`), commissioner live dashboard, and public live scores subscribe to `game_events` via Supabase Realtime and render from derived state.
+- TV display (`/tv/[gameId]`), commissioner live dashboard, and public live scores render from derived state. The TV reads the public `tv_game` feed (published seasons only; the public cannot read `game_events` directly) and asks for newer actions every 1.5 s during play. Its clock is corrected for clock differences between the scorer's device, the server and the screen. Realtime can replace polling later.
 - TV flashes: 4th foul, foul-out, substitution, made 3-pointer, timeout, bonus. Show ~3–4 seconds, never hide the score.
 - TV design: huge numbers, high contrast, readable across a court. Sponsor slot on screen and during timeouts/breaks.
 

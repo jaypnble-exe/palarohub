@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  automaticFreeThrows,
   basketball,
   basketballEventSchema,
   basketballRulesSchema,
@@ -685,13 +686,199 @@ describe("basketball scoresheet marks", () => {
     foul(game, "home", h1, "technical");
     const { fouls, running } = scoresheetMarks(game.state(), game.events);
     expect(fouls.home[h1]).toEqual([
-      { kind: "personal", period: 1 },
-      { kind: "technical", period: 2 },
+      { kind: "personal", period: 1, freeThrows: 0 },
+      { kind: "technical", period: 2, freeThrows: 0 },
     ]);
     expect(running.home).toEqual([
       { total: 2, points: 2, jersey: 4, period: 1 },
       { total: 5, points: 3, jersey: 5, period: 2 },
     ]);
     expect(running.away).toEqual([]);
+  });
+});
+
+describe("official scoresheet details", () => {
+  const withShotClock = basketballRulesSchema.parse({
+    shotClock: { enabled: true, seconds: 24, resetSeconds: 14 },
+  });
+
+  it("fills in the free throws a foul usually gives", () => {
+    const game = tipOff();
+    const state = game.state();
+    expect(automaticFreeThrows(state, "home", "personal", rules)).toBe(0);
+    expect(automaticFreeThrows(state, "home", "technical", rules)).toBe(1);
+    expect(automaticFreeThrows(state, "home", "unsportsmanlike", rules)).toBe(
+      2,
+    );
+    for (let i = 0; i < 4; i++) foul(game, "home", home[i % 5]);
+    expect(automaticFreeThrows(game.state(), "home", "personal", rules)).toBe(
+      2,
+    );
+  });
+
+  it("asks for the opponents' free throws until they are taken", () => {
+    const game = tipOff();
+    game.add("foul", {
+      team: "home",
+      playerId: h1,
+      kind: "personal",
+      freeThrows: 2,
+    });
+    expect(game.state().freeThrowsDue).toEqual({ team: "away", count: 2 });
+    game.add("score", { team: "away", playerId: a1, points: 1, made: true });
+    expect(game.state().freeThrowsDue).toEqual({ team: "away", count: 1 });
+    game.add("score", { team: "away", playerId: a1, points: 1, made: false });
+    expect(game.state().freeThrowsDue).toBeNull();
+    expect(scoresheetMarks(game.state(), game.events).fouls.home[h1]).toEqual([
+      { kind: "personal", period: 1, freeThrows: 2 },
+    ]);
+  });
+
+  it("ejects the coach after 2 own technicals or 3 with the bench", () => {
+    const coach = tipOff();
+    for (let i = 0; i < 2; i++)
+      coach.add("foul", {
+        team: "home",
+        playerId: null,
+        kind: "technical",
+        offender: "coach",
+      });
+    expect(coach.state().teams.home.coachEjected).toBe(true);
+
+    const mixed = tipOff();
+    for (const offender of ["coach", "bench"] as const)
+      mixed.add("foul", {
+        team: "home",
+        playerId: null,
+        kind: "technical",
+        offender,
+      });
+    expect(mixed.state().teams.home.coachEjected).toBe(false);
+    mixed.add("foul", {
+      team: "home",
+      playerId: null,
+      kind: "technical",
+      offender: "bench",
+    });
+    const team = mixed.state().teams.home;
+    expect(team.coachFouls).toEqual({ coach: 1, bench: 2 });
+    expect(team.coachEjected).toBe(true);
+  });
+
+  it("disqualifies a player for fighting", () => {
+    const game = tipOff();
+    game.add("foul", { team: "home", playerId: h2, kind: "fighting" });
+    expect(game.state().teams.home.players[h2].disqualified).toBe("ejected");
+  });
+
+  it("keeps coaches, captain, who played, and timeouts for the scoresheet", () => {
+    const game = tipOff();
+    game.add("team_staff", {
+      team: "home",
+      coach: "Coach Ramon",
+      assistantCoach: null,
+      captainId: h1,
+    });
+    game.add("substitution", { team: "home", out: h2, in: h6 }, 500_000);
+    game.add("timeout", { team: "home" }, 412_000);
+    const team = game.state().teams.home;
+    expect([team.coach, team.captainId]).toEqual(["Coach Ramon", h1]);
+    expect(team.players[h6].entered).toBe(true);
+    expect(team.players[home[6]].entered).toBe(false);
+    expect(team.timeouts).toEqual([{ period: 1, clockMs: 412_000 }]);
+    expect(game.state().startedAt).not.toBeNull();
+  });
+
+  it("runs the shot clock with the game clock and resets it", () => {
+    const game = tipOff();
+    expect(game.state(withShotClock).shotClock.remainingMs).toBe(24_000);
+    game.add("clock_start", {}, 600_000);
+    game.add("clock_stop", {}, 590_000);
+    expect(game.state(withShotClock).shotClock.remainingMs).toBe(14_000);
+    game.add("shot_clock", { seconds: 14 }, 590_000);
+    expect(game.state(withShotClock).shotClock.remainingMs).toBe(14_000);
+    game.add("score", { team: "home", playerId: h1, points: 2, made: true });
+    expect(game.state(withShotClock).shotClock.remainingMs).toBe(24_000);
+    game.add("shot_clock_violation", { team: "away" });
+    const state = game.state(withShotClock);
+    expect(state.teams.away.shotClockViolations).toBe(1);
+    expect(state.effects.at(-1)?.kind).toBe("shotClockViolation");
+  });
+
+  it("refuses shot clock actions in a league without one", () => {
+    const game = tipOff();
+    const event = game.add("shot_clock", { seconds: 24 });
+    const state = reduceBasketballGame(game.events.slice(0, -1), rules);
+    expect(validateBasketballEvent(state, event, rules)).toBe("shotClockOff");
+  });
+
+  it("records confirmations and protests only after the final buzzer", () => {
+    const game = tipOff();
+    const early = game.add("confirmation", {
+      role: "referee",
+      name: "Ramon Aquino",
+    });
+    const before = reduceBasketballGame(game.events.slice(0, -1), rules);
+    expect(validateBasketballEvent(before, early, rules)).toBe("notFinal");
+    game.events.pop();
+    game.add("score", { team: "home", playerId: h1, points: 2, made: true });
+    for (let period = 1; period <= rules.quarters; period++) {
+      game.add("period_end", {});
+      if (period < rules.quarters) game.add("period_start", {});
+    }
+    game.add("game_end", {});
+    game.add("confirmation", { role: "referee", name: "Ramon Aquino" });
+    game.add("protest", { team: "away", note: "Clock did not stop" });
+    const state = game.state();
+    expect(state.confirmations.map((entry) => entry.name)).toEqual([
+      "Ramon Aquino",
+    ]);
+    expect(state.protests).toMatchObject([
+      { team: "away", note: "Clock did not stop" },
+    ]);
+    expect(state.endedAt).not.toBeNull();
+  });
+});
+
+describe("possession arrow", () => {
+  it("points to the team that lost the opening tip", () => {
+    const game = tipOff();
+    game.add("jump_ball_won", { team: "home" });
+    const state = game.state();
+    expect(state.possession).toBe("away");
+    expect(state.effects.at(-1)).toMatchObject({
+      kind: "openingTip",
+      team: "home",
+    });
+  });
+
+  it("gives jump balls to the arrow's team and flips it", () => {
+    const game = tipOff();
+    game.add("jump_ball_won", { team: "home" });
+    game.add("alternating_possession", { team: "away" });
+    expect(game.state().possession).toBe("home");
+    const wrong = game.add("alternating_possession", { team: "away" });
+    const before = reduceBasketballGame(game.events.slice(0, -1), rules);
+    expect(validateBasketballEvent(before, wrong, rules)).toBe("notArrowTeam");
+  });
+
+  it("starts each later period with the arrow's throw-in", () => {
+    const game = tipOff();
+    game.add("jump_ball_won", { team: "away" });
+    game.add("period_end", {});
+    game.add("period_start", {});
+    const state = game.state();
+    expect(state.effects.at(-1)).toMatchObject({
+      kind: "periodPossession",
+      team: "home",
+    });
+    expect(state.possession).toBe("away");
+  });
+
+  it("asks for the opening tip before the first jump ball", () => {
+    const game = tipOff();
+    const early = game.add("alternating_possession", { team: "home" });
+    const state = reduceBasketballGame(game.events.slice(0, -1), rules);
+    expect(validateBasketballEvent(state, early, rules)).toBe("arrowNotSet");
   });
 });

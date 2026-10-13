@@ -68,6 +68,37 @@ export default async function ManagerRegistrationPage({
   const pendingChange = data.changes.find(
     (change) => change.status === "submitted",
   );
+  const editor = (
+    <section className="space-y-5">
+      <h2 className="font-display text-2xl font-semibold">
+        {t("editRegistration")}
+      </h2>
+      {returned && !registrationOpen && (
+        <Alert tone="info">{t("returnedAfterDeadline")}</Alert>
+      )}
+      <RegistrationWizard
+        slug={slug}
+        registrationId={registrationId}
+        initial={{
+          teamId: data.team.id,
+          seasonId: data.season.id,
+          divisionId: data.division.id,
+          roster,
+        }}
+        teams={[data.team]}
+        divisions={divisions ?? []}
+        taken={others.data.map((row) => ({
+          teamId: data.team.id,
+          divisionId: row.division_id,
+        }))}
+        catalog={data.playerCatalog}
+        ratingScale={data.season.rating_scale}
+        deadline={data.settings.deadline}
+        feeHalalas={data.registration.fee_halalas}
+        requireDocuments={data.settings.require_documents}
+      />
+    </section>
+  );
   return (
     <main className="mx-auto max-w-2xl space-y-6 py-6">
       <PageHeader
@@ -80,44 +111,22 @@ export default async function ManagerRegistrationPage({
         seasonName={data.season.name}
         comment={data.registration.review_comment}
       />
-      <RegistrationDetails data={data} showStatus={false} />
+      {editable && editor}
+      {canTakeBack && (
+        <TakeBackButton slug={slug} registrationId={registrationId} />
+      )}
+      <RegistrationDetails
+        data={data}
+        showStatus={false}
+        showRoster={!editable}
+      />
       {payments && (
         <Section id="payments" title={paymentText("teamTitle")}>
           <PaymentSummary team={payments} />
           <LedgerList slug={slug} entries={payments.entries} canEdit={false} />
         </Section>
       )}
-      {editable ? (
-        <section className="space-y-5">
-          <h2 className="font-display text-2xl font-semibold">
-            {t("editRegistration")}
-          </h2>
-          {returned && !registrationOpen && (
-            <Alert tone="info">{t("returnedAfterDeadline")}</Alert>
-          )}
-          <RegistrationWizard
-            slug={slug}
-            registrationId={registrationId}
-            initial={{
-              teamId: data.team.id,
-              seasonId: data.season.id,
-              divisionId: data.division.id,
-              roster,
-            }}
-            teams={[data.team]}
-            divisions={divisions ?? []}
-            taken={others.data.map((row) => ({
-              teamId: data.team.id,
-              divisionId: row.division_id,
-            }))}
-            catalog={data.playerCatalog}
-            ratingScale={data.season.rating_scale}
-            deadline={data.settings.deadline}
-            feeHalalas={data.registration.fee_halalas}
-            requireDocuments={data.settings.require_documents}
-          />
-        </section>
-      ) : data.registration.status === "approved" ? (
+      {editable ? null : data.registration.status === "approved" ? (
         <section className="space-y-5">
           <h2 className="font-display text-2xl font-semibold">
             {t("rosterChanges")}
@@ -145,8 +154,6 @@ export default async function ManagerRegistrationPage({
             </details>
           )}
         </section>
-      ) : canTakeBack ? (
-        <TakeBackButton slug={slug} registrationId={registrationId} />
       ) : (
         data.registration.status !== "submitted" && (
           <Alert tone="info">{t("registrationLocked")}</Alert>

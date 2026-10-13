@@ -1667,6 +1667,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      tv_game: {
+        Args: { p_after?: number; p_game_id: string };
+        Returns: Json;
+      };
       withdraw_team_registration: {
         Args: { p_league_id: string; p_registration_id: string };
         Returns: undefined;

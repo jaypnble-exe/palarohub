@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -20,8 +20,32 @@ import { Button } from "@/components/ui/button";
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/field";
-import { Chip } from "@/components/ui/chip";
+import { Chip, ChoiceCard } from "@/components/ui/chip";
 import { Alert } from "@/components/ui/alert";
+import { ActionBar } from "@/components/ui/action-bar";
+import { Icon } from "@/components/ui/icon";
+import { Stepper } from "@/components/ui/stepper";
+import { Switch } from "@/components/ui/switch";
+
+const STEPS = [
+  "stepDetails",
+  "stepDivisions",
+  "stepRules",
+  "stepReview",
+] as const;
+const DAY_MS = 86400000;
+
+/** Whole weeks between two yyyy-mm-dd dates, or null if either is missing. */
+function seasonWeeks(start?: string, end?: string) {
+  if (!start || !end) return null;
+  const days =
+    (new Date(`${end}T12:00:00Z`).getTime() -
+      new Date(`${start}T12:00:00Z`).getTime()) /
+    DAY_MS;
+  return Number.isFinite(days) && days > 0
+    ? Math.max(1, Math.round(days / 7))
+    : null;
+}
 
 export function SeasonWizard({
   slug,
@@ -40,6 +64,25 @@ export function SeasonWizard({
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [feedback, setFeedback] = useState<string>();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  function goTo(nextStep: number) {
+    setStep(nextStep);
+    setFeedback(undefined);
+    // Start each step at its heading, for screen readers too.
+    requestAnimationFrame(() => {
+      headingRef.current?.scrollIntoView?.({ block: "start" });
+      headingRef.current?.focus({ preventScroll: true });
+    });
+  }
+  const heading = (key: string) => (
+    <h2
+      ref={headingRef}
+      tabIndex={-1}
+      className="scroll-mt-4 font-display text-2xl font-semibold outline-none"
+    >
+      {t(key)}
+    </h2>
+  );
   const {
     register,
     control,
@@ -86,16 +129,13 @@ export function SeasonWizard({
         setFeedback("invalidDetails");
         return;
       }
-      setStep(2);
-      setFeedback(undefined);
+      goTo(2);
       return;
     }
     const names = step === 2 ? (["divisions"] as const) : (["rules"] as const);
-    if (await trigger([...names])) {
-      setStep(step + 1);
-      setFeedback(undefined);
-    }
+    if (await trigger([...names])) goTo(step + 1);
   }
+  const weeks = seasonWeeks(values.startDate, values.endDate);
   const invalid = Boolean(Object.keys(errors).length);
   return (
     <form
@@ -110,47 +150,55 @@ export function SeasonWizard({
       }}
       noValidate
     >
-      <div className="space-y-2">
+      <div className="space-y-3">
         <p className="text-sm font-semibold text-muted-foreground">
           {t("step", { current: step, total: 4 })}
         </p>
-        <progress
-          value={step}
-          max={4}
-          aria-label={t("step", { current: step, total: 4 })}
-          className="h-2 w-full accent-primary"
+        <Stepper
+          label={t("progressLabel")}
+          steps={STEPS.map((key) => t(key))}
+          current={step - 1}
+          onSelect={(index) => goTo(index + 1)}
         />
       </div>
       {step === 1 && (
         <section className="space-y-5">
-          <h2 className="text-2xl font-semibold">{t("details")}</h2>
+          {heading("details")}
           {copyTemplate && (
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                if (
-                  copyTemplate.divisions.some(
-                    (division) => !labels.includes(division.maxRating),
-                  )
-                ) {
-                  setFeedback("copyRatingsChanged");
-                  return;
-                }
-                setValue("sport", copyTemplate.sport);
-                setValue("rules", copyTemplate.rules);
-                replace(
-                  copyTemplate.divisions.map(({ id: _id, ...division }) => {
-                    void _id;
-                    return division;
-                  }),
-                );
-                setFeedback("copied");
-              }}
-            >
-              {t("copyLast")}
-            </Button>
+            <div className="space-y-3 rounded-2xl border-2 border-dashed border-primary/40 bg-orange-soft/40 p-4">
+              <div className="space-y-1">
+                <p className="font-semibold">{t("copyLastTitle")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("copyLastHelp")}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  if (
+                    copyTemplate.divisions.some(
+                      (division) => !labels.includes(division.maxRating),
+                    )
+                  ) {
+                    setFeedback("copyRatingsChanged");
+                    return;
+                  }
+                  setValue("sport", copyTemplate.sport);
+                  setValue("rules", copyTemplate.rules);
+                  replace(
+                    copyTemplate.divisions.map(({ id: _id, ...division }) => {
+                      void _id;
+                      return division;
+                    }),
+                  );
+                  setFeedback("copied");
+                }}
+              >
+                {t("copyLast")}
+              </Button>
+            </div>
           )}
           <div className="space-y-2">
             <label htmlFor="season-name" className="font-semibold">
@@ -186,6 +234,11 @@ export function SeasonWizard({
               />
             </div>
           </div>
+          {weeks && (
+            <p className="text-sm font-semibold text-muted-foreground">
+              {t("seasonLength", { weeks })}
+            </p>
+          )}
           <div className="space-y-2">
             <label htmlFor="season-sport" className="font-semibold">
               {t("sport")}
@@ -216,8 +269,10 @@ export function SeasonWizard({
       )}
       {step === 2 && (
         <section className="space-y-5">
-          <h2 className="text-2xl font-semibold">{t("divisions")}</h2>
-          <p className="text-muted-foreground">{t("divisionHelp")}</p>
+          <div className="space-y-1">
+            {heading("divisions")}
+            <p className="text-muted-foreground">{t("divisionHelp")}</p>
+          </div>
           {fields.map((field, index) => (
             <fieldset
               key={field.fieldKey}
@@ -226,6 +281,29 @@ export function SeasonWizard({
               <legend className="sr-only">
                 {t("divisionNumber", { number: index + 1 })}
               </legend>
+              <div className="flex items-center justify-between gap-3">
+                <p className="flex items-center gap-2 text-sm font-bold text-muted-foreground uppercase">
+                  <span className="grid size-7 place-items-center rounded-full bg-navy text-xs text-on-dark">
+                    {index + 1}
+                  </span>
+                  {t("divisionNumber", { number: index + 1 })}
+                </p>
+                {fields.length > 1 && (
+                  <button
+                    type="button"
+                    className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-destructive hover:underline"
+                    aria-label={t("removeDivisionNamed", {
+                      name:
+                        values.divisions?.[index]?.name ||
+                        t("divisionNumber", { number: index + 1 }),
+                    })}
+                    onClick={() => remove(index)}
+                  >
+                    <Icon name="close" className="size-4" />
+                    {t("remove")}
+                  </button>
+                )}
+              </div>
               <div className="space-y-2">
                 <label
                   htmlFor={`division-name-${index}`}
@@ -300,20 +378,18 @@ export function SeasonWizard({
                   />
                 </div>
               </div>
-              <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
-                <input
-                  type="checkbox"
-                  className="size-5 accent-primary"
-                  checked={values.divisions?.[index]?.rules != null}
-                  onChange={(event) =>
-                    setValue(
-                      `divisions.${index}.rules`,
-                      event.target.checked ? { ...rules } : null,
-                    )
-                  }
-                />
-                {t("overrideRules")}
-              </label>
+              <Switch
+                className="border-t pt-4"
+                label={t("overrideRules")}
+                description={t("overrideRulesHelp")}
+                checked={values.divisions?.[index]?.rules != null}
+                onChange={(checked) =>
+                  setValue(
+                    `divisions.${index}.rules`,
+                    checked ? { ...rules } : null,
+                  )
+                }
+              />
               {values.divisions?.[index]?.rules != null && (
                 <SportRulesFields
                   sport={values.divisions[index]?.sport ?? sport}
@@ -323,44 +399,43 @@ export function SeasonWizard({
                   }
                 />
               )}
-              {fields.length > 1 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => remove(index)}
-                >
-                  {t("removeDivision")}
-                </Button>
-              )}
             </fieldset>
           ))}
           <Button
             type="button"
             variant="outline"
+            className="w-full border-dashed"
             disabled={fields.length >= 12}
             onClick={() => append(newDivision(sport, labels))}
           >
+            <Icon name="add" className="size-5" />
             {t("addDivision")}
           </Button>
         </section>
       )}
       {step === 3 && (
         <section className="space-y-5">
-          <h2 className="text-2xl font-semibold">{t("rules")}</h2>
-          <p className="text-muted-foreground">{t("rulesHelp")}</p>
-          <SportRulesFields
-            sport={sport}
-            value={rules}
-            onChange={(value) => setValue("rules", value)}
-          />
+          <div className="space-y-1">
+            {heading("rules")}
+            <p className="text-muted-foreground">{t("rulesHelp")}</p>
+          </div>
+          <div className={cardVariants()}>
+            <SportRulesFields
+              sport={sport}
+              value={rules}
+              onChange={(value) => setValue("rules", value)}
+            />
+          </div>
         </section>
       )}
       {step === 4 && (
         <section className="space-y-5">
-          <h2 className="text-2xl font-semibold">{t("review")}</h2>
+          {heading("review")}
           <div className={cn(cardVariants(), "space-y-3")}>
-            <h3 className="text-xl font-semibold">{values.name}</h3>
-            <p>
+            <h3 className="font-display text-2xl font-semibold">
+              {values.name}
+            </h3>
+            <p className="font-semibold">
               {t("dates", {
                 start: format.dateTime(
                   new Date(`${values.startDate}T12:00:00Z`),
@@ -371,21 +446,30 @@ export function SeasonWizard({
                 }),
               })}
             </p>
-            <p>{sports(sport)}</p>
+            <p className="text-sm text-muted-foreground">
+              {sports(sport)}
+              {weeks ? ` · ${t("seasonLength", { weeks })}` : ""}
+            </p>
             <p className="text-sm text-muted-foreground">
               {t("scaleOrder")}: {labels.join(" → ")}
             </p>
+          </div>
+          <div className={cn(cardVariants({ padding: "none" }), "divide-y")}>
             {values.divisions?.map((division, index) => (
-              <div key={index} className="space-y-3">
-                <p>
-                  {t("divisionSummary", {
-                    name: division.name ?? "",
-                    rating: t("maximum", { rating: division.maxRating ?? "" }),
-                    roster: t("rosterRange", {
-                      min: division.rosterMin ?? 0,
-                      max: division.rosterMax ?? 0,
-                    }),
+              <div key={index} className="space-y-2 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold">{division.name}</p>
+                  <span className="rounded-lg bg-accent px-2.5 py-1 text-sm font-semibold">
+                    {t("maximum", { rating: division.maxRating ?? "" })}
+                  </span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {t("rosterRange", {
+                    min: division.rosterMin ?? 0,
+                    max: division.rosterMax ?? 0,
                   })}
+                  {" · "}
+                  {t(division.rules != null ? "ownRules" : "inheritRules")}
                 </p>
                 {division.rules != null && (
                   <details>
@@ -402,38 +486,46 @@ export function SeasonWizard({
               </div>
             ))}
           </div>
-          <SportRulesFields sport={sport} value={rules} disabled />
-          <label className="flex min-h-11 items-start gap-3 rounded-xl border bg-card p-4">
-            <input
-              type="checkbox"
-              className="mt-1 size-5 shrink-0 accent-primary"
-              checked={values.status === "published"}
-              onChange={(event) =>
-                setValue("status", event.target.checked ? "published" : "draft")
-              }
+          <details className={cardVariants()}>
+            <summary className="min-h-11 cursor-pointer py-3 font-semibold">
+              {t("rules")}
+            </summary>
+            <SportRulesFields sport={sport} value={rules} disabled />
+          </details>
+          <fieldset className="space-y-3">
+            <legend className="mb-3 font-semibold">{t("whenDone")}</legend>
+            <ChoiceCard
+              name="season-status"
+              checked={values.status !== "published"}
+              onChange={() => setValue("status", "draft")}
+              title={t("draftChoice")}
+              description={t("draftChoiceHelp")}
             />
-            <span>
-              <strong>{t("publishNow")}</strong>
-              <span className="mt-1 block text-sm text-muted-foreground">
-                {t("publishHelp")}
-              </span>
-            </span>
-          </label>
+            <ChoiceCard
+              name="season-status"
+              checked={values.status === "published"}
+              onChange={() => setValue("status", "published")}
+              title={t("publishNow")}
+              description={t("publishHelp")}
+            />
+          </fieldset>
         </section>
       )}
       {invalid && <Alert tone="danger">{t("invalidSetup")}</Alert>}
-      {feedback && <p role="status">{t(feedback)}</p>}
-      <div className="flex gap-3">
+      {feedback && (
+        <Alert tone={feedback === "copied" ? "success" : "info"}>
+          {t(feedback)}
+        </Alert>
+      )}
+      <ActionBar>
         {step > 1 && (
           <Button
             type="button"
             variant="outline"
             disabled={isSubmitting}
-            onClick={() => {
-              setStep(step - 1);
-              setFeedback(undefined);
-            }}
+            onClick={() => goTo(step - 1)}
           >
+            <Icon name="back" className="size-5" />
             {t("back")}
           </Button>
         )}
@@ -447,8 +539,11 @@ export function SeasonWizard({
                   ? "publish"
                   : "saveDraft",
           )}
+          {!isSubmitting && (
+            <Icon name={step < 4 ? "arrow" : "check"} className="size-5" />
+          )}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   );
 }
