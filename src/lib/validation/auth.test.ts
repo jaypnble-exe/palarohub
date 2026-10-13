@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { safeNextPath } from "./auth";
+import {
+  newPasswordSchema,
+  safeNextPath,
+  signInSchema,
+  signUpSchema,
+} from "./auth";
 import { leagueSchema, reservedSlugs } from "./leagues";
 
 describe("auth redirect", () => {
@@ -37,5 +42,49 @@ describe("league validation", () => {
   });
   it("accepts a valid league", () => {
     expect(leagueSchema.parse(league)).toEqual(league);
+  });
+});
+
+describe("password rules", () => {
+  it("needs a name, a valid email, and at least 8 characters to sign up", () => {
+    const account = {
+      name: "Juan",
+      email: "juan@example.test",
+      password: "12345678",
+    };
+    expect(signUpSchema.safeParse(account).success).toBe(true);
+    expect(
+      signUpSchema.safeParse({ ...account, password: "1234567" }).success,
+    ).toBe(false);
+    expect(signUpSchema.safeParse({ ...account, name: "  " }).success).toBe(
+      false,
+    );
+    expect(signUpSchema.safeParse({ ...account, email: "juan" }).success).toBe(
+      false,
+    );
+  });
+
+  it("accepts any non-empty password when signing in", () => {
+    expect(
+      signInSchema.safeParse({ email: "a@b.test", password: "x" }).success,
+    ).toBe(true);
+    expect(
+      signInSchema.safeParse({ email: "a@b.test", password: "" }).success,
+    ).toBe(false);
+  });
+
+  it("requires the new password to be typed the same twice", () => {
+    expect(
+      newPasswordSchema.safeParse({
+        password: "long-enough",
+        confirm: "long-enough",
+      }).success,
+    ).toBe(true);
+    const mismatch = newPasswordSchema.safeParse({
+      password: "long-enough",
+      confirm: "different",
+    });
+    expect(mismatch.success).toBe(false);
+    expect(mismatch.error?.issues[0]?.message).toBe("mismatch");
   });
 });

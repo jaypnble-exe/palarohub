@@ -43,11 +43,16 @@ export default async function MyLeaguesPage({
           {t("signOutFailed")}
         </p>
       )}
-      {admin && (
-        <Button asChild>
-          <Link href="/admin">{t("create")}</Link>
+      <div className="flex flex-wrap gap-3">
+        {admin && (
+          <Button asChild>
+            <Link href="/admin">{t("create")}</Link>
+          </Button>
+        )}
+        <Button asChild variant="outline">
+          <Link href="/leagues/password">{t("changePassword")}</Link>
         </Button>
-      )}
+      </div>
       {!leagues.size ? (
         <div className={cardVariants({ padding: "lg" })}>
           <p className="font-medium">{t("empty")}</p>

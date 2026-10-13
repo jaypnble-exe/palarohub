@@ -7,6 +7,7 @@ import { LoginForm } from "@/components/login-form";
 import { Button } from "@/components/ui/button";
 import { signInWithGoogle } from "@/app/auth/actions";
 import { Alert } from "@/components/ui/alert";
+import { isGoogleEnabled } from "@/lib/auth-settings";
 
 export default async function LoginPage({
   searchParams,
@@ -18,6 +19,7 @@ export default async function LoginPage({
   if (await getAuth()) redirect(next);
   const t = await getTranslations("Login");
   const configured = hasSupabaseConfig();
+  const google = configured && (await isGoogleEnabled());
   const errorKey = ["unavailable", "googleFailed", "callbackFailed"].includes(
     error ?? "",
   )
@@ -33,12 +35,18 @@ export default async function LoginPage({
       {configured ? (
         <>
           <LoginForm next={next} />
-          <p className="text-center text-sm text-muted-foreground">{t("or")}</p>
-          <form action={signInWithGoogle.bind(null, next)}>
-            <Button variant="outline" className="w-full">
-              {t("google")}
-            </Button>
-          </form>
+          {google && (
+            <>
+              <p className="text-center text-sm text-muted-foreground">
+                {t("or")}
+              </p>
+              <form action={signInWithGoogle.bind(null, next)}>
+                <Button variant="outline" className="w-full">
+                  {t("google")}
+                </Button>
+              </form>
+            </>
+          )}
         </>
       ) : (
         <p role="status" className="rounded-xl border p-4">
