@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 import type { EligibilityIssue } from "@/lib/domain/eligibility";
 import type { RegistrationActionResult } from "@/lib/validation/registration";
+import { Alert } from "@/components/ui/alert";
 
 export function EligibilityFeedback({
   issues,
@@ -42,14 +43,10 @@ export function RegistrationFeedback({
   const t = useTranslations("Registration");
   if (!result) return null;
   return (
-    <div role={result.error ? "alert" : "status"} className="space-y-3">
-      <p
-        className={
-          result.error ? "text-sm text-destructive" : "text-sm font-semibold"
-        }
-      >
+    <div className="space-y-3">
+      <Alert tone={result.error ? "danger" : "success"}>
         {t(result.error ?? successKey)}
-      </p>
+      </Alert>
       {result.issues?.length ? (
         <EligibilityFeedback issues={result.issues} />
       ) : null}

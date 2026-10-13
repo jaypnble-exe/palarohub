@@ -11,6 +11,8 @@ import {
   type AnnouncementInput,
 } from "@/lib/validation/schedule";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { Field, Select, Textarea } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ScheduleFeedback, useScheduleMutation } from "./mutation";
 
@@ -34,7 +36,7 @@ export function AnnouncementForm({
   });
   return (
     <form
-      className="space-y-5 rounded-2xl border bg-card p-5"
+      className={`${cardVariants()} space-y-5`}
       noValidate
       onSubmit={handleSubmit((input) =>
         mutation.run(
@@ -45,37 +47,33 @@ export function AnnouncementForm({
     >
       <h2 className="font-display text-2xl font-semibold">{t("newPost")}</h2>
       <fieldset disabled={mutation.pending} className="space-y-5">
-        <div className="space-y-2">
-          <label htmlFor="announcement-title" className="font-semibold">
-            {t("title")}
-          </label>
+        <Field
+          id="announcement-title"
+          label={t("title")}
+          error={errors.title ? t("required") : undefined}
+        >
           <Input
             id="announcement-title"
             maxLength={120}
             {...register("title")}
             aria-invalid={Boolean(errors.title)}
           />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="announcement-body" className="font-semibold">
-            {t("message")}
-          </label>
-          <textarea
+        </Field>
+        <Field
+          id="announcement-body"
+          label={t("message")}
+          error={errors.body ? t("required") : undefined}
+        >
+          <Textarea
             id="announcement-body"
-            rows={4}
             maxLength={2000}
-            className="w-full rounded-xl border-2 bg-card px-4 py-3"
             {...register("body")}
             aria-invalid={Boolean(errors.body)}
           />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="announcement-for" className="font-semibold">
-            {t("audience")}
-          </label>
-          <select
+        </Field>
+        <Field id="announcement-for" label={t("audience")}>
+          <Select
             id="announcement-for"
-            className="min-h-[52px] w-full rounded-xl border-2 bg-card px-4"
             {...register("divisionId", {
               setValueAs: (value: string | null) => value || null,
             })}
@@ -86,14 +84,9 @@ export function AnnouncementForm({
                 {division.label}
               </option>
             ))}
-          </select>
-        </div>
+          </Select>
+        </Field>
       </fieldset>
-      {(errors.title || errors.body) && (
-        <p role="alert" className="text-sm text-destructive">
-          {t("required")}
-        </p>
-      )}
       <Button disabled={mutation.pending}>
         {t(mutation.pending ? "posting" : "post")}
       </Button>

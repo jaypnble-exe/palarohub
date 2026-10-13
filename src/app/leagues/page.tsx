@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { requireUser, isPlatformAdmin } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/lib/supabase/database.types";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default async function MyLeaguesPage({
   searchParams,
@@ -47,14 +49,14 @@ export default async function MyLeaguesPage({
         </Button>
       )}
       {!leagues.size ? (
-        <div className="rounded-2xl border bg-card p-6">
+        <div className={cardVariants({ padding: "lg" })}>
           <p className="font-medium">{t("empty")}</p>
           <p className="mt-2 text-sm text-muted-foreground">{t("emptyHelp")}</p>
         </div>
       ) : (
         <ul className="space-y-4">
           {[...leagues.entries()].map(([id, league]) => (
-            <li key={id} className="space-y-4 rounded-2xl border bg-card p-5">
+            <li key={id} className={cn(cardVariants(), "space-y-4")}>
               <div>
                 <h2 className="text-xl font-semibold">{league.name}</h2>
                 <p className="mt-2 text-sm text-muted-foreground">

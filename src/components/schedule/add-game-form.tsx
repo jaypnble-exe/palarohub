@@ -4,10 +4,10 @@ import { useTranslations } from "next-intl";
 import { addGame } from "@/app/(admin)/admin/[league]/schedule/actions";
 import { fromRiyadhDateTimeInput } from "@/lib/domain/riyadh-time";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { Field, Select } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ScheduleFeedback, useScheduleMutation } from "./mutation";
-
-const selectClass = "min-h-[52px] w-full rounded-xl border-2 bg-card px-4";
 
 export function AddGameForm({
   slug,
@@ -27,7 +27,7 @@ export function AddGameForm({
   const [when, setWhen] = useState("");
   const [venue, setVenue] = useState(defaultVenue);
   return (
-    <details className="rounded-2xl border bg-card p-5">
+    <details className={cardVariants()}>
       <summary className="min-h-11 cursor-pointer py-2 font-semibold">
         {t("addGame")}
       </summary>
@@ -56,13 +56,9 @@ export function AddGameForm({
         <p className="text-sm text-muted-foreground">{t("addGameHelp")}</p>
         <fieldset disabled={mutation.pending} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor="add-home" className="font-semibold">
-                {t("homeTeam")}
-              </label>
-              <select
+            <Field id="add-home" label={t("homeTeam")}>
+              <Select
                 id="add-home"
-                className={selectClass}
                 value={home}
                 onChange={(event) => setHome(event.target.value)}
               >
@@ -71,15 +67,11 @@ export function AddGameForm({
                     {team.name}
                   </option>
                 ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="add-away" className="font-semibold">
-                {t("awayTeam")}
-              </label>
-              <select
+              </Select>
+            </Field>
+            <Field id="add-away" label={t("awayTeam")}>
+              <Select
                 id="add-away"
-                className={selectClass}
                 value={away}
                 onChange={(event) => setAway(event.target.value)}
               >
@@ -88,31 +80,25 @@ export function AddGameForm({
                     {team.name}
                   </option>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </Field>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="add-when" className="font-semibold">
-              {t("dateAndTime")}
-            </label>
+          <Field id="add-when" label={t("dateAndTime")}>
             <Input
               id="add-when"
               type="datetime-local"
               value={when}
               onChange={(event) => setWhen(event.target.value)}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="add-venue" className="font-semibold">
-              {t("court")}
-            </label>
+          </Field>
+          <Field id="add-venue" label={t("court")}>
             <Input
               id="add-venue"
               value={venue}
               maxLength={80}
               onChange={(event) => setVenue(event.target.value)}
             />
-          </div>
+          </Field>
           <Button>{t(mutation.pending ? "saving" : "addGame")}</Button>
         </fieldset>
         <ScheduleFeedback

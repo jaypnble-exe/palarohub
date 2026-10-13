@@ -2,7 +2,8 @@ import { getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { isPlatformAdmin } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
-import { TileGrid, type Tile } from "@/components/admin/tile-grid";
+import { TileGrid, type Tile } from "@/components/ui/tile-grid";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** Everything that is not in the bottom bar, one tap away. */
 export default async function MorePage({
@@ -105,12 +106,7 @@ export default async function MorePage({
   ];
   return (
     <main className="space-y-7 py-6">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-muted-foreground">
-          {league.name}
-        </p>
-        <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
-      </div>
+      <PageHeader eyebrow={league.name} title={t("title")} />
       {sections.map((section) => (
         <section key={section.title} className="space-y-3">
           <h2 className="text-lg font-semibold">{section.title}</h2>

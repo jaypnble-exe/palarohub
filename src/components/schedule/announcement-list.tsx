@@ -1,4 +1,7 @@
 import { getFormatter, getTranslations } from "next-intl/server";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export interface AnnouncementItem {
   id: string;
@@ -17,12 +20,11 @@ export async function AnnouncementList({
 }) {
   const t = await getTranslations("Announcements");
   const format = await getFormatter();
-  if (!announcements.length)
-    return <p className="rounded-2xl border bg-card p-5">{t("none")}</p>;
+  if (!announcements.length) return <EmptyState title={t("none")} />;
   return (
     <ul className="space-y-3">
       {announcements.map((item) => (
-        <li key={item.id} className="space-y-2 rounded-2xl border bg-card p-5">
+        <li key={item.id} className={cn(cardVariants(), "space-y-2")}>
           <p className="text-sm text-muted-foreground">
             {format.dateTime(new Date(item.createdAt), { dateStyle: "medium" })}
             {" · "}

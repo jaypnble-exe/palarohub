@@ -5,14 +5,14 @@ import { recordLedgerEntry } from "@/app/(admin)/admin/[league]/payments/actions
 import { sarToHalalas } from "@/lib/validation/registration";
 import { fineReasons, paymentMethods } from "@/lib/validation/payments";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { ChipGroup } from "@/components/ui/chip";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   ScheduleFeedback,
   useScheduleMutation,
 } from "@/components/schedule/mutation";
-
-const chip =
-  "min-h-11 rounded-xl border-2 bg-background px-4 font-semibold aria-pressed:border-navy aria-pressed:bg-navy aria-pressed:text-on-dark";
 
 /** One form for both payments and fines, phone first. */
 export function LedgerForm({
@@ -41,7 +41,7 @@ export function LedgerForm({
   const [note, setNote] = useState("");
   return (
     <form
-      className="space-y-5 rounded-2xl border bg-card p-5"
+      className={`${cardVariants()} space-y-5`}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -66,82 +66,56 @@ export function LedgerForm({
         );
       }}
     >
-      <div role="group" aria-label={t("entryType")} className="flex gap-2">
-        {(["payment", "fine"] as const).map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={kind === option}
-            className={`${chip} flex-1`}
-            onClick={() => setKind(option)}
-          >
-            {t(option === "payment" ? "recordPayment" : "addFine")}
-          </button>
-        ))}
-      </div>
+      <ChipGroup
+        label={t("entryType")}
+        stretch
+        value={kind}
+        onChange={setKind}
+        options={[
+          { value: "payment", label: t("recordPayment") },
+          { value: "fine", label: t("addFine") },
+        ]}
+      />
       <fieldset disabled={mutation.pending} className="space-y-5">
-        <div className="space-y-2">
-          <label htmlFor="ledger-amount" className="font-semibold">
-            {t("amount")}
-          </label>
+        <Field id="ledger-amount" label={t("amount")}>
           <Input
             id="ledger-amount"
             inputMode="decimal"
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
           />
-        </div>
+        </Field>
         {kind === "payment" ? (
           <div className="space-y-2">
-            <p id="ledger-method" className="font-semibold">
-              {t("method")}
-            </p>
-            <div
-              role="group"
-              aria-labelledby="ledger-method"
-              className="flex flex-wrap gap-2"
-            >
-              {paymentMethods.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={method === option}
-                  className={chip}
-                  onClick={() => setMethod(option)}
-                >
-                  {t(`methods.${option}`)}
-                </button>
-              ))}
-            </div>
+            <p className="font-semibold">{t("method")}</p>
+            <ChipGroup
+              label={t("method")}
+              value={method}
+              onChange={setMethod}
+              options={paymentMethods.map((option) => ({
+                value: option,
+                label: t(`methods.${option}`),
+              }))}
+            />
           </div>
         ) : (
           <div className="space-y-2">
-            <p id="ledger-reason" className="font-semibold">
-              {t("fineReason")}
-            </p>
-            <div
-              role="group"
-              aria-labelledby="ledger-reason"
-              className="flex flex-wrap gap-2"
-            >
-              {fineReasons.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={reason === option}
-                  className={chip}
-                  onClick={() => setReason(option)}
-                >
-                  {t(`reasons.${option}`)}
-                </button>
-              ))}
-            </div>
+            <p className="font-semibold">{t("fineReason")}</p>
+            <ChipGroup
+              label={t("fineReason")}
+              value={reason}
+              onChange={setReason}
+              options={fineReasons.map((option) => ({
+                value: option,
+                label: t(`reasons.${option}`),
+              }))}
+            />
           </div>
         )}
-        <div className="space-y-2">
-          <label htmlFor="ledger-date" className="font-semibold">
-            {t(kind === "payment" ? "paidOn" : "finedOn")}
-          </label>
+        <Field
+          id="ledger-date"
+          label={t(kind === "payment" ? "paidOn" : "finedOn")}
+        >
           <Input
             id="ledger-date"
             type="date"
@@ -149,18 +123,15 @@ export function LedgerForm({
             value={paidOn}
             onChange={(event) => setPaidOn(event.target.value)}
           />
-        </div>
-        <div className="space-y-2">
-          <label htmlFor="ledger-note" className="font-semibold">
-            {t("note")}
-          </label>
+        </Field>
+        <Field id="ledger-note" label={t("note")}>
           <Input
             id="ledger-note"
             maxLength={500}
             value={note}
             onChange={(event) => setNote(event.target.value)}
           />
-        </div>
+        </Field>
         <Button className="w-full sm:w-fit">
           {t(
             mutation.pending

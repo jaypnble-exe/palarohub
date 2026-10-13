@@ -1,5 +1,9 @@
 import { getTranslations, getFormatter } from "next-intl/server";
 import type { loadRegistration } from "@/lib/registration-data";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { formatSar } from "@/lib/format";
 
 type Data = Extract<
   Awaited<ReturnType<typeof loadRegistration>>,
@@ -14,7 +18,7 @@ export async function RegistrationDetails({ data }: { data: Data }) {
       : data.entries.filter((entry) => entry.active);
   return (
     <div className="space-y-6">
-      <section className="space-y-3 rounded-2xl border bg-card p-5">
+      <section className={cn(cardVariants(), "space-y-3")}>
         <p>
           {t("seasonDivision", {
             season: data.season.name,
@@ -23,15 +27,10 @@ export async function RegistrationDetails({ data }: { data: Data }) {
         </p>
         <p>
           {t("feeValue", {
-            amount: format.number(data.registration.fee_halalas / 100, {
-              style: "currency",
-              currency: "SAR",
-            }),
+            amount: formatSar(format, data.registration.fee_halalas),
           })}
         </p>
-        <span className="inline-block rounded-full bg-accent px-3 py-1 text-sm font-semibold">
-          {t(`status.${data.registration.status}`)}
-        </span>
+        <Badge>{t(`status.${data.registration.status}`)}</Badge>
         {data.registration.review_comment && (
           <p className="rounded-xl bg-accent p-4 text-sm">
             {data.registration.review_comment}
@@ -42,7 +41,7 @@ export async function RegistrationDetails({ data }: { data: Data }) {
         <h2 className="font-display text-2xl font-semibold">
           {t("yourRoster")}
         </h2>
-        <ul className="divide-y rounded-2xl border bg-card">
+        <ul className={cn(cardVariants({ padding: "none" }), "divide-y")}>
           {entries.map((entry) => (
             <li
               key={entry.id}
@@ -69,7 +68,7 @@ export async function RegistrationDetails({ data }: { data: Data }) {
         </ul>
       </section>
       {data.entries.some((entry) => !entry.active && entry.accepted_at) && (
-        <details className="rounded-2xl border bg-card p-5">
+        <details className={cardVariants()}>
           <summary className="min-h-11 cursor-pointer py-3 font-semibold">
             {t("previousRosters")}
           </summary>

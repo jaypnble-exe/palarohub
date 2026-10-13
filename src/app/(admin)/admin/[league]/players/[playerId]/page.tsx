@@ -1,14 +1,14 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations, getFormatter } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import {
   PlayerRatingForm,
   PlayerChecksForm,
 } from "@/components/registration/player-forms";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function PlayerPage({
   params,
 }: {
@@ -57,13 +57,11 @@ export default async function PlayerPage({
     ]),
   ];
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}/players`}>{t("backPlayers")}</Link>
-      </Button>
-      <h1 className="font-display text-3xl font-semibold">
-        {player.data.display_name}
-      </h1>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/admin/${slug}/players`, label: t("backPlayers") }}
+        title={player.data.display_name}
+      />
       {canManage && (
         <PlayerRatingForm
           slug={slug}
@@ -86,7 +84,7 @@ export default async function PlayerPage({
           {t("ratingHistory")}
         </h2>
         {!ratings.data?.length ? (
-          <p className="rounded-2xl border bg-card p-5">{t("unratedHelp")}</p>
+          <EmptyState title={t("unratedHelp")} />
         ) : (
           <ol className="space-y-3">
             {ratings.data.map((rating) => (

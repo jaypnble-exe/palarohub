@@ -1,4 +1,4 @@
-import type { IconName } from "./dashboard-icon";
+import type { IconName } from "@/components/ui/icon";
 
 export interface DashboardTasks {
   gamesToApprove: number;

@@ -35,6 +35,9 @@ import { Pregame } from "./pregame";
 import { PlayerSheet } from "./player-sheet";
 import { PlayByPlay } from "./play-by-play";
 import { BoxScores } from "./box-score";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Alert } from "@/components/ui/alert";
 
 export type RecordEvent = <T extends BasketballEventType>(
   type: T,
@@ -260,36 +263,24 @@ export function BasketballScorebook({
       </header>
 
       {blocked && (
-        <p
-          role="alert"
-          className="rounded-xl bg-destructive p-4 font-semibold text-white"
-        >
+        <Alert tone="critical" className="text-base">
           {t(`blocked.${log.status}`)}
-        </p>
+        </Alert>
       )}
       {reopenComment && review === "open" && (
-        <p
-          role="alert"
-          className="rounded-xl bg-orange-soft p-4 font-semibold text-orange-dark"
-        >
+        <Alert tone="warning" className="text-base">
           {t("reopened", { comment: reopenComment })}
-        </p>
+        </Alert>
       )}
       {openedOffline && log.status !== "synced" && (
-        <p
-          role="status"
-          className="rounded-xl bg-accent p-3 text-sm font-semibold"
-        >
+        <Alert tone="info" className="text-base">
           {t("openedOffline")}
-        </p>
+        </Alert>
       )}
       {log.storageFailed && (
-        <p
-          role="alert"
-          className="rounded-xl bg-orange-soft p-3 font-semibold text-orange-dark"
-        >
+        <Alert tone="warning" className="text-base">
           {t("storageFailed")}
-        </p>
+        </Alert>
       )}
       {conflicts.length > 0 && (
         <div
@@ -314,12 +305,9 @@ export function BasketballScorebook({
         </div>
       )}
       {notice && (
-        <p
-          role="alert"
-          className="rounded-xl border-2 border-destructive bg-card p-3 font-semibold text-destructive"
-        >
+        <Alert tone="danger" className="text-base">
           {t(notice)}
-        </p>
+        </Alert>
       )}
       {alerts.map((effect, index) => (
         <p
@@ -373,7 +361,7 @@ export function BasketballScorebook({
               return (
                 <section
                   key={side}
-                  className="space-y-3 rounded-2xl border bg-card p-3"
+                  className={cn(cardVariants({ padding: "sm" }), "space-y-3")}
                   aria-label={teamNames[side]}
                 >
                   <h2 className="truncate text-lg font-semibold">
@@ -489,14 +477,11 @@ export function BasketballScorebook({
             })}
           </p>
           {review === "submitted" ? (
-            <p
-              role="status"
-              className="rounded-xl bg-green-700 p-4 font-semibold text-white"
-            >
+            <Alert tone="success" className="text-base">
               {t(
                 setup.status === "approved" ? "approvedNote" : "submittedNote",
               )}
-            </p>
+            </Alert>
           ) : (
             <div className="space-y-3 rounded-2xl border-2 border-navy bg-card p-4">
               <p className="text-sm">{t("finalNext")}</p>

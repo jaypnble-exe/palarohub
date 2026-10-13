@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getTranslations, getFormatter } from "next-intl/server";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export async function RegistrationList({
   slug,
@@ -21,23 +24,18 @@ export async function RegistrationList({
   const t = await getTranslations("Registration");
   const format = await getFormatter();
   return !registrations.length ? (
-    <p className="rounded-2xl border bg-card p-5 text-muted-foreground">
+    <p className={cn(cardVariants(), "text-muted-foreground")}>
       {t("noRegistrations")}
     </p>
   ) : (
     <ul className="space-y-4">
       {registrations.map((registration) => (
-        <li
-          key={registration.id}
-          className="space-y-3 rounded-2xl border bg-card p-5"
-        >
+        <li key={registration.id} className={cn(cardVariants(), "space-y-3")}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-display text-2xl font-semibold">
               {registration.team_name}
             </h2>
-            <span className="rounded-full bg-accent px-3 py-1 text-sm font-semibold">
-              {t(`status.${registration.status}`)}
-            </span>
+            <Badge>{t(`status.${registration.status}`)}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
             {t("seasonDivision", {

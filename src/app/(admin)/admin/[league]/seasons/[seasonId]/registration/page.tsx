@@ -1,13 +1,13 @@
-﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { getSiteUrl } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import { RegistrationSettingsForm } from "@/components/registration/settings-form";
 import { RegistrationShareLink } from "@/components/registration/share-link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function SeasonRegistrationSettings({
   params,
 }: {
@@ -36,20 +36,17 @@ export default async function SeasonRegistrationSettings({
   if (!season.data) notFound();
   const t = await getTranslations("Registration");
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}/seasons/${seasonId}`}>
-          {t("seasonSetup")}
-        </Link>
-      </Button>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">{season.data.name}</p>
-        <h1 className="font-display text-3xl font-semibold">
-          {t("registrationSettings")}
-        </h1>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{
+          href: `/admin/${slug}/seasons/${seasonId}`,
+          label: t("seasonSetup"),
+        }}
+        eyebrow={season.data.name}
+        title={t("registrationSettings")}
+      />
       {season.data.status !== "published" ? (
-        <p className="rounded-2xl border bg-card p-5">{t("publishFirst")}</p>
+        <EmptyState title={t("publishFirst")} />
       ) : (
         <>
           <RegistrationSettingsForm

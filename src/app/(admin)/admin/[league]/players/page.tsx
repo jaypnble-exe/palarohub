@@ -4,6 +4,10 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
 import { NameForm } from "@/components/registration/name-form";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function PlayersPage({
   params,
 }: {
@@ -20,25 +24,25 @@ export default async function PlayersPage({
     .order("display_name");
   if (error) throw new Error("Unable to load players.");
   return (
-    <main className="space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("leagueHome")}</Link>
-      </Button>
-      <h1 className="font-display text-3xl font-semibold">{t("players")}</h1>
-      <details className="rounded-2xl border bg-card p-5">
+    <main className="space-y-6 py-6">
+      <PageHeader title={t("players")} />
+      <details className={cardVariants()}>
         <summary className="min-h-11 cursor-pointer py-3 font-semibold">
           {t("addNewPlayer")}
         </summary>
         <NameForm slug={slug} kind="player" />
       </details>
       {!players?.length ? (
-        <p className="rounded-2xl border bg-card p-5">{t("noPlayers")}</p>
+        <EmptyState title={t("noPlayers")} />
       ) : (
         <ul className="space-y-3">
           {players.map((player) => (
             <li
               key={player.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-5"
+              className={cn(
+                cardVariants(),
+                "flex flex-wrap items-center justify-between gap-3",
+              )}
             >
               <div>
                 <h2 className="font-semibold">{player.display_name}</h2>

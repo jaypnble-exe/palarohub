@@ -8,6 +8,8 @@ import {
 } from "@/lib/domain/riyadh-time";
 import { gameStatuses, type GameStatus } from "@/lib/validation/schedule";
 import { Button } from "@/components/ui/button";
+import { ChipGroup } from "@/components/ui/chip";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { ScheduleFeedback, useScheduleMutation } from "./mutation";
 
@@ -61,54 +63,37 @@ export function GameEditor({
       >
         <fieldset disabled={mutation.pending} className="space-y-4">
           <div className="space-y-2">
-            <p id={`status-${game.id}`} className="font-semibold">
-              {t("gameStatus")}
-            </p>
-            <div
-              role="group"
-              aria-labelledby={`status-${game.id}`}
-              className="flex flex-wrap gap-2"
-            >
-              {gameStatuses.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  aria-pressed={status === option}
-                  onClick={() => setStatus(option)}
-                  className="min-h-11 rounded-xl border-2 bg-background px-4 font-semibold aria-pressed:border-navy aria-pressed:bg-navy aria-pressed:text-on-dark"
-                >
-                  {t(`status.${option}`)}
-                </button>
-              ))}
-            </div>
+            <p className="font-semibold">{t("gameStatus")}</p>
+            <ChipGroup
+              label={t("gameStatus")}
+              value={status}
+              onChange={setStatus}
+              options={gameStatuses.map((option) => ({
+                value: option,
+                label: t(`status.${option}`),
+              }))}
+            />
           </div>
-          <div className="space-y-2">
-            <label htmlFor={`when-${game.id}`} className="font-semibold">
-              {t("dateAndTime")}
-            </label>
+          <Field
+            id={`when-${game.id}`}
+            label={t("dateAndTime")}
+            help={status === "postponed" ? t("postponedHelp") : undefined}
+          >
             <Input
               id={`when-${game.id}`}
               type="datetime-local"
               value={when}
               onChange={(event) => setWhen(event.target.value)}
             />
-            {status === "postponed" && (
-              <p className="text-sm text-muted-foreground">
-                {t("postponedHelp")}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label htmlFor={`venue-${game.id}`} className="font-semibold">
-              {t("court")}
-            </label>
+          </Field>
+          <Field id={`venue-${game.id}`} label={t("court")}>
             <Input
               id={`venue-${game.id}`}
               value={venue}
               maxLength={80}
               onChange={(event) => setVenue(event.target.value)}
             />
-          </div>
+          </Field>
           <Button>{t(mutation.pending ? "saving" : "saveGame")}</Button>
         </fieldset>
         <ScheduleFeedback result={mutation.result} message={(key) => t(key)} />

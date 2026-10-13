@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RegistrationFeedback } from "./feedback";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export function NameForm({
   slug,
@@ -39,7 +41,7 @@ export function NameForm({
   });
   return (
     <form
-      className="space-y-4 rounded-2xl border bg-card p-5"
+      className={cn(cardVariants(), "space-y-4")}
       onSubmit={handleSubmit((input) =>
         startTransition(async () => {
           try {

@@ -18,6 +18,9 @@
   --on-dark-muted: #bfc8d6;
   --orange-dark: #b04e17;
   --orange-soft: #fdebdd;
+  --success: #1f6f3a;
+  --success-soft: #e2f0e6;
+  --destructive-soft: #fbe6e4;
 }
 
 @theme inline {
@@ -38,6 +41,9 @@
   --color-on-dark-muted: var(--on-dark-muted);
   --color-orange-dark: var(--orange-dark);
   --color-orange-soft: var(--orange-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-destructive-soft: var(--destructive-soft);
   --font-sans: var(--font-public-sans), Arial, sans-serif;
   --font-display: var(--font-oswald), Arial, sans-serif;
 }

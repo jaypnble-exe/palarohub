@@ -1,5 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import type { DivisionStandings } from "@/lib/standings-data";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 /** One division's table. Phone first: points-for/against show on wider screens. */
 export async function StandingsTable({
@@ -25,9 +28,11 @@ export async function StandingsTable({
         {standings.divisionName}
       </h2>
       {rows.length === 0 ? (
-        <p className="rounded-2xl border bg-card p-5">{t("noTeams")}</p>
+        <EmptyState title={t("noTeams")} />
       ) : (
-        <div className="overflow-hidden rounded-2xl border bg-card">
+        <div
+          className={cn(cardVariants({ padding: "none" }), "overflow-hidden")}
+        >
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">

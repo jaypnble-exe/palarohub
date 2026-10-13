@@ -17,6 +17,11 @@ import { getSportModule, supportedSports } from "@/lib/sports/registry";
 import { SportRulesFields } from "@/lib/sports/rules-fields";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Select } from "@/components/ui/field";
+import { Chip } from "@/components/ui/chip";
+import { Alert } from "@/components/ui/alert";
 
 export function SeasonWizard({
   slug,
@@ -185,9 +190,8 @@ export function SeasonWizard({
             <label htmlFor="season-sport" className="font-semibold">
               {t("sport")}
             </label>
-            <select
+            <Select
               id="season-sport"
-              className="min-h-[52px] w-full rounded-xl border-2 bg-card px-4"
               {...register("sport", {
                 onChange: (event) => {
                   const selected = event.target.value;
@@ -206,7 +210,7 @@ export function SeasonWizard({
                   {sports(value)}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </section>
       )}
@@ -217,7 +221,7 @@ export function SeasonWizard({
           {fields.map((field, index) => (
             <fieldset
               key={field.fieldKey}
-              className="space-y-4 rounded-2xl border bg-card p-5"
+              className={cn(cardVariants(), "space-y-4")}
             >
               <legend className="sr-only">
                 {t("divisionNumber", { number: index + 1 })}
@@ -245,13 +249,10 @@ export function SeasonWizard({
                   aria-labelledby={`rating-label-${index}`}
                 >
                   {labels.map((label) => (
-                    <button
+                    <Chip
                       key={label}
-                      type="button"
-                      aria-pressed={
-                        values.divisions?.[index]?.maxRating === label
-                      }
-                      className="min-h-11 min-w-12 rounded-xl border-2 bg-background px-4 font-bold aria-pressed:border-navy aria-pressed:bg-navy aria-pressed:text-on-dark"
+                      selected={values.divisions?.[index]?.maxRating === label}
+                      className="min-w-12 font-bold"
                       onClick={() =>
                         setValue(`divisions.${index}.maxRating`, label, {
                           shouldValidate: true,
@@ -259,7 +260,7 @@ export function SeasonWizard({
                       }
                     >
                       {label}
-                    </button>
+                    </Chip>
                   ))}
                 </div>
               </div>
@@ -357,7 +358,7 @@ export function SeasonWizard({
       {step === 4 && (
         <section className="space-y-5">
           <h2 className="text-2xl font-semibold">{t("review")}</h2>
-          <div className="space-y-3 rounded-2xl border bg-card p-5">
+          <div className={cn(cardVariants(), "space-y-3")}>
             <h3 className="text-xl font-semibold">{values.name}</h3>
             <p>
               {t("dates", {
@@ -420,14 +421,7 @@ export function SeasonWizard({
           </label>
         </section>
       )}
-      {invalid && (
-        <p
-          role="alert"
-          className="rounded-xl border border-destructive p-4 text-sm text-destructive"
-        >
-          {t("invalidSetup")}
-        </p>
-      )}
+      {invalid && <Alert tone="danger">{t("invalidSetup")}</Alert>}
       {feedback && <p role="status">{t(feedback)}</p>}
       <div className="flex gap-3">
         {step > 1 && (

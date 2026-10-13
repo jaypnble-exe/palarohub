@@ -117,7 +117,34 @@
     "tileSchedule": "Schedule",
     "tileAnnouncements": "Announcements",
     "tileStandings": "Standings",
-    "tilePlayers": "Players"
+    "tilePlayers": "Players",
+    "setupTitle": "Get your season ready",
+    "setupHelp": "Four steps. Tap the highlighted one to continue.",
+    "setup": {
+      "season": "Create and publish a season",
+      "registration": "Open team registration",
+      "teams": "Approve at least two teams",
+      "schedule": "Make the game schedule"
+    },
+    "setupHelpStep": {
+      "season": "Pick dates, divisions, and rules. You can copy last season.",
+      "registration": "Set the fee and deadline, then share the link on WhatsApp.",
+      "teams": "Check each team's roster and approve it.",
+      "schedule": "The app makes a fair round robin for each division."
+    },
+    "setupStart": "Start",
+    "todayAt": "Today, {time}",
+    "tomorrowAt": "Tomorrow, {time}",
+    "scorerPin": "Scorer PIN",
+    "noUpcomingHelp": "Games appear here once a division has a schedule.",
+    "thisSeason": "This season",
+    "statTeams": "Teams",
+    "statTeamsDetail": "Approved and playing",
+    "statGames": "Games played",
+    "ofTotal": "{value} of {total}",
+    "statGamesDetail": "Approved results",
+    "statCollected": "Payments collected",
+    "statCollectedDetail": "of {total} expected"
   },
   "PublicLeague": {
     "placeholder": "Results and standings update automatically once games are approved."
@@ -923,7 +950,12 @@
     "teamNotFound": "This team or entry no longer exists.",
     "notAllowed": "Only the commissioner and league staff can do this.",
     "invalidForm": "Something is not right. Check the form and try again.",
-    "saveFailed": "Could not save. Check your connection and try again."
+    "saveFailed": "Could not save. Check your connection and try again.",
+    "collected": "Collected so far",
+    "collectedOf": "of {total} expected (fees and fines)",
+    "behindTitle": "Teams behind",
+    "teamsTitle": "Teams",
+    "noTeamsHelp": "Teams appear here once their registration is approved."
   },
   "AdminNav": {
     "label": "League menu",

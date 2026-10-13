@@ -8,6 +8,11 @@ import type { GameLifecycleStatus } from "@/lib/validation/schedule";
 import { Button } from "@/components/ui/button";
 import { ShareButtons } from "@/components/share-buttons";
 import { GameList } from "@/components/schedule/game-list";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { ChipLinks } from "@/components/ui/chip";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function PublicSchedulePage({
   params,
@@ -75,72 +80,58 @@ export default async function PublicSchedulePage({
   const shareUrl = `${getSiteUrl()}${path}${
     division ? `?division=${division.id}` : season ? `?season=${season.id}` : ""
   }`;
-  const chip =
-    "inline-flex min-h-11 items-center rounded-xl border-2 bg-background px-4 font-semibold aria-[current=true]:border-navy aria-[current=true]:bg-navy aria-[current=true]:text-on-dark";
   return (
-    <main className="space-y-6 py-8">
-      <div className="flex flex-wrap gap-2">
-        <Button asChild variant="ghost">
-          <Link href={`/${slug}`}>{league.name}</Link>
-        </Button>
-        <Button asChild variant="ghost">
-          <Link
-            href={`/${slug}/standings${season ? `?season=${season.id}` : ""}`}
-          >
-            {t("standings")}
-          </Link>
-        </Button>
-      </div>
-      <div className="space-y-2">
-        <h1 className="font-display text-3xl font-semibold">
-          {t("publicTitle")}
-        </h1>
-        {season && <p className="text-muted-foreground">{season.name}</p>}
-      </div>
-      {seasons.length > 1 && (
-        <nav aria-label={t("chooseSeason")} className="flex flex-wrap gap-2">
-          {seasons.map((item) => (
+    <main className="space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/${slug}`, label: league.name }}
+        eyebrow={season?.name}
+        title={t("publicTitle")}
+        actions={
+          <Button asChild variant="outline">
             <Link
-              key={item.id}
-              href={`${path}?season=${item.id}`}
-              aria-current={item.id === season?.id}
-              className={chip}
+              href={`/${slug}/standings${season ? `?season=${season.id}` : ""}`}
             >
-              {item.name}
+              {t("standings")}
             </Link>
-          ))}
-        </nav>
+          </Button>
+        }
+      />
+      {seasons.length > 1 && (
+        <ChipLinks
+          label={t("chooseSeason")}
+          links={seasons.map((item) => ({
+            href: `${path}?season=${item.id}`,
+            label: item.name,
+            current: item.id === season?.id,
+          }))}
+        />
       )}
       {season && season.divisions.length > 1 && (
-        <nav aria-label={t("chooseDivision")} className="flex flex-wrap gap-2">
-          <Link
-            href={`${path}?season=${season.id}`}
-            aria-current={!division}
-            className={chip}
-          >
-            {t("allDivisions")}
-          </Link>
-          {[...season.divisions]
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((item) => (
-              <Link
-                key={item.id}
-                href={`${path}?division=${item.id}`}
-                aria-current={item.id === division?.id}
-                className={chip}
-              >
-                {item.name}
-              </Link>
-            ))}
-        </nav>
+        <ChipLinks
+          label={t("chooseDivision")}
+          links={[
+            {
+              href: `${path}?season=${season.id}`,
+              label: t("allDivisions"),
+              current: !division,
+            },
+            ...[...season.divisions]
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((item) => ({
+                href: `${path}?division=${item.id}`,
+                label: item.name,
+                current: item.id === division?.id,
+              })),
+          ]}
+        />
       )}
       {season ? (
         <GameList games={games} />
       ) : (
-        <p className="rounded-2xl border bg-card p-5">{t("noGames")}</p>
+        <EmptyState title={t("noGames")} />
       )}
       {games.length > 0 && (
-        <section className="space-y-3 rounded-2xl border bg-card p-5">
+        <section className={cn(cardVariants(), "space-y-3")}>
           <h2 className="font-display text-xl font-semibold">
             {t("shareSchedule")}
           </h2>

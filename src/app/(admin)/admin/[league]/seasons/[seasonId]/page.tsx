@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { seasonFormValues } from "@/lib/season-data";
 import { SportRulesFields } from "@/lib/sports/rules-fields";
 import { allowedRatingLabels } from "@/lib/domain/ratings";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default async function SeasonPage({
   params,
@@ -38,9 +41,7 @@ export default async function SeasonPage({
       </Button>
       <div className="space-y-3">
         <h1 className="text-3xl font-bold">{season.name}</h1>
-        <span className="inline-block rounded-full bg-accent px-3 py-1 text-sm font-semibold">
-          {t(season.status)}
-        </span>
+        <Badge>{t(season.status)}</Badge>
       </div>
       {season.status === "published" && (
         <Button asChild variant="outline">
@@ -76,7 +77,7 @@ export default async function SeasonPage({
             {values.divisions.map((division) => (
               <div
                 key={division.id}
-                className="space-y-3 rounded-2xl border bg-card p-5"
+                className={cn(cardVariants(), "space-y-3")}
               >
                 <h3 className="text-xl font-semibold">{division.name}</h3>
                 <p>{t("maximum", { rating: division.maxRating })}</p>

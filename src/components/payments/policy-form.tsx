@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { setPaymentPolicy } from "@/app/(admin)/admin/[league]/payments/actions";
 import type { PaymentPolicy } from "@/lib/domain/payments";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { ChoiceCard } from "@/components/ui/chip";
 import {
   ScheduleFeedback,
   useScheduleMutation,
@@ -22,7 +24,7 @@ export function PolicyForm({
   const [policy, setPolicy] = useState(initial);
   return (
     <form
-      className="space-y-3 rounded-2xl border bg-card p-5"
+      className={`${cardVariants()} space-y-3`}
       onSubmit={(event) => {
         event.preventDefault();
         mutation.run(() => setPaymentPolicy(slug, policy));
@@ -35,26 +37,14 @@ export function PolicyForm({
         className="space-y-2"
       >
         {(["warn", "block"] as const).map((option) => (
-          <label
+          <ChoiceCard
             key={option}
-            className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border-2 p-3 has-[:checked]:border-navy"
-          >
-            <input
-              type="radio"
-              name="payment-policy"
-              checked={policy === option}
-              onChange={() => setPolicy(option)}
-              className="mt-1 size-5 accent-primary"
-            />
-            <span>
-              <span className="block font-semibold">
-                {t(`policy.${option}`)}
-              </span>
-              <span className="block text-sm text-muted-foreground">
-                {t(`policyHelp.${option}`)}
-              </span>
-            </span>
-          </label>
+            name="payment-policy"
+            checked={policy === option}
+            onChange={() => setPolicy(option)}
+            title={t(`policy.${option}`)}
+            description={t(`policyHelp.${option}`)}
+          />
         ))}
       </div>
       <Button

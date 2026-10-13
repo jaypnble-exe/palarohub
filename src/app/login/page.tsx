@@ -6,6 +6,7 @@ import { safeNextPath } from "@/lib/validation/auth";
 import { LoginForm } from "@/components/login-form";
 import { Button } from "@/components/ui/button";
 import { signInWithGoogle } from "@/app/auth/actions";
+import { Alert } from "@/components/ui/alert";
 
 export default async function LoginPage({
   searchParams,
@@ -28,14 +29,7 @@ export default async function LoginPage({
         <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground">{t("intro")}</p>
       </div>
-      {errorKey && (
-        <p
-          role="alert"
-          className="rounded-xl border border-destructive p-4 text-sm"
-        >
-          {t(errorKey)}
-        </p>
-      )}
+      {errorKey && <Alert tone="danger">{t(errorKey)}</Alert>}
       {configured ? (
         <>
           <LoginForm next={next} />

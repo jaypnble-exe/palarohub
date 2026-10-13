@@ -1,6 +1,10 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import { toRiyadhDateTimeInput } from "@/lib/domain/riyadh-time";
 import type { ScheduleGame } from "@/lib/schedule-data";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 /** Games grouped by their Riyadh date; postponed games without a date go last. */
 export async function GameList({
@@ -22,8 +26,7 @@ export async function GameList({
   const ordered = [...days.entries()].sort(([a], [b]) =>
     a === "" ? 1 : b === "" ? -1 : a.localeCompare(b),
   );
-  if (!games.length)
-    return <p className="rounded-2xl border bg-card p-5">{t("noGames")}</p>;
+  if (!games.length) return <EmptyState title={t("noGames")} />;
   return (
     <div className="space-y-6">
       {ordered.map(([day, dayGames]) => (
@@ -42,7 +45,10 @@ export async function GameList({
             {dayGames.map((game) => (
               <li
                 key={game.id}
-                className="space-y-3 rounded-2xl border bg-card p-4 data-[status=cancelled]:opacity-70"
+                className={cn(
+                  cardVariants(),
+                  "space-y-3 data-[status=cancelled]:opacity-70",
+                )}
                 data-status={game.status}
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -61,9 +67,7 @@ export async function GameList({
                     )}
                   </p>
                   {game.status !== "scheduled" && (
-                    <span className="rounded-full bg-accent px-3 py-1 text-sm font-semibold">
-                      {t(`status.${game.status}`)}
-                    </span>
+                    <Badge>{t(`status.${game.status}`)}</Badge>
                   )}
                 </div>
                 <p

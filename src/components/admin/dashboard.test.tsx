@@ -44,10 +44,25 @@ const props = {
     { id: "2", name: "Mia Dela Cruz", roles: ["League staff"] },
   ],
   isDemo: false,
-  seasonName: "Sindikato Cup 2026",
+  season: {
+    name: "Sindikato Cup 2026",
+    teams: 4,
+    gamesPlayed: 2,
+    gamesTotal: 6,
+    collectedHalalas: 360000,
+    expectedHalalas: 720000,
+  },
+  setup: {
+    seasonId: "s1",
+    hasSeason: true,
+    registrationReady: true,
+    teamsApproved: true,
+    scheduled: true,
+  },
   liveGames: [
     {
       id: "g1",
+      divisionId: "d1",
       home: "Riyadh Royals",
       away: "Hail Hawks",
       venue: "Main court",
@@ -58,6 +73,7 @@ const props = {
   upcomingGames: [
     {
       id: "g2",
+      divisionId: "d1",
       home: "Taif Titans",
       away: "Yanbu Kings",
       venue: "Main court",
@@ -122,14 +138,12 @@ describe("league navigation", () => {
 describe("commissioner home", () => {
   it("opens on the to-do list with one action per item", async () => {
     render(await Dashboard(props));
-    const todo = screen.getByRole("heading", {
-      name: en.AdminHome.todo,
-    }).parentElement!;
+    const todo = screen.getByRole("region", { name: en.AdminHome.todo });
     const items = within(todo).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "1game waiting for your approvalReview",
-      "3teams waiting for approvalReview",
-      "2teams behind on paymentsView",
+      "11 game waiting for your approvalReview",
+      "33 teams waiting for approvalReview",
+      "22 teams behind on paymentsView",
     ]);
     expect(
       within(items[2]).getByRole("link", { name: "View" }),
@@ -162,5 +176,66 @@ describe("commissioner home", () => {
     );
     const home = renderToStaticMarkup(await Dashboard(props));
     writeFileSync(process.env.DASHBOARD_PREVIEW, `${nav}\n${home}`);
+  });
+
+  it("guides a new league through setup, highlighting the next step", async () => {
+    render(
+      await Dashboard({
+        ...props,
+        season: null,
+        setup: {
+          seasonId: null,
+          hasSeason: false,
+          registrationReady: false,
+          teamsApproved: false,
+          scheduled: false,
+        },
+      }),
+    );
+    const steps = within(
+      screen.getByRole("region", { name: en.AdminHome.setupTitle }),
+    ).getAllByRole("link");
+    expect(steps).toHaveLength(4);
+    expect(steps[0]).toHaveAttribute("aria-current", "step");
+    expect(steps[0]).toHaveAttribute("href", "/admin/sindikato/seasons");
+    expect(
+      screen.queryByRole("region", { name: en.AdminHome.thisSeason }),
+    ).toBeNull();
+  });
+
+  it("hides setup once the schedule exists and shows season progress", async () => {
+    render(await Dashboard(props));
+    expect(
+      screen.queryByRole("region", { name: en.AdminHome.setupTitle }),
+    ).toBeNull();
+    const season = screen.getByRole("region", {
+      name: en.AdminHome.thisSeason,
+    });
+    expect(within(season).getByText("2 of 6")).toBeInTheDocument();
+    expect(within(season).getByText(/SAR\s?3,600\.00/)).toBeInTheDocument();
+    expect(
+      within(season)
+        .getAllByRole("progressbar")
+        .map((bar) => bar.getAttribute("aria-valuenow")),
+    ).toEqual(["33", "50"]);
+  });
+
+  it("offers the scorer PIN for games later today", async () => {
+    const soon = new Date(new Date().getTime() + 30 * 60_000);
+    // Keep the game on today's Riyadh date even late in the evening.
+    const riyadhHour = (soon.getUTCHours() + 3) % 24;
+    const scheduledAt =
+      riyadhHour < 23 ? soon.toISOString() : new Date().toISOString();
+    render(
+      await Dashboard({
+        ...props,
+        upcomingGames: [{ ...props.upcomingGames[0], scheduledAt }],
+      }),
+    );
+    const next = screen.getByRole("region", { name: en.AdminHome.comingUp });
+    expect(within(next).getByText(/^Today, /)).toBeInTheDocument();
+    expect(
+      within(next).getByRole("link", { name: en.AdminHome.scorerPin }),
+    ).toHaveAttribute("href", "/admin/sindikato/schedule/d1");
   });
 });

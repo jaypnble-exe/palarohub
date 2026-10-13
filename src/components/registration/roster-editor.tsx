@@ -7,6 +7,7 @@ import type {
 } from "@/lib/validation/registration";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/field";
 
 export function RosterEditor({
   value,
@@ -121,11 +122,10 @@ export function RosterEditor({
           >
             {t("choosePlayer")}
           </label>
-          <select
+          <Select
             id={`${prefix}-select`}
             value={selected}
             onChange={(event) => setSelected(event.target.value)}
-            className="min-h-[52px] w-full rounded-xl border-2 bg-card px-3"
           >
             <option value="">{t("choosePlayer")}</option>
             {available.map((player) => (
@@ -141,7 +141,7 @@ export function RosterEditor({
                 {player.onAnotherTeam ? t("unavailablePlayer") : ""}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             type="button"
             variant="outline"

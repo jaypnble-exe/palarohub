@@ -3,11 +3,13 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 export function RegistrationShareLink({ url }: { url: string }) {
   const t = useTranslations("Registration");
   const [feedback, setFeedback] = useState<string>();
   return (
-    <section className="space-y-4 rounded-2xl border bg-card p-5">
+    <section className={cn(cardVariants(), "space-y-4")}>
       <h2 className="font-display text-2xl font-semibold">
         {t("shareRegistration")}
       </h2>

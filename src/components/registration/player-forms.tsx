@@ -21,6 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRegistrationMutation } from "./mutation";
 import { RegistrationFeedback } from "./feedback";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Select, Textarea } from "@/components/ui/field";
 
 export function PlayerRatingForm({
   slug,
@@ -53,7 +56,7 @@ export function PlayerRatingForm({
   });
   return (
     <form
-      className="space-y-4 rounded-2xl border bg-card p-5"
+      className={cn(cardVariants(), "space-y-4")}
       onSubmit={handleSubmit((input) =>
         mutation.run(
           () => addPlayerRating(slug, input),
@@ -70,17 +73,13 @@ export function PlayerRatingForm({
         <label htmlFor="player-rating" className="font-semibold">
           {t("rating")}
         </label>
-        <select
-          id="player-rating"
-          {...register("rating")}
-          className="min-h-[52px] w-full rounded-xl border-2 bg-card px-3"
-        >
+        <Select id="player-rating" {...register("rating")}>
           {labels.map((label) => (
             <option key={label} value={label}>
               {label}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
       <div className="space-y-2">
         <label htmlFor="rating-effective" className="font-semibold">
@@ -104,12 +103,11 @@ export function PlayerRatingForm({
         <label htmlFor="rating-reason" className="font-semibold">
           {t("ratingReason")}
         </label>
-        <textarea
+        <Textarea
           id="rating-reason"
           {...register("reason")}
           rows={3}
           maxLength={500}
-          className="w-full rounded-xl border-2 bg-background p-3"
           aria-invalid={!!errors.reason}
         />
       </div>
@@ -145,7 +143,7 @@ export function PlayerChecksForm({
   const suspended = useWatch({ control, name: "suspended" });
   return (
     <form
-      className="space-y-4 rounded-2xl border bg-card p-5"
+      className={cn(cardVariants(), "space-y-4")}
       onSubmit={handleSubmit((input) =>
         mutation.run(() => updatePlayerChecks(slug, input)),
       )}

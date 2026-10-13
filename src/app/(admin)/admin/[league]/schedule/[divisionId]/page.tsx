@@ -17,6 +17,9 @@ import {
   isSchedulable,
   type GameStatus,
 } from "@/lib/validation/schedule";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function DivisionSchedulePage({
   params,
@@ -33,21 +36,19 @@ export default async function DivisionSchedulePage({
   const t = await getTranslations("Schedule");
   const publicUrl = `${getSiteUrl()}/${slug}/schedule?division=${division.id}`;
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}/schedule`}>{t("backToSchedules")}</Link>
-      </Button>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {division.seasons?.name}
-        </p>
-        <h1 className="font-display text-3xl font-semibold">{division.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("teamCount", { count: teams.length })}
-          {" · "}
-          {t("gameCount", { count: games.length })}
-        </p>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/admin/${slug}/schedule`, label: t("backToSchedules") }}
+        eyebrow={division.seasons?.name}
+        title={division.name}
+        description={
+          <>
+            {t("teamCount", { count: teams.length })}
+            {" · "}
+            {t("gameCount", { count: games.length })}
+          </>
+        }
+      />
       {teams.length >= 2 && (
         <div className="flex flex-wrap gap-3">
           <Button asChild variant={games.length ? "outline" : "default"}>
@@ -58,7 +59,7 @@ export default async function DivisionSchedulePage({
         </div>
       )}
       {games.length > 0 && (
-        <section className="space-y-3 rounded-2xl border bg-card p-5">
+        <section className={cn(cardVariants(), "space-y-3")}>
           <h2 className="font-display text-xl font-semibold">
             {t("shareSchedule")}
           </h2>

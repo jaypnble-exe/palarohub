@@ -4,6 +4,10 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
 import { RegistrationList } from "@/components/registration/list";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function TeamHome({
   params,
 }: {
@@ -46,24 +50,19 @@ export default async function TeamHome({
   if (registrations.error)
     throw new Error("Unable to load your registrations.");
   return (
-    <main className="space-y-6 py-8">
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">{league.name}</p>
-        <h1 className="font-display text-3xl font-semibold">
-          {t("teamWorkspace")}
-        </h1>
-      </div>
+    <main className="space-y-6 py-6">
+      <PageHeader eyebrow={league.name} title={t("teamWorkspace")} />
       <section className="space-y-4">
         <h2 className="font-display text-2xl font-semibold">
           {t("openSeasons")}
         </h2>
         {!settings.data?.length ? (
-          <p className="rounded-2xl border bg-card p-5">{t("noOpenSeasons")}</p>
+          <EmptyState title={t("noOpenSeasons")} />
         ) : (
           settings.data.map((setting, index) => (
             <div
               key={setting.season_id}
-              className="space-y-3 rounded-2xl border bg-card p-5"
+              className={cn(cardVariants(), "space-y-3")}
             >
               <h3 className="text-xl font-semibold">{setting.seasons.name}</h3>
               <p className="text-sm text-muted-foreground">

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 /** Games waiting for approval first, then games being played, then recent results. */
 export default async function GamesPage({
@@ -32,8 +35,8 @@ export default async function GamesPage({
     }),
   );
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <h1 className="font-display text-3xl font-semibold">{t("gamesTitle")}</h1>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader title={t("gamesTitle")} />
       {groups.map(({ status, games: list }) => (
         <section key={status} className="space-y-3">
           <h2 className="text-xl font-semibold">{t(`group.${status}`)}</h2>
@@ -43,7 +46,10 @@ export default async function GamesPage({
                 <li key={game.id}>
                   <Link
                     href={`/admin/${slug}/games/${game.id}`}
-                    className="block space-y-1 rounded-2xl border bg-card p-4 hover:bg-accent"
+                    className={cn(
+                      cardVariants(),
+                      "block space-y-1 hover:bg-accent",
+                    )}
                   >
                     <span className="block font-semibold">
                       {schedule("matchup", {

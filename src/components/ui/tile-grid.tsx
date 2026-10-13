@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { DashboardIcon, type IconName } from "./dashboard-icon";
+import { cn } from "@/lib/utils";
+import { cardVariants } from "./card";
+import { Icon, type IconName } from "./icon";
 
 export interface Tile {
   href: string;
@@ -16,10 +18,13 @@ export function TileGrid({ tiles }: { tiles: readonly Tile[] }) {
         <li key={tile.href}>
           <Link
             href={tile.href}
-            className="flex h-full min-h-[96px] flex-col gap-2 rounded-2xl border bg-card p-4 transition-colors hover:bg-accent"
+            className={cn(
+              cardVariants({ interactive: true }),
+              "flex h-full min-h-[96px] flex-col gap-2",
+            )}
           >
             <span className="grid size-10 place-items-center rounded-xl bg-accent text-orange-dark">
-              <DashboardIcon name={tile.icon} />
+              <Icon name={tile.icon} />
             </span>
             <span className="font-semibold leading-tight">{tile.label}</span>
             {tile.description && (

@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations, getFormatter } from "next-intl/server";
@@ -6,6 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { JoinRegistrationButton } from "@/components/registration/join-button";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
+import { formatSar } from "@/lib/format";
 export default async function PublicRegistrationPage({
   params,
 }: {
@@ -53,19 +57,15 @@ export default async function PublicRegistrationPage({
     new Date(settings.data.deadline).getTime() > new Date().getTime();
   const path = `/${slug}/register/${seasonId}`;
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/${slug}`}>{t("publicLeague")}</Link>
-      </Button>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">{league.name}</p>
-        <h1 className="font-display text-3xl font-semibold">
-          {season.data.name}
-        </h1>
-        <p className="text-muted-foreground">{t("publicRegistrationIntro")}</p>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/${slug}`, label: t("publicLeague") }}
+        eyebrow={league.name}
+        title={season.data.name}
+        description={t("publicRegistrationIntro")}
+      />
       {settings.data && (
-        <div className="space-y-3 rounded-2xl border bg-card p-5">
+        <div className={cn(cardVariants(), "space-y-3")}>
           <p>
             {t("deadlineValue", {
               date: format.dateTime(new Date(settings.data.deadline), {
@@ -76,10 +76,7 @@ export default async function PublicRegistrationPage({
           </p>
           <p className="font-semibold">
             {t("feeValue", {
-              amount: format.number(settings.data.fee_halalas / 100, {
-                style: "currency",
-                currency: "SAR",
-              }),
+              amount: formatSar(format, settings.data.fee_halalas),
             })}
           </p>
           {settings.data.require_documents && (
@@ -89,10 +86,7 @@ export default async function PublicRegistrationPage({
       )}
       <ul className="space-y-3">
         {divisions.data?.map((division) => (
-          <li
-            key={division.id}
-            className="space-y-2 rounded-2xl border bg-card p-5"
-          >
+          <li key={division.id} className={cn(cardVariants(), "space-y-2")}>
             <h2 className="font-display text-2xl font-semibold">
               {division.name}
             </h2>

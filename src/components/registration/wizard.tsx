@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +16,10 @@ import { Button } from "@/components/ui/button";
 import { RosterEditor } from "./roster-editor";
 import { NameForm } from "./name-form";
 import { EligibilityFeedback, RegistrationFeedback } from "./feedback";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Select } from "@/components/ui/field";
+import { formatSar } from "@/lib/format";
 
 type Division = {
   id: string;
@@ -148,29 +152,24 @@ export function RegistrationWizard({
                 {t("yourTeam")}
               </label>
               <input type="hidden" {...register("teamId")} />
-              <select
+              <Select
                 id="registration-team"
                 value={values.teamId}
                 onChange={(event) => setValue("teamId", event.target.value)}
                 disabled={registrationId !== null}
-                className="min-h-[52px] w-full rounded-xl border-2 bg-card px-3"
               >
                 {teams.map((team) => (
                   <option key={team.id} value={team.id}>
                     {team.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="space-y-2">
               <label htmlFor="registration-division" className="font-semibold">
                 {t("division")}
               </label>
-              <select
-                id="registration-division"
-                {...register("divisionId")}
-                className="min-h-[52px] w-full rounded-xl border-2 bg-card px-3"
-              >
+              <Select id="registration-division" {...register("divisionId")}>
                 {divisions.map((item) => (
                   <option key={item.id} value={item.id}>
                     {t("divisionOption", {
@@ -179,7 +178,7 @@ export function RegistrationWizard({
                     })}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <p className="text-sm text-muted-foreground">
               {t("deadlineValue", {
@@ -191,10 +190,7 @@ export function RegistrationWizard({
             </p>
             <p className="text-sm font-semibold">
               {t("feeValue", {
-                amount: format.number(feeHalalas / 100, {
-                  style: "currency",
-                  currency: "SAR",
-                }),
+                amount: formatSar(format, feeHalalas),
               })}
             </p>
           </section>
@@ -221,17 +217,14 @@ export function RegistrationWizard({
             <h2 className="font-display text-2xl font-semibold">
               {t("reviewRegistration")}
             </h2>
-            <div className="space-y-3 rounded-2xl border bg-card p-5">
+            <div className={cn(cardVariants(), "space-y-3")}>
               <p className="text-xl font-semibold">
                 {teams.find((team) => team.id === values.teamId)?.name}
               </p>
               <p>{division?.name}</p>
               <p>
                 {t("feeValue", {
-                  amount: format.number(feeHalalas / 100, {
-                    style: "currency",
-                    currency: "SAR",
-                  }),
+                  amount: formatSar(format, feeHalalas),
                 })}
               </p>
               <p className="text-sm text-muted-foreground">

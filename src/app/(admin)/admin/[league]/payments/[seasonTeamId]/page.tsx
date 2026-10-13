@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations } from "next-intl/server";
@@ -6,7 +5,8 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { seasonPayments } from "@/lib/payments-data";
 import { toRiyadhDateTimeInput } from "@/lib/domain/riyadh-time";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
 import { PaymentSummary } from "@/components/payments/payment-summary";
 import { LedgerForm } from "@/components/payments/ledger-form";
 import { LedgerList } from "@/components/payments/ledger-list";
@@ -38,16 +38,15 @@ export default async function TeamPaymentsPage({
   const t = await getTranslations("Payments");
   const today = toRiyadhDateTimeInput(new Date().toISOString()).slice(0, 10);
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}/payments?season=${registration.season_id}`}>
-          {t("backToPayments")}
-        </Link>
-      </Button>
-      <div className="space-y-1">
-        <p className="text-sm text-muted-foreground">{team.divisionName}</p>
-        <h1 className="font-display text-3xl font-semibold">{team.teamName}</h1>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{
+          href: `/admin/${slug}/payments?season=${registration.season_id}`,
+          label: t("backToPayments"),
+        }}
+        eyebrow={team.divisionName}
+        title={team.teamName}
+      />
       <PaymentSummary team={team} />
       <LedgerForm
         slug={slug}
@@ -55,10 +54,9 @@ export default async function TeamPaymentsPage({
         today={today}
         suggestedHalalas={team.status.behindByHalalas}
       />
-      <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">{t("history")}</h2>
+      <Section id="history" title={t("history")}>
         <LedgerList slug={slug} entries={team.entries} canEdit />
-      </section>
+      </Section>
     </main>
   );
 }

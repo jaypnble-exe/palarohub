@@ -1,14 +1,14 @@
-﻿import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { loadRegistration } from "@/lib/registration-data";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import { RegistrationDetails } from "@/components/registration/details";
 import { RegistrationWizard } from "@/components/registration/wizard";
 import { RosterChangeForm } from "@/components/registration/change-form";
 import { seasonPayments } from "@/lib/payments-data";
 import { PaymentSummary } from "@/components/payments/payment-summary";
 import { LedgerList } from "@/components/payments/ledger-list";
+import { cardVariants } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function ManagerRegistrationPage({
   params,
 }: {
@@ -49,13 +49,11 @@ export default async function ManagerRegistrationPage({
     (change) => change.status === "submitted",
   );
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/team/${slug}`}>{t("teamHome")}</Link>
-      </Button>
-      <h1 className="font-display text-3xl font-semibold">
-        {data.registration.team_name}
-      </h1>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/team/${slug}`, label: t("teamHome") }}
+        title={data.registration.team_name}
+      />
       <RegistrationDetails data={data} />
       {payments && (
         <section className="space-y-3">
@@ -99,7 +97,7 @@ export default async function ManagerRegistrationPage({
               {t("changeWaiting")}
             </p>
           ) : (
-            <details className="rounded-2xl border bg-card p-5">
+            <details className={cardVariants()}>
               <summary className="min-h-11 cursor-pointer py-3 font-semibold">
                 {t("requestChange")}
               </summary>

@@ -4,6 +4,10 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { scheduleOverview } from "@/lib/schedule-data";
 import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function ScheduleHome({
   params,
@@ -17,11 +21,8 @@ export default async function ScheduleHome({
   const t = await getTranslations("Schedule");
   const seasons = [...new Set(divisions.map((division) => division.seasonId))];
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <div className="space-y-2">
-        <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
-        <p className="text-muted-foreground">{t("intro")}</p>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader title={t("title")} description={t("intro")} />
       <div className="flex flex-wrap gap-3">
         <Button asChild variant="outline">
           <Link href={`/${slug}/schedule`}>{t("publicSchedule")}</Link>
@@ -32,9 +33,7 @@ export default async function ScheduleHome({
           </Link>
         </Button>
       </div>
-      {!seasons.length && (
-        <p className="rounded-2xl border bg-card p-5">{t("noSeasons")}</p>
-      )}
+      {!seasons.length && <EmptyState title={t("noSeasons")} />}
       {seasons.map((seasonId) => {
         const seasonDivisions = divisions.filter(
           (division) => division.seasonId === seasonId,
@@ -48,7 +47,7 @@ export default async function ScheduleHome({
               {seasonDivisions.map((division) => (
                 <li
                   key={division.id}
-                  className="space-y-3 rounded-2xl border bg-card p-5"
+                  className={cn(cardVariants(), "space-y-3")}
                 >
                   <div className="space-y-1">
                     <h3 className="text-xl font-semibold">{division.name}</h3>

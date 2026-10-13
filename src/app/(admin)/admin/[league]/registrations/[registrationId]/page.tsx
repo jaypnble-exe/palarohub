@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { RegistrationDetails } from "@/components/registration/details";
 import { ReviewForm } from "@/components/registration/review-form";
 import { EligibilityFeedback } from "@/components/registration/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function RegistrationReviewPage({
   params,
 }: {
@@ -24,15 +25,14 @@ export default async function RegistrationReviewPage({
       jerseyNumber: entry.jersey_number,
     }));
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}/registrations`}>
-          {t("backRegistrations")}
-        </Link>
-      </Button>
-      <h1 className="font-display text-3xl font-semibold">
-        {data.registration.team_name}
-      </h1>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{
+          href: `/admin/${slug}/registrations`,
+          label: t("backRegistrations"),
+        }}
+        title={data.registration.team_name}
+      />
       <RegistrationDetails data={data} />
       {data.registration.status === "submitted" && (
         <section className="space-y-4">

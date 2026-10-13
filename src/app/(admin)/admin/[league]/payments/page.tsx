@@ -1,10 +1,17 @@
-import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { seasonPayments } from "@/lib/payments-data";
 import { parsePaymentPolicy } from "@/lib/domain/payments";
+import { formatSar } from "@/lib/format";
 import { AccessDenied } from "@/components/access-denied";
+import { ChipLinks } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LinkCard } from "@/components/ui/link-card";
+import { PageHeader } from "@/components/ui/page-header";
+import { Section } from "@/components/ui/section";
+import { StatTile } from "@/components/ui/stat";
 import { PolicyForm } from "@/components/payments/policy-form";
+import { PaymentBadge } from "@/components/payments/payment-summary";
 
 export default async function PaymentsPage({
   params,
@@ -34,78 +41,66 @@ export default async function PaymentsPage({
     : [];
   const t = await getTranslations("Payments");
   const format = await getFormatter();
-  const sar = (halalas: number) =>
-    format.number(halalas / 100, { style: "currency", currency: "SAR" });
+  const sar = (halalas: number) => formatSar(format, halalas);
   const behind = teams.filter((team) => team.status.behind);
-  const chip =
-    "inline-flex min-h-11 items-center rounded-xl border-2 bg-background px-4 font-semibold aria-[current=true]:border-navy aria-[current=true]:bg-navy aria-[current=true]:text-on-dark";
+  const collected = teams.reduce((sum, team) => sum + team.paidHalalas, 0);
+  const expected = teams.reduce(
+    (sum, team) => sum + team.quotaHalalas + team.finesHalalas,
+    0,
+  );
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <div className="space-y-2">
-        <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
-        {season && <p className="text-muted-foreground">{season.name}</p>}
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader title={t("title")} eyebrow={season?.name} />
       {seasons.length > 1 && (
-        <nav aria-label={t("chooseSeason")} className="flex flex-wrap gap-2">
-          {seasons.map((item) => (
-            <Link
-              key={item.id}
-              href={`/admin/${slug}/payments?season=${item.id}`}
-              aria-current={item.id === season?.id}
-              className={chip}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
+        <ChipLinks
+          label={t("chooseSeason")}
+          links={seasons.map((item) => ({
+            href: `/admin/${slug}/payments?season=${item.id}`,
+            label: item.name,
+            current: item.id === season?.id,
+          }))}
+        />
       )}
-      {season && (
-        <p className="rounded-2xl border bg-card p-4 font-semibold">
-          {t("behindCount", { count: behind.length })}
-        </p>
+      {season && teams.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <StatTile
+            label={t("collected")}
+            value={sar(collected)}
+            detail={t("collectedOf", { total: sar(expected) })}
+            progress={{ value: collected, max: expected }}
+          />
+          <StatTile
+            label={t("behindTitle")}
+            value={behind.length}
+            detail={t("behindCount", { count: behind.length })}
+          />
+        </div>
       )}
-      {!teams.length ? (
-        <p className="rounded-2xl border bg-card p-5">{t("noTeams")}</p>
-      ) : (
-        <ul className="space-y-3">
-          {teams.map((team) => (
-            <li key={team.seasonTeamId}>
-              <Link
-                href={`/admin/${slug}/payments/${team.seasonTeamId}`}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border bg-card p-4 hover:bg-accent"
-              >
-                <span>
-                  <span className="block font-semibold">{team.teamName}</span>
-                  <span className="block text-sm text-muted-foreground">
-                    {team.divisionName} ·{" "}
-                    {t("paidOf", {
-                      paid: sar(team.paidHalalas),
-                      total: sar(team.quotaHalalas + team.finesHalalas),
-                    })}
-                  </span>
-                </span>
-                <span
-                  className={
-                    team.status.behind
-                      ? "rounded-full bg-destructive/10 px-3 py-1 text-sm font-semibold text-destructive"
-                      : team.status.paidInFull
-                        ? "rounded-full bg-green-700 px-3 py-1 text-sm font-semibold text-white"
-                        : "rounded-full bg-accent px-3 py-1 text-sm font-semibold"
-                  }
-                >
-                  {team.status.behind
-                    ? t("behindBy", {
-                        amount: sar(team.status.behindByHalalas),
-                      })
-                    : team.status.paidInFull
-                      ? t("paidInFull")
-                      : t("upToDate")}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Section id="teams" title={t("teamsTitle")}>
+        {!teams.length ? (
+          <EmptyState
+            icon="teams"
+            title={t("noTeams")}
+            description={t("noTeamsHelp")}
+          />
+        ) : (
+          <ul className="space-y-3">
+            {teams.map((team) => (
+              <li key={team.seasonTeamId}>
+                <LinkCard
+                  href={`/admin/${slug}/payments/${team.seasonTeamId}`}
+                  title={team.teamName}
+                  subtitle={`${team.divisionName} · ${t("paidOf", {
+                    paid: sar(team.paidHalalas),
+                    total: sar(team.quotaHalalas + team.finesHalalas),
+                  })}`}
+                  trailing={<PaymentBadge status={team.status} />}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
       {canManage && (
         <PolicyForm slug={slug} initial={parsePaymentPolicy(league.settings)} />
       )}

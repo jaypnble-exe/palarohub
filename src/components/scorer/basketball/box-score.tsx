@@ -7,6 +7,8 @@ import {
   type ShotLine,
   type Side,
 } from "@/lib/sports/basketball";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const shots = (line: ShotLine) => `${line.made}-${line.attempted}`;
 
@@ -25,7 +27,7 @@ export function BoxScores({
         return (
           <div
             key={side}
-            className="overflow-x-auto rounded-2xl border bg-card"
+            className={cn(cardVariants({ padding: "none" }), "overflow-x-auto")}
           >
             <table className="w-full min-w-[520px] text-sm">
               <caption className="p-3 text-left text-lg font-semibold">

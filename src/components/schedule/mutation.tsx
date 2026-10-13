@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ScheduleActionResult } from "@/lib/validation/schedule";
+import { Alert } from "@/components/ui/alert";
 
 export function useScheduleMutation() {
   const router = useRouter();
@@ -37,13 +38,8 @@ export function ScheduleFeedback({
 }) {
   if (!result) return null;
   return (
-    <p
-      role={result.error ? "alert" : "status"}
-      className={
-        result.error ? "text-sm text-destructive" : "text-sm font-semibold"
-      }
-    >
+    <Alert tone={result.error ? "danger" : "success"}>
       {message(result.error ?? "saved")}
-    </p>
+    </Alert>
   );
 }

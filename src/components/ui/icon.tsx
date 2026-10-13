@@ -3,6 +3,7 @@ export type IconName =
   | "leagues"
   | "public"
   | "arrow"
+  | "back"
   | "check"
   | "add"
   | "seasons"
@@ -17,7 +18,11 @@ export type IconName =
   | "ratings"
   | "review"
   | "live"
-  | "workspace";
+  | "workspace"
+  | "alert"
+  | "info"
+  | "pin"
+  | "share";
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />,
@@ -36,6 +41,7 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   arrow: <path d="M5 12h14m-6-6 6 6-6 6" />,
+  back: <path d="M19 12H5m6 6-6-6 6-6" />,
   check: <path d="m5 12 4 4L19 6" />,
   add: <path d="M12 5v14M5 12h14" />,
   seasons: (
@@ -110,9 +116,36 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18" />
     </>
   ),
+  alert: (
+    <>
+      <path d="M12 3 2 20h20L12 3Z" />
+      <path d="M12 10v4M12 17h.01" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </>
+  ),
+  pin: (
+    <>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  share: (
+    <>
+      <circle cx="18" cy="5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="19" r="2.5" />
+      <path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4" />
+    </>
+  ),
 };
 
-export function DashboardIcon({
+/** Line icons in one style. Decorative: always pair with a visible label. */
+export function Icon({
   name,
   className = "size-6",
 }: {

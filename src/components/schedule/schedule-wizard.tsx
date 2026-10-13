@@ -8,9 +8,12 @@ import { toRiyadhDateTimeInput } from "@/lib/domain/riyadh-time";
 import { scheduleSetupSchema } from "@/lib/validation/schedule";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert } from "@/components/ui/alert";
+import { ChipGroup, ChoiceCard } from "@/components/ui/chip";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
-const chipClass =
-  "min-h-11 rounded-xl border-2 bg-background px-4 font-semibold aria-pressed:border-navy aria-pressed:bg-navy aria-pressed:text-on-dark";
 // 18 October 2026 is a Sunday; used only to label weekdays.
 const weekdayDate = (day: number) => new Date(Date.UTC(2026, 9, 18 + day, 12));
 
@@ -122,10 +125,7 @@ export function ScheduleWizard({
     setSaving(false);
   }
 
-  if (teams.length < 2)
-    return (
-      <p className="rounded-2xl border bg-card p-5">{t("needTwoTeams")}</p>
-    );
+  if (teams.length < 2) return <EmptyState title={t("needTwoTeams")} />;
 
   return (
     <form
@@ -152,7 +152,7 @@ export function ScheduleWizard({
       {step === 1 && (
         <section className="space-y-5">
           <h2 className="text-2xl font-semibold">{t("teamsAndFormat")}</h2>
-          <div className="space-y-2 rounded-2xl border bg-card p-5">
+          <div className={cn(cardVariants(), "space-y-2")}>
             <p className="font-semibold">
               {t("teamCount", { count: teams.length })}
             </p>
@@ -162,28 +162,16 @@ export function ScheduleWizard({
           </div>
           <div role="radiogroup" aria-label={t("format")} className="space-y-3">
             {[false, true].map((option) => (
-              <label
+              <ChoiceCard
                 key={String(option)}
-                className="flex min-h-11 cursor-pointer items-start gap-3 rounded-2xl border-2 bg-card p-4 has-[:checked]:border-navy"
-              >
-                <input
-                  type="radio"
-                  name="format"
-                  checked={twice === option}
-                  onChange={() => setTwice(option)}
-                  className="mt-1 size-5 accent-primary"
-                />
-                <span className="space-y-1">
-                  <span className="block font-semibold">
-                    {t(option ? "playTwice" : "playOnce")}
-                  </span>
-                  <span className="block text-sm text-muted-foreground">
-                    {t("gamesPerTeam", {
-                      count: (teams.length - 1) * (option ? 2 : 1),
-                    })}
-                  </span>
-                </span>
-              </label>
+                name="format"
+                checked={twice === option}
+                onChange={() => setTwice(option)}
+                title={t(option ? "playTwice" : "playOnce")}
+                description={t("gamesPerTeam", {
+                  count: (teams.length - 1) * (option ? 2 : 1),
+                })}
+              />
             ))}
           </div>
         </section>
@@ -204,35 +192,25 @@ export function ScheduleWizard({
             />
           </div>
           <div className="space-y-2">
-            <p id="game-days-label" className="font-semibold">
-              {t("gameDays")}
-            </p>
-            <div
-              role="group"
-              aria-labelledby="game-days-label"
-              className="flex flex-wrap gap-2"
-            >
-              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                <button
-                  key={day}
-                  type="button"
-                  aria-pressed={gameDays.includes(day)}
-                  className={chipClass}
-                  onClick={() =>
-                    setGameDays(
-                      gameDays.includes(day)
-                        ? gameDays.filter((value) => value !== day)
-                        : [...gameDays, day].sort((a, b) => a - b),
-                    )
-                  }
-                >
-                  {format.dateTime(weekdayDate(day), {
-                    weekday: "short",
-                    timeZone: "UTC",
-                  })}
-                </button>
-              ))}
-            </div>
+            <p className="font-semibold">{t("gameDays")}</p>
+            <ChipGroup
+              label={t("gameDays")}
+              value={gameDays}
+              onChange={(day) =>
+                setGameDays(
+                  gameDays.includes(day)
+                    ? gameDays.filter((value) => value !== day)
+                    : [...gameDays, day].sort((a, b) => a - b),
+                )
+              }
+              options={[0, 1, 2, 3, 4, 5, 6].map((day) => ({
+                value: day,
+                label: format.dateTime(weekdayDate(day), {
+                  weekday: "short",
+                  timeZone: "UTC",
+                }),
+              }))}
+            />
           </div>
           <fieldset className="space-y-3">
             <legend className="font-semibold">{t("startTimes")}</legend>
@@ -329,7 +307,7 @@ export function ScheduleWizard({
       {step === 3 && !("error" in preview) && (
         <section className="space-y-5">
           <h2 className="text-2xl font-semibold">{t("checkAndSave")}</h2>
-          <div className="space-y-2 rounded-2xl border bg-card p-5">
+          <div className={cn(cardVariants(), "space-y-2")}>
             <p className="font-semibold">
               {t("previewSummary", {
                 games: preview.games.length,
@@ -339,12 +317,9 @@ export function ScheduleWizard({
             <p>{t("lastGame", { date: longDate(preview.lastDate) })}</p>
           </div>
           {preview.lastDate > seasonEnd && (
-            <p
-              role="alert"
-              className="rounded-xl border border-primary/40 bg-orange-soft p-4 text-sm text-orange-dark"
-            >
+            <Alert tone="warning">
               {t("pastSeasonEnd", { date: longDate(seasonEnd) })}
-            </p>
+            </Alert>
           )}
           <ol className="space-y-2">
             {preview.games.map((game, index) => (

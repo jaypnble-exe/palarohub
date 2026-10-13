@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getFormatter, getTranslations } from "next-intl/server";
@@ -8,6 +7,9 @@ import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
 import { BoxScores } from "@/components/scorer/basketball/box-score";
 import { ReviewActions } from "@/components/review/review-actions";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { Alert } from "@/components/ui/alert";
 
 export default async function GameReviewPage({
   params,
@@ -29,38 +31,30 @@ export default async function GameReviewPage({
     label: `#${player.jersey} ${player.name} (${teamNames[player.team]})`,
   }));
   return (
-    <main className="mx-auto max-w-3xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}/games`}>{t("backToGames")}</Link>
-      </Button>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {record.seasonName} · {record.divisionName}
-          {game.scheduledAt &&
-            ` · ${format.dateTime(new Date(game.scheduledAt), { dateStyle: "medium", timeStyle: "short" })}`}
-        </p>
-        <h1 className="font-display text-3xl font-semibold">
-          {schedule("matchup", teamNames)}
-        </h1>
-        <span className="inline-block rounded-full bg-accent px-3 py-1 text-sm font-semibold">
-          {schedule(`status.${game.status}`)}
-        </span>
-      </div>
+    <main className="mx-auto max-w-3xl space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/admin/${slug}/games`, label: t("backToGames") }}
+        eyebrow={
+          <>
+            {record.seasonName} · {record.divisionName}
+            {game.scheduledAt &&
+              ` · ${format.dateTime(new Date(game.scheduledAt), { dateStyle: "medium", timeStyle: "short" })}`}
+          </>
+        }
+        title={schedule("matchup", teamNames)}
+      />
 
       {summary ? (
         <p className="font-display text-5xl font-semibold">
           {summary.homeScore} – {summary.awayScore}
         </p>
       ) : (
-        <p className="rounded-2xl border bg-card p-5">{t("notFinished")}</p>
+        <EmptyState title={t("notFinished")} />
       )}
       {record.unreadableEvents > 0 && (
-        <p
-          role="alert"
-          className="rounded-xl bg-orange-soft p-4 text-sm text-orange-dark"
-        >
+        <Alert tone="warning">
           {t("unreadableEvents", { count: record.unreadableEvents })}
-        </p>
+        </Alert>
       )}
 
       {game.status === "approved" && (

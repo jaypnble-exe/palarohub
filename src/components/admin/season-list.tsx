@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export async function SeasonList({
   slug,
@@ -30,21 +33,16 @@ export async function SeasonList({
         </Button>
       )}
       {!seasons.length ? (
-        <p className="rounded-2xl border bg-card p-5 text-muted-foreground">
+        <p className={cn(cardVariants(), "text-muted-foreground")}>
           {t(publicView ? "noPublished" : "empty")}
         </p>
       ) : (
         <ul className="space-y-4">
           {seasons.map((season) => (
-            <li
-              key={season.id}
-              className="space-y-4 rounded-2xl border bg-card p-5"
-            >
+            <li key={season.id} className={cn(cardVariants(), "space-y-4")}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <h3 className="text-2xl font-semibold">{season.name}</h3>
-                <span className="rounded-full bg-accent px-3 py-1 text-sm font-semibold">
-                  {t(season.status)}
-                </span>
+                <Badge>{t(season.status)}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {format.dateTime(new Date(`${season.start_date}T12:00:00Z`), {

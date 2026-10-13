@@ -9,6 +9,8 @@ import type {
 import { Button } from "@/components/ui/button";
 import type { RecordEvent } from "./board";
 import { describeEvent, formatClock, periodName } from "./helpers";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 /** Every recorded action, newest first. Fixing one adds a correction; nothing is deleted. */
 export function PlayByPlay({
@@ -36,7 +38,7 @@ export function PlayByPlay({
   });
   return (
     <section
-      className="space-y-2 rounded-2xl border bg-card p-3"
+      className={cn(cardVariants({ padding: "sm" }), "space-y-2")}
       aria-label={t("playByPlay")}
     >
       <h2 className="text-lg font-semibold">{t("playByPlay")}</h2>

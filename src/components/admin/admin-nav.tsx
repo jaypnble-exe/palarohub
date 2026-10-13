@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { DashboardIcon, type IconName } from "./dashboard-icon";
+import { Icon, type IconName } from "@/components/ui/icon";
 
 interface Tab {
   key: string;
@@ -74,7 +74,7 @@ export function AdminNav({ slug }: { slug: string }) {
               aria-current={current === tab.key ? "page" : undefined}
               className="flex min-h-[64px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent aria-[current=page]:text-orange-dark sm:flex-row sm:gap-2 sm:text-sm"
             >
-              <DashboardIcon name={tab.icon} className="size-6 sm:size-5" />
+              <Icon name={tab.icon} className="size-6 sm:size-5" />
               <span>{t(tab.key)}</span>
             </Link>
           </li>

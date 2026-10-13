@@ -3,6 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function TeamsPage({
   params,
 }: {
@@ -21,17 +25,14 @@ export default async function TeamsPage({
     .order("name");
   if (error) throw new Error("Unable to load teams.");
   return (
-    <main className="space-y-6 py-8">
-      <h1 className="font-display text-3xl font-semibold">{t("teams")}</h1>
+    <main className="space-y-6 py-6">
+      <PageHeader title={t("teams")} />
       {!teams?.length ? (
-        <p className="rounded-2xl border bg-card p-5">{t("noTeams")}</p>
+        <EmptyState title={t("noTeams")} />
       ) : (
         <ul className="space-y-4">
           {teams.map((team) => (
-            <li
-              key={team.id}
-              className="space-y-4 rounded-2xl border bg-card p-5"
-            >
+            <li key={team.id} className={cn(cardVariants(), "space-y-4")}>
               <h2 className="font-display text-2xl font-semibold">
                 {team.name}
               </h2>

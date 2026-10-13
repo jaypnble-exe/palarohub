@@ -7,6 +7,7 @@ import {
   AnnouncementForm,
   DeleteAnnouncementButton,
 } from "@/components/schedule/announcement-form";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function AnnouncementsPage({
   params,
@@ -34,11 +35,8 @@ export default async function AnnouncementsPage({
     ]),
   );
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <div className="space-y-2">
-        <h1 className="font-display text-3xl font-semibold">{t("heading")}</h1>
-        <p className="text-muted-foreground">{t("intro")}</p>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader title={t("heading")} description={t("intro")} />
       <AnnouncementForm
         slug={slug}
         divisions={divisions.map((division) => ({

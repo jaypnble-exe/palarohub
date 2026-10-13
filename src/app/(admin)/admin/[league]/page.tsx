@@ -92,33 +92,34 @@ export default async function CommissionerHome({
   ]);
   if (counts.some((result) => result.error))
     throw new Error("Unable to load registration tasks.");
-  const behind = (
-    await Promise.all(
-      (seasons ?? [])
-        .filter((season) => season.status === "published")
-        .map((season) => seasonPayments(supabase, league.id, season.id)),
-    )
-  )
+  const currentSeason =
+    (seasons ?? []).find((season) => season.status === "published") ?? null;
+  const published = (seasons ?? []).filter(
+    (season) => season.status === "published",
+  );
+  const paymentsBySeason = await Promise.all(
+    published.map((season) => seasonPayments(supabase, league.id, season.id)),
+  );
+  const behind = paymentsBySeason
     .flat()
     .filter((team) => team.status.behind).length;
-  const unscheduled = (await scheduleOverview(supabase, league.id)).filter(
+  const divisions = await scheduleOverview(supabase, league.id);
+  const unscheduled = divisions.filter(
     (division) => division.teamCount >= 2 && division.gameCount === 0,
   ).length;
-  // Games being played now, and the next few on the schedule.
-  const [live, upcoming] = await Promise.all([
+  // Games being played now, the next few on the schedule, and season totals.
+  const gameFields =
+    "id,division_id,home_team_name,away_team_name,venue,division_name,scheduled_at";
+  const [live, upcoming, seasonGames, registration] = await Promise.all([
     supabase
       .from("published_games")
-      .select(
-        "id,home_team_name,away_team_name,venue,division_name,scheduled_at",
-      )
+      .select(gameFields)
       .eq("league_id", league.id)
       .eq("status", "in_progress")
       .order("scheduled_at"),
     supabase
       .from("published_games")
-      .select(
-        "id,home_team_name,away_team_name,venue,division_name,scheduled_at",
-      )
+      .select(gameFields)
       .eq("league_id", league.id)
       .eq("status", "scheduled")
       .gte(
@@ -127,18 +128,63 @@ export default async function CommissionerHome({
       )
       .order("scheduled_at")
       .limit(3),
+    currentSeason
+      ? supabase
+          .from("published_games")
+          .select("status")
+          .eq("league_id", league.id)
+          .eq("season_id", currentSeason.id)
+          .neq("status", "cancelled")
+      : { data: [] as { status: string | null }[], error: null },
+    currentSeason
+      ? supabase
+          .from("registration_settings")
+          .select("season_id")
+          .eq("league_id", league.id)
+          .eq("season_id", currentSeason.id)
+          .maybeSingle()
+      : { data: null, error: null },
   ]);
-  if (live.error || upcoming.error) throw new Error("Unable to load games.");
+  if (live.error || upcoming.error || seasonGames.error || registration.error)
+    throw new Error("Unable to load games.");
   const toGame = (game: (typeof live.data)[number]) => ({
     id: game.id ?? "",
+    divisionId: game.division_id ?? "",
     home: game.home_team_name ?? "",
     away: game.away_team_name ?? "",
     venue: game.venue ?? "",
     division: game.division_name ?? "",
     scheduledAt: game.scheduled_at,
   });
-  const currentSeason =
-    (seasons ?? []).find((season) => season.status === "published") ?? null;
+  const seasonTeams = currentSeason
+    ? (paymentsBySeason[published.indexOf(currentSeason)] ?? [])
+    : [];
+  const season = currentSeason
+    ? {
+        name: currentSeason.name,
+        teams: seasonTeams.length,
+        gamesPlayed: seasonGames.data.filter(
+          (game) => game.status === "approved",
+        ).length,
+        gamesTotal: seasonGames.data.length,
+        collectedHalalas: seasonTeams.reduce(
+          (sum, team) => sum + team.paidHalalas,
+          0,
+        ),
+        expectedHalalas: seasonTeams.reduce(
+          (sum, team) => sum + team.quotaHalalas + team.finesHalalas,
+          0,
+        ),
+      }
+    : null;
+  // Setup steps for a new league, shown until the first schedule exists.
+  const setup = {
+    seasonId: currentSeason?.id ?? null,
+    hasSeason: Boolean(currentSeason),
+    registrationReady: Boolean(registration.data),
+    teamsApproved: seasonTeams.length >= 2,
+    scheduled: divisions.some((division) => division.gameCount > 0),
+  };
   const isDemo = Boolean(
     settings &&
     typeof settings === "object" &&
@@ -152,7 +198,8 @@ export default async function CommissionerHome({
       role={roleTranslations(role)}
       members={[...members.values()]}
       isDemo={isDemo}
-      seasonName={currentSeason?.name ?? null}
+      season={season}
+      setup={setup}
       liveGames={live.data.map(toGame)}
       upcomingGames={upcoming.data.map(toGame)}
       tasks={{

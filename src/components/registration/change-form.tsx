@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { RosterEditor } from "./roster-editor";
 import { useRegistrationMutation } from "./mutation";
 import { EligibilityFeedback, RegistrationFeedback } from "./feedback";
+import { Textarea } from "@/components/ui/field";
 
 export function RosterChangeForm({
   slug,
@@ -79,13 +80,12 @@ export function RosterChangeForm({
         <label htmlFor="roster-change-reason" className="font-semibold">
           {t("changeReason")}
         </label>
-        <textarea
+        <Textarea
           id="roster-change-reason"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           rows={3}
           maxLength={1000}
-          className="w-full rounded-xl border-2 bg-card p-3"
         />
       </div>
       <Button disabled={mutation.pending || issues.length > 0}>

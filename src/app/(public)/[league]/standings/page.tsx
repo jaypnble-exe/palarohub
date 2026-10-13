@@ -8,6 +8,11 @@ import { seasonStandings } from "@/lib/standings-data";
 import { Button } from "@/components/ui/button";
 import { ShareButtons } from "@/components/share-buttons";
 import { StandingsTable } from "@/components/public/standings-table";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { ChipLinks } from "@/components/ui/chip";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function StandingsPage({
   params,
@@ -40,46 +45,38 @@ export default async function StandingsPage({
     : [];
   const t = await getTranslations("Standings");
   const path = `/${slug}/standings`;
-  const chip =
-    "inline-flex min-h-11 items-center rounded-xl border-2 bg-background px-4 font-semibold aria-[current=true]:border-navy aria-[current=true]:bg-navy aria-[current=true]:text-on-dark";
   return (
-    <main className="space-y-6 py-8">
-      <div className="flex flex-wrap gap-2">
-        <Button asChild variant="ghost">
-          <Link href={`/${slug}`}>{league.name}</Link>
-        </Button>
-        <Button asChild variant="ghost">
-          <Link
-            href={`/${slug}/schedule${season ? `?season=${season.id}` : ""}`}
-          >
-            {t("schedule")}
-          </Link>
-        </Button>
-      </div>
-      <div className="space-y-2">
-        <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
-        {season && <p className="text-muted-foreground">{season.name}</p>}
-      </div>
-      {seasons.length > 1 && (
-        <nav aria-label={t("chooseSeason")} className="flex flex-wrap gap-2">
-          {seasons.map((item) => (
+    <main className="space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/${slug}`, label: league.name }}
+        eyebrow={season?.name}
+        title={t("title")}
+        actions={
+          <Button asChild variant="outline">
             <Link
-              key={item.id}
-              href={`${path}?season=${item.id}`}
-              aria-current={item.id === season?.id}
-              className={chip}
+              href={`/${slug}/schedule${season ? `?season=${season.id}` : ""}`}
             >
-              {item.name}
+              {t("schedule")}
             </Link>
-          ))}
-        </nav>
+          </Button>
+        }
+      />
+      {seasons.length > 1 && (
+        <ChipLinks
+          label={t("chooseSeason")}
+          links={seasons.map((item) => ({
+            href: `${path}?season=${item.id}`,
+            label: item.name,
+            current: item.id === season?.id,
+          }))}
+        />
       )}
       {standings.length ? (
         standings.map((division) => (
           <StandingsTable key={division.divisionId} standings={division} />
         ))
       ) : (
-        <p className="rounded-2xl border bg-card p-5">{t("noSeason")}</p>
+        <EmptyState title={t("noSeason")} />
       )}
       {season &&
         [...new Set(season.divisions.map((division) => division.sport))].map(
@@ -90,7 +87,7 @@ export default async function StandingsPage({
           ),
         )}
       {season && (
-        <section className="space-y-3 rounded-2xl border bg-card p-5">
+        <section className={cn(cardVariants(), "space-y-3")}>
           <h2 className="font-display text-xl font-semibold">{t("share")}</h2>
           <ShareButtons
             url={`${getSiteUrl()}${path}?season=${season.id}`}

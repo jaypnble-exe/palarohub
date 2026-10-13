@@ -3,7 +3,10 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { reverseLedgerEntry } from "@/app/(admin)/admin/[league]/payments/actions";
 import type { LedgerRow } from "@/lib/payments-data";
+import { formatSar } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { cardVariants } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import {
   ScheduleFeedback,
@@ -22,12 +25,11 @@ export function LedgerList({
 }) {
   const t = useTranslations("Payments");
   const format = useFormatter();
-  const sar = (halalas: number) =>
-    format.number(halalas / 100, { style: "currency", currency: "SAR" });
+  const sar = (halalas: number) => formatSar(format, halalas);
   if (!entries.length)
-    return <p className="rounded-2xl border bg-card p-5">{t("noEntries")}</p>;
+    return <EmptyState icon="payments" title={t("noEntries")} />;
   return (
-    <ul className="divide-y rounded-2xl border bg-card">
+    <ul className={`${cardVariants({ padding: "none" })} divide-y`}>
       {entries.map((entry) => (
         <li key={entry.id} className="space-y-2 p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">

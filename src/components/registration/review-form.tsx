@@ -10,6 +10,9 @@ import { reviewSchema, type ReviewInput } from "@/lib/validation/registration";
 import { Button } from "@/components/ui/button";
 import { useRegistrationMutation } from "./mutation";
 import { RegistrationFeedback } from "./feedback";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Select, Textarea } from "@/components/ui/field";
 
 export function ReviewForm({
   slug,
@@ -35,7 +38,7 @@ export function ReviewForm({
   const prefix = changeRequestId ?? registrationId;
   return (
     <form
-      className="space-y-4 rounded-2xl border bg-card p-5"
+      className={cn(cardVariants(), "space-y-4")}
       onSubmit={handleSubmit((input) =>
         mutation.run(() =>
           changeRequestId
@@ -54,28 +57,26 @@ export function ReviewForm({
         <label htmlFor={`decision-${prefix}`} className="font-semibold">
           {t("decision")}
         </label>
-        <select
+        <Select
           id={`decision-${prefix}`}
           {...register("decision")}
           disabled={mutation.pending}
-          className="min-h-[52px] w-full rounded-xl border-2 bg-card px-3"
         >
           <option value="approved">{t("approve")}</option>
           {!changeRequestId && <option value="returned">{t("return")}</option>}
           <option value="rejected">{t("reject")}</option>
-        </select>
+        </Select>
       </div>
       <div className="space-y-2">
         <label htmlFor={`comment-${prefix}`} className="font-semibold">
           {t(decision === "approved" ? "optionalComment" : "requiredComment")}
         </label>
-        <textarea
+        <Textarea
           id={`comment-${prefix}`}
           {...register("comment")}
           disabled={mutation.pending}
           rows={3}
           maxLength={1000}
-          className="w-full rounded-xl border-2 bg-background p-3"
           aria-invalid={!!errors.comment}
         />
         {errors.comment && (

@@ -9,6 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { RecordEvent } from "./board";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
+import { Badge } from "@/components/ui/badge";
+import { Alert } from "@/components/ui/alert";
+import { formatSar } from "@/lib/format";
 
 /** Attendance, game jerseys, starting fives, officials, and tip-off. */
 export function Pregame({
@@ -40,23 +46,16 @@ export function Pregame({
     <div className="space-y-4">
       <p className="text-muted-foreground">{t("pregameHelp")}</p>
       {behind.map(({ side, behindByHalalas }) => (
-        <p
+        <Alert
           key={side}
-          role="alert"
-          className={
-            blockUnpaid
-              ? "rounded-xl bg-destructive p-4 font-semibold text-white"
-              : "rounded-xl bg-orange-soft p-4 font-semibold text-orange-dark"
-          }
+          tone={blockUnpaid ? "critical" : "warning"}
+          className="text-base"
         >
           {t(blockUnpaid ? "paymentBlocked" : "paymentWarning", {
             team: teamNames[side],
-            amount: format.number(behindByHalalas / 100, {
-              style: "currency",
-              currency: "SAR",
-            }),
+            amount: formatSar(format, behindByHalalas),
           })}
-        </p>
+        </Alert>
       ))}
       <div className="grid gap-3 md:grid-cols-2">
         {sides.map((side) => (
@@ -113,7 +112,7 @@ function TeamSetup({
   const [jersey, setJersey] = useState("");
   return (
     <section
-      className="space-y-3 rounded-2xl border bg-card p-3"
+      className={cn(cardVariants({ padding: "sm" }), "space-y-3")}
       aria-label={name}
     >
       <div className="flex items-baseline justify-between gap-2">
@@ -183,10 +182,9 @@ function TeamSetup({
                 {line.name}
               </span>
               {line.present ? (
-                <button
-                  type="button"
+                <Chip
+                  selected={starting}
                   disabled={disabled || team.startersSet}
-                  aria-pressed={starting}
                   onClick={() =>
                     setStarters(
                       starting
@@ -196,14 +194,12 @@ function TeamSetup({
                           : starters,
                     )
                   }
-                  className="min-h-11 rounded-lg border-2 px-3 text-sm font-semibold aria-pressed:border-navy aria-pressed:bg-navy aria-pressed:text-on-dark"
+                  className="px-3 text-sm"
                 >
                   {t("starter")}
-                </button>
+                </Chip>
               ) : suspended.has(id) ? (
-                <span className="rounded-lg bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
-                  {t("suspended")}
-                </span>
+                <Badge tone="danger">{t("suspended")}</Badge>
               ) : (
                 <Button
                   type="button"
@@ -262,7 +258,10 @@ function Officials({
   );
   const [saved, setSaved] = useState(false);
   return (
-    <details className="rounded-2xl border bg-card p-3" open={!state.officials}>
+    <details
+      className={cardVariants({ padding: "sm" })}
+      open={!state.officials}
+    >
       <summary className="min-h-11 cursor-pointer py-2 text-lg font-semibold">
         {t("officials")}
       </summary>

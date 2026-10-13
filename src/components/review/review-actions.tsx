@@ -10,6 +10,9 @@ import {
   ScheduleFeedback,
   useScheduleMutation,
 } from "@/components/schedule/mutation";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Textarea } from "@/components/ui/field";
 
 /** Approve the result (with chosen suspensions) or send it back to the scorer. */
 export function ReviewActions({
@@ -80,7 +83,7 @@ export function ReviewActions({
       )}
       {canApprove && (
         <form
-          className="space-y-3 rounded-2xl border bg-card p-5"
+          className={cn(cardVariants(), "space-y-3")}
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
@@ -98,13 +101,12 @@ export function ReviewActions({
           <label htmlFor="reopen-comment" className="text-sm font-semibold">
             {t("reopenLabel")}
           </label>
-          <textarea
+          <Textarea
             id="reopen-comment"
             rows={3}
             maxLength={1000}
             value={comment}
             onChange={(event) => setComment(event.target.value)}
-            className="w-full rounded-xl border-2 bg-card px-4 py-3"
           />
           <Button variant="outline" disabled={mutation.pending}>
             {t("reopen")}

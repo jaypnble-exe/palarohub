@@ -10,6 +10,8 @@ import { leagueSchema, type LeagueInput } from "@/lib/validation/leagues";
 import { supportedSports } from "@/lib/sports/registry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/field";
+import { Alert } from "@/components/ui/alert";
 
 export function CreateLeagueForm() {
   const t = useTranslations("CreateLeague");
@@ -103,10 +105,9 @@ export function CreateLeagueForm() {
           <label htmlFor="league-sport" className="text-sm font-medium">
             {t("sport")}
           </label>
-          <select
+          <Select
             id="league-sport"
             {...register("sport")}
-            className="min-h-12 w-full rounded-xl border border-input bg-background px-4 text-base"
             aria-invalid={Boolean(errors.sport)}
           >
             {supportedSports.map((sport) => (
@@ -114,7 +115,7 @@ export function CreateLeagueForm() {
                 {sports(sport)}
               </option>
             ))}
-          </select>
+          </Select>
           {errors.sport && (
             <p role="alert" className="text-sm text-destructive">
               {t("invalidSport")}
@@ -145,14 +146,7 @@ export function CreateLeagueForm() {
           )}
         </div>
       )}
-      {status && (
-        <p
-          role="alert"
-          className="rounded-xl border border-destructive p-4 text-sm"
-        >
-          {t(status)}
-        </p>
-      )}
+      {status && <Alert tone="danger">{t(status)}</Alert>}
       <div className="flex gap-3">
         {step === 2 && (
           <Button

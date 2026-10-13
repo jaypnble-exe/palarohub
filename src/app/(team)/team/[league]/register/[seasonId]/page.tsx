@@ -1,13 +1,13 @@
-﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { parsePlayerCatalog } from "@/lib/registration-data";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import { NameForm } from "@/components/registration/name-form";
 import { RegistrationWizard } from "@/components/registration/wizard";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function NewRegistrationPage({
   params,
 }: {
@@ -74,20 +74,14 @@ export default async function NewRegistrationPage({
     settings.data?.is_open &&
     new Date(settings.data.deadline).getTime() > new Date().getTime();
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/team/${slug}`}>{t("teamHome")}</Link>
-      </Button>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">{season.data.name}</p>
-        <h1 className="font-display text-3xl font-semibold">
-          {t("registerTeam")}
-        </h1>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{ href: `/team/${slug}`, label: t("teamHome") }}
+        eyebrow={season.data.name}
+        title={t("registerTeam")}
+      />
       {!isOpen || !settings.data ? (
-        <p className="rounded-2xl border bg-card p-5">
-          {t("registrationClosed")}
-        </p>
+        <EmptyState title={t("registrationClosed")} />
       ) : !available.length ? (
         <div className="space-y-4">
           <p className="text-muted-foreground">{t("firstTeamHelp")}</p>

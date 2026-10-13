@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { getTranslations } from "next-intl/server";
@@ -6,8 +5,9 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { divisionSchedule } from "@/lib/schedule-data";
 import { toRiyadhDateTimeInput } from "@/lib/domain/riyadh-time";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import { ScheduleWizard } from "@/components/schedule/schedule-wizard";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function NewSchedulePage({
   params,
@@ -24,30 +24,23 @@ export default async function NewSchedulePage({
   const season = division.seasons;
   const t = await getTranslations("Schedule");
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link
-          href={
-            games.length
-              ? `/admin/${slug}/schedule/${division.id}`
-              : `/admin/${slug}/schedule`
-          }
-        >
-          {t("back")}
-        </Link>
-      </Button>
-      <div className="space-y-2">
-        <p className="text-sm text-muted-foreground">
-          {season.name} · {division.name}
-        </p>
-        <h1 className="font-display text-3xl font-semibold">
-          {t(games.length ? "remakeSchedule" : "makeSchedule")}
-        </h1>
-      </div>
+    <main className="mx-auto max-w-2xl space-y-6 py-6">
+      <PageHeader
+        back={{
+          href: games.length
+            ? `/admin/${slug}/schedule/${division.id}`
+            : `/admin/${slug}/schedule`,
+          label: t("back"),
+        }}
+        eyebrow={
+          <>
+            {season.name} · {division.name}
+          </>
+        }
+        title={t(games.length ? "remakeSchedule" : "makeSchedule")}
+      />
       {season.status !== "published" ? (
-        <p className="rounded-2xl border bg-card p-5">
-          {t("seasonNotPublished")}
-        </p>
+        <EmptyState title={t("seasonNotPublished")} />
       ) : (
         <ScheduleWizard
           slug={slug}

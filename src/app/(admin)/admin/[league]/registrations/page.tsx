@@ -4,6 +4,9 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
 import { RegistrationList } from "@/components/registration/list";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/ui/page-header";
 export default async function RegistrationInbox({
   params,
 }: {
@@ -29,13 +32,8 @@ export default async function RegistrationInbox({
   if (registrations.error || changes.error)
     throw new Error("Unable to load registration inbox.");
   return (
-    <main className="space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("leagueHome")}</Link>
-      </Button>
-      <h1 className="font-display text-3xl font-semibold">
-        {t("registrations")}
-      </h1>
+    <main className="space-y-6 py-6">
+      <PageHeader title={t("registrations")} />
       <section className="space-y-4">
         <h2 className="font-display text-2xl font-semibold">
           {t("teamsWaiting")}
@@ -56,10 +54,7 @@ export default async function RegistrationInbox({
           </h2>
           <ul className="space-y-3">
             {changes.data.map((change) => (
-              <li
-                key={change.id}
-                className="space-y-3 rounded-2xl border bg-card p-5"
-              >
+              <li key={change.id} className={cn(cardVariants(), "space-y-3")}>
                 <p className="font-semibold">
                   {change.season_teams?.team_name}
                 </p>

@@ -1,31 +1,18 @@
 import { getFormatter, getTranslations } from "next-intl/server";
+import type { PaymentStatus } from "@/lib/domain/payments";
 import type { TeamPayments } from "@/lib/payments-data";
+import { formatSar } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
 
 /** Plain-language status of one team's payments. */
 export async function PaymentSummary({ team }: { team: TeamPayments }) {
   const t = await getTranslations("Payments");
   const format = await getFormatter();
-  const sar = (halalas: number) =>
-    format.number(halalas / 100, { style: "currency", currency: "SAR" });
+  const sar = (halalas: number) => formatSar(format, halalas);
   const { status } = team;
-  const tone = status.behind
-    ? "bg-destructive/10 text-destructive"
-    : status.paidInFull
-      ? "bg-green-700 text-white"
-      : "bg-accent";
   return (
     <div className="space-y-3">
-      <p
-        className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${tone}`}
-      >
-        {status.behind
-          ? t("behindBy", { amount: sar(status.behindByHalalas) })
-          : status.paidInFull
-            ? status.balanceHalalas < 0
-              ? t("credit", { amount: sar(-status.balanceHalalas) })
-              : t("paidInFull")
-            : t("upToDate")}
-      </p>
+      <PaymentBadge status={status} />
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
         <div>
           <dt className="text-muted-foreground">{t("fee")}</dt>
@@ -58,4 +45,25 @@ export async function PaymentSummary({ team }: { team: TeamPayments }) {
       </p>
     </div>
   );
+}
+
+/** "Behind by SAR 150", "Up to date", or "Paid in full", in the matching colour. */
+export async function PaymentBadge({ status }: { status: PaymentStatus }) {
+  const t = await getTranslations("Payments");
+  const format = await getFormatter();
+  if (status.behind)
+    return (
+      <Badge tone="danger">
+        {t("behindBy", { amount: formatSar(format, status.behindByHalalas) })}
+      </Badge>
+    );
+  if (status.paidInFull)
+    return (
+      <Badge tone="success">
+        {status.balanceHalalas < 0
+          ? t("credit", { amount: formatSar(format, -status.balanceHalalas) })
+          : t("paidInFull")}
+      </Badge>
+    );
+  return <Badge>{t("upToDate")}</Badge>;
 }
