@@ -20,7 +20,7 @@ export interface ManagerTodo {
 export function managerTodos(
   slug: string,
   registrations: readonly ManagerRegistration[],
-  behind: readonly { teamName: string; amount: string }[],
+  behind: readonly { id: string; teamName: string; amount: string }[],
   openSeasons: readonly OpenSeason[],
   formatDeadline: (iso: string) => string,
 ): ManagerTodo[] {
@@ -48,7 +48,7 @@ export function managerTodos(
         href: `${base}/registrations/${registration.id}`,
       })),
     ...behind.map((team) => ({
-      key: `pay-${team.teamName}`,
+      key: `pay-${team.id}`,
       icon: "payments" as const,
       text: "todoPay",
       values: { team: team.teamName, amount: team.amount },

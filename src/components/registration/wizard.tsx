@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useFormatter } from "next-intl";
 import { saveRegistration } from "@/app/(team)/team/[league]/actions";
 import {
+  playersForDivision,
   registrationSchema,
+  type CatalogPlayer,
   type RegistrationInput,
-  type RegistrationPlayer,
+  type RosterEntryInput,
   type RegistrationActionResult,
 } from "@/lib/validation/registration";
 import { checkRosterEligibility } from "@/lib/domain/eligibility";
@@ -34,6 +36,7 @@ export function RegistrationWizard({
   initial,
   teams,
   divisions,
+  taken = [],
   catalog,
   ratingScale,
   deadline,
@@ -45,7 +48,9 @@ export function RegistrationWizard({
   initial: RegistrationInput;
   teams: { id: string; name: string }[];
   divisions: Division[];
-  catalog: RegistrationPlayer[];
+  /** Divisions each team has already entered this season (one registration per division). */
+  taken?: { teamId: string; divisionId: string }[];
+  catalog: CatalogPlayer[];
   ratingScale: string[];
   deadline: string;
   feeHalalas: number;
@@ -61,6 +66,7 @@ export function RegistrationWizard({
     register,
     control,
     setValue,
+    getValues,
     trigger,
     handleSubmit,
     formState: { errors },
@@ -74,8 +80,46 @@ export function RegistrationWizard({
     jerseyNumber: entry.jerseyNumber ?? 0,
   }));
   const division = divisions.find((item) => item.id === values.divisionId);
+  const openDivisions = (teamId: string | undefined) =>
+    divisions.filter(
+      (item) =>
+        !taken.some(
+          (entry) => entry.teamId === teamId && entry.divisionId === item.id,
+        ),
+    );
+  const divisionOptions = openDivisions(values.teamId);
+  const newPlayers = (values.newPlayers ?? []).map((player) => ({
+    id: player.id ?? "",
+    name: player.name ?? "",
+  }));
+  const divisionCatalog = [
+    ...playersForDivision(catalog, values.divisionId),
+    ...newPlayers.map((player) => ({
+      ...player,
+      rating: null,
+      suspended: false,
+      documentsPresent: false,
+      onAnotherTeam: false,
+      isNew: true,
+    })),
+  ];
+  function changeRoster(next: RosterEntryInput[]) {
+    setValue("roster", next, { shouldValidate: true });
+    // A new player taken off the roster is simply forgotten; it was never saved.
+    setValue(
+      "newPlayers",
+      (getValues("newPlayers") ?? []).filter((player) =>
+        next.some((entry) => entry.playerId === player.id),
+      ),
+    );
+  }
+  function addNewPlayer(name: string) {
+    const id = crypto.randomUUID();
+    setValue("newPlayers", [...(getValues("newPlayers") ?? []), { id, name }]);
+    return id;
+  }
   const players = roster.map((entry) => {
-    const player = catalog.find((item) => item.id === entry.playerId);
+    const player = divisionCatalog.find((item) => item.id === entry.playerId);
     return {
       ...(player ?? {
         id: entry.playerId,
@@ -155,7 +199,13 @@ export function RegistrationWizard({
               <Select
                 id="registration-team"
                 value={values.teamId}
-                onChange={(event) => setValue("teamId", event.target.value)}
+                onChange={(event) => {
+                  const teamId = event.target.value;
+                  setValue("teamId", teamId);
+                  const options = openDivisions(teamId);
+                  if (!options.some((item) => item.id === values.divisionId))
+                    setValue("divisionId", options[0]?.id ?? "");
+                }}
                 disabled={registrationId !== null}
               >
                 {teams.map((team) => (
@@ -170,7 +220,7 @@ export function RegistrationWizard({
                 {t("division")}
               </label>
               <Select id="registration-division" {...register("divisionId")}>
-                {divisions.map((item) => (
+                {divisionOptions.map((item) => (
                   <option key={item.id} value={item.id}>
                     {t("divisionOption", {
                       name: item.name,
@@ -179,6 +229,16 @@ export function RegistrationWizard({
                   </option>
                 ))}
               </Select>
+              {divisionOptions.length < divisions.length && (
+                <p className="text-sm text-muted-foreground">
+                  {t("alreadyInDivisions", {
+                    divisions: divisions
+                      .filter((item) => !divisionOptions.includes(item))
+                      .map((item) => item.name)
+                      .join(", "),
+                  })}
+                </p>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {t("deadlineValue", {
@@ -202,11 +262,10 @@ export function RegistrationWizard({
             </h2>
             <p className="text-sm text-muted-foreground">{t("rosterHelp")}</p>
             <RosterEditor
-              catalog={catalog}
+              catalog={divisionCatalog}
               value={roster}
-              onChange={(value) =>
-                setValue("roster", value, { shouldValidate: true })
-              }
+              onChange={changeRoster}
+              onAddNewPlayer={addNewPlayer}
               limit={division?.roster_max ?? 50}
             />
             <EligibilityFeedback issues={issues} />
@@ -232,7 +291,7 @@ export function RegistrationWizard({
               </p>
             </div>
             <RosterEditor
-              catalog={catalog}
+              catalog={divisionCatalog}
               value={roster}
               onChange={() => {}}
               disabled
@@ -286,14 +345,6 @@ export function RegistrationWizard({
             embedded
             onCreated={(id) => setValue("teamId", id)}
           />
-        </details>
-      )}
-      {step === 2 && (
-        <details className="rounded-xl border bg-card p-4">
-          <summary className="min-h-11 cursor-pointer py-3 font-semibold">
-            {t("addNewPlayer")}
-          </summary>
-          <NameForm slug={slug} kind="player" embedded />
         </details>
       )}
     </div>

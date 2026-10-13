@@ -19,7 +19,6 @@ export interface EligibilityRules {
 export type EligibilityCode =
   | "rosterTooSmall"
   | "rosterTooLarge"
-  | "ratingMissing"
   | "ratingTooHigh"
   | "ratingUnknown"
   | "playerSuspended"
@@ -56,13 +55,15 @@ export function checkRosterEligibility(
       issues.push({ code: "duplicateJersey", ...detail });
     ids.add(player.id);
     jerseys.add(player.jerseyNumber);
-    if (!player.rating) issues.push({ code: "ratingMissing", ...detail });
-    else if (
-      !rules.ratingScale.includes(player.rating) ||
-      !rules.ratingScale.includes(rules.maximumRating)
+    // Ratings are optional; only rated players are checked against the division cap.
+    if (
+      player.rating &&
+      (!rules.ratingScale.includes(player.rating) ||
+        !rules.ratingScale.includes(rules.maximumRating))
     )
       issues.push({ code: "ratingUnknown", ...detail, rating: player.rating });
     else if (
+      player.rating &&
       !isRatingAllowed(rules.ratingScale, player.rating, rules.maximumRating)
     )
       issues.push({

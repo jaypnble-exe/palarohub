@@ -77,7 +77,7 @@ select throws_ok($$select public.save_team_registration('72000000-0000-4000-8000
 select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000004","role":"authenticated"}',true);
 select is((select count(*)::integer from public.roster_entries where league_id='72000000-0000-4000-8000-000000000001'),0,'another manager cannot read a submitted private roster');
 select is((select count(*)::integer from public.registration_reviews where league_id='72000000-0000-4000-8000-000000000001'),0,'another manager cannot read private review history');
-select throws_ok($$select public.save_team_registration('72000000-0000-4000-8000-000000000001',public.test_registration_payload('75000000-0000-4000-8000-000000000002','73000000-0000-4000-8000-000000000001','74000000-0000-4000-8000-000000000001',array['76000000-0000-4000-8000-000000000001','76000000-0000-4000-8000-000000000002']::uuid[]))$$,'23505',null,'a player cannot occupy two active teams in one season');
+select throws_ok($$select public.save_team_registration('72000000-0000-4000-8000-000000000001',public.test_registration_payload('75000000-0000-4000-8000-000000000002','73000000-0000-4000-8000-000000000001','74000000-0000-4000-8000-000000000001',array['76000000-0000-4000-8000-000000000001','76000000-0000-4000-8000-000000000002']::uuid[]))$$,'23505',null,'a player cannot occupy two active teams in one division');
 select is((select count(*)::integer from public.season_teams where team_id='75000000-0000-4000-8000-000000000002'),0,'failed roster save leaves no orphan registration');
 
 select set_config('request.jwt.claims','{"sub":"71000000-0000-4000-8000-000000000001","role":"authenticated"}',true);

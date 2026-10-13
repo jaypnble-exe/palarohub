@@ -19,7 +19,7 @@ export default async function TeamsPage({
   const { data: teams, error } = await supabase
     .from("teams")
     .select(
-      "id,name,profiles(display_name),season_teams(id,status,team_name,seasons(name))",
+      "id,name,profiles(display_name),season_teams(id,status,team_name,seasons(name),divisions(name))",
     )
     .eq("league_id", league.id)
     .order("name");
@@ -44,7 +44,14 @@ export default async function TeamsPage({
               <ul className="space-y-3">
                 {team.season_teams.map((registration) => (
                   <li key={registration.id} className="space-y-2 border-t pt-3">
-                    <p className="text-sm">{registration.seasons?.name}</p>
+                    <p className="text-sm">
+                      {[
+                        registration.seasons?.name,
+                        registration.divisions?.name,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {t(`status.${registration.status}`)}
                     </p>

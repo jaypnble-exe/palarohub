@@ -124,7 +124,7 @@ describe("team manager to-do list", () => {
         registration("r2", "Royals B", "returned", { reviewComment: "Fix #7" }),
         registration("a1", "Royals", "submitted"),
       ],
-      [{ teamName: "Royals", amount: "SAR 150.00" }],
+      [{ id: "r1", teamName: "Royals", amount: "SAR 150.00" }],
       [
         {
           seasonId: "s1",
@@ -167,7 +167,7 @@ describe("team manager home", () => {
       "/team/sindikato/registrations/r2",
     );
     expect(items[1]).toHaveTextContent(
-      /Riyadh Royals owes SAR\s?150\.00 before the next game/,
+      /Riyadh Royals · Division B owes SAR\s?150\.00 before the next game/,
     );
     expect(items[2]).toHaveTextContent(
       "Register a team for Sindikato Cup 2027",

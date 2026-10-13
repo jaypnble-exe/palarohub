@@ -128,9 +128,9 @@ Only basketball is built in Phase 1, but nothing outside the sport modules may a
 - Ratings are a league-configurable scale (default `A`, `B`, `C`, `D`; `A` is highest).
 - Each division sets a **maximum allowed rating**, and optionally composition limits (e.g. max 2 B-rated players) or a points cap.
 - Eligibility checks (all in `lib/domain/eligibility.ts`, also enforced in DB where practical):
-  - rating allowed in division
+  - rating allowed in division (ratings are optional: unrated players may be submitted and approved; the commissioner rates players whenever they choose)
   - roster min/max size
-  - player not on another team in the same season
+  - player not on another team in the same division (a team may enter several divisions of a season, one registration and fee each; a player may play in several divisions if eligible in each)
   - player not suspended
   - required documents present
 - Error messages are plain language, e.g. *"Juan Dela Cruz is rated A and cannot join Division C (max rating: C)."*

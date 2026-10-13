@@ -50,7 +50,7 @@ export default async function NewRegistrationPage({
         .order("name"),
       supabase
         .from("season_teams")
-        .select("team_id")
+        .select("team_id,division_id")
         .eq("league_id", league.id)
         .eq("season_id", seasonId),
       supabase.rpc("registration_player_catalog", {
@@ -66,9 +66,22 @@ export default async function NewRegistrationPage({
   )
     throw new Error("Unable to load registration setup.");
   if (!season.data) notFound();
+  // A team registers once per division, so it stays available until it is in every division.
+  const taken = (existing.data ?? []).map((registration) => ({
+    teamId: registration.team_id,
+    divisionId: registration.division_id,
+  }));
+  const divisionList = divisions.data ?? [];
+  const openDivisions = (teamId: string) =>
+    divisionList.filter(
+      (division) =>
+        !taken.some(
+          (entry) =>
+            entry.teamId === teamId && entry.divisionId === division.id,
+        ),
+    );
   const available = (teams.data ?? []).filter(
-    (team) =>
-      !existing.data?.some((registration) => registration.team_id === team.id),
+    (team) => openDivisions(team.id).length > 0,
   );
   const isOpen =
     settings.data?.is_open &&
@@ -84,14 +97,17 @@ export default async function NewRegistrationPage({
         <EmptyState title={t("registrationClosed")} />
       ) : !available.length ? (
         <div className="space-y-4">
-          <p className="text-muted-foreground">{t("firstTeamHelp")}</p>
+          <p className="text-muted-foreground">
+            {t(teams.data?.length ? "allDivisionsEntered" : "firstTeamHelp")}
+          </p>
           <NameForm slug={slug} kind="team" />
         </div>
       ) : (
         <RegistrationWizard
           slug={slug}
           teams={available}
-          divisions={divisions.data ?? []}
+          divisions={divisionList}
+          taken={taken}
           catalog={parsePlayerCatalog(catalog.data)}
           ratingScale={season.data.rating_scale}
           deadline={settings.data.deadline}
@@ -100,7 +116,7 @@ export default async function NewRegistrationPage({
           initial={{
             teamId: available[0].id,
             seasonId,
-            divisionId: divisions.data?.[0]?.id ?? "",
+            divisionId: openDivisions(available[0].id)[0]?.id ?? "",
             roster: [],
           }}
         />

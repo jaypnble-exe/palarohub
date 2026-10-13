@@ -57,7 +57,11 @@ export async function TeamHome({
   const behind = payments
     .filter((team) => team.status.behind)
     .map((team) => ({
-      teamName: team.teamName,
+      id: team.seasonTeamId,
+      // The same team can owe in more than one division.
+      teamName: team.divisionName
+        ? `${team.teamName} · ${team.divisionName}`
+        : team.teamName,
       amount: formatSar(format, team.status.behindByHalalas),
     }));
   const todos = managerTodos(

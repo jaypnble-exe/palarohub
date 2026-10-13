@@ -32,13 +32,23 @@ export default async function ManagerRegistrationPage({
     ["draft", "returned"].includes(data.registration.status) &&
     data.settings.is_open &&
     new Date(data.settings.deadline).getTime() > new Date().getTime();
-  const { data: divisions, error } = await data.supabase
-    .from("divisions")
-    .select("*")
-    .eq("league_id", data.league.id)
-    .eq("season_id", data.season.id)
-    .order("name");
-  if (error) throw new Error("Unable to load divisions.");
+  const [{ data: divisions, error }, others] = await Promise.all([
+    data.supabase
+      .from("divisions")
+      .select("*")
+      .eq("league_id", data.league.id)
+      .eq("season_id", data.season.id)
+      .order("name"),
+    // The team's other divisions this season, which this draft cannot move into.
+    data.supabase
+      .from("season_teams")
+      .select("division_id")
+      .eq("league_id", data.league.id)
+      .eq("season_id", data.season.id)
+      .eq("team_id", data.team.id)
+      .neq("id", registrationId),
+  ]);
+  if (error || others.error) throw new Error("Unable to load divisions.");
   const [payments] =
     data.registration.status === "approved"
       ? await seasonPayments(
@@ -87,7 +97,11 @@ export default async function ManagerRegistrationPage({
             }}
             teams={[data.team]}
             divisions={divisions ?? []}
-            catalog={data.catalog}
+            taken={others.data.map((row) => ({
+              teamId: data.team.id,
+              divisionId: row.division_id,
+            }))}
+            catalog={data.playerCatalog}
             ratingScale={data.season.rating_scale}
             deadline={data.settings.deadline}
             feeHalalas={data.registration.fee_halalas}

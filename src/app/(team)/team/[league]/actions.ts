@@ -52,11 +52,11 @@ function failure(error: {
       return { error: "teamNameTaken" };
     if (error.message.includes("roster_one_pending_request_idx"))
       return { error: "changeAlreadyPending" };
-    if (error.message.includes("roster_one_team_per_season_idx"))
+    if (error.message.includes("roster_one_team_per_division_idx"))
       return { error: "playerAlreadyRegistered" };
     if (error.message.includes("roster_unique_jersey_idx"))
       return { error: "duplicateJersey" };
-    if (error.message.includes("season_teams_team_id_season_id_key"))
+    if (error.message.includes("season_teams_team_division_key"))
       return { error: "teamAlreadyRegistered" };
   }
   if (

@@ -1023,6 +1023,7 @@ export type Database = {
           accepted_at: string | null;
           active: boolean;
           created_at: string;
+          division_id: string;
           id: string;
           jersey_number: number;
           league_id: string;
@@ -1036,6 +1037,7 @@ export type Database = {
           accepted_at?: string | null;
           active?: boolean;
           created_at?: string;
+          division_id?: string;
           id?: string;
           jersey_number: number;
           league_id: string;
@@ -1049,6 +1051,7 @@ export type Database = {
           accepted_at?: string | null;
           active?: boolean;
           created_at?: string;
+          division_id?: string;
           id?: string;
           jersey_number?: number;
           league_id?: string;

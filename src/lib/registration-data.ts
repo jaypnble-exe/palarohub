@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { getLeagueAccess } from "./league-access";
 import type { Database } from "./supabase/database.types";
 import {
-  registrationPlayerSchema,
+  catalogPlayerSchema,
+  playersForDivision,
+  type CatalogPlayer,
   type RegistrationPlayer,
   type RosterEntryInput,
 } from "./validation/registration";
@@ -19,8 +21,8 @@ export type RegistrationSettings =
 export type RegistrationDivision =
   Database["public"]["Tables"]["divisions"]["Row"];
 export type RegistrationSeason = Database["public"]["Tables"]["seasons"]["Row"];
-export function parsePlayerCatalog(value: unknown): RegistrationPlayer[] {
-  return z.array(registrationPlayerSchema).parse(value);
+export function parsePlayerCatalog(value: unknown): CatalogPlayer[] {
+  return z.array(catalogPlayerSchema).parse(value);
 }
 export function rosterEligibility(
   roster: readonly RosterEntryInput[],
@@ -119,6 +121,7 @@ export async function loadRegistration(
     results;
   if (!season.data || !division.data || !settings.data || !team.data)
     throw new Error("Registration configuration is missing.");
+  const playerCatalog = parsePlayerCatalog(catalog.data);
   return {
     denied: false as const,
     ...access,
@@ -130,6 +133,9 @@ export async function loadRegistration(
     entries: entries.data ?? [],
     reviews: reviews.data ?? [],
     changes: changes.data ?? [],
-    catalog: parsePlayerCatalog(catalog.data),
+    /** Players as seen for this registration's division. */
+    catalog: playersForDivision(playerCatalog, registration.division_id),
+    /** Every division's view, for a draft that may move to another division. */
+    playerCatalog,
   };
 }

@@ -40,11 +40,10 @@ describe("roster eligibility", () => {
       rating: "A",
       maximumRating: "C",
     }));
-  it("does not guess when a rating is absent or outside the season scale", () => {
+  it("lets unrated players through but does not guess outside the season scale", () => {
     expect(
-      checkRosterEligibility([{ ...player, rating: null }, roster[1]], rules)[0]
-        .code,
-    ).toBe("ratingMissing");
+      checkRosterEligibility([{ ...player, rating: null }, roster[1]], rules),
+    ).toEqual([]);
     expect(
       checkRosterEligibility(
         [{ ...player, rating: "ELITE" }, roster[1]],

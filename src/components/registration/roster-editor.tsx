@@ -8,6 +8,9 @@ import type {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/field";
+import { Badge } from "@/components/ui/badge";
+
+const NEW_PLAYER = "new";
 
 export function RosterEditor({
   value,
@@ -15,17 +18,35 @@ export function RosterEditor({
   catalog,
   limit = 50,
   disabled = false,
+  onAddNewPlayer,
 }: {
   value: readonly RosterEntryInput[];
   onChange: (roster: RosterEntryInput[]) => void;
   catalog: readonly RegistrationPlayer[];
   limit?: number;
   disabled?: boolean;
+  /**
+   * Offers "Add a new player" in the list. Receives the typed name and returns
+   * the new player's id; nothing is saved until the roster is.
+   */
+  onAddNewPlayer?: (name: string) => string;
 }) {
   const t = useTranslations("Registration");
   const prefix = useId();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState("");
+  const [newName, setNewName] = useState("");
+  const typedName = newName.trim();
+  const sameName = catalog.find(
+    (player) =>
+      player.name.trim().toLocaleLowerCase() === typedName.toLocaleLowerCase(),
+  );
+  const nextJersey = () => {
+    const jerseys = new Set(value.map((item) => item.jerseyNumber));
+    let number = 1;
+    while (jerseys.has(number)) number++;
+    return number;
+  };
   const available = catalog.filter(
     (player) =>
       !value.some((entry) => entry.playerId === player.id) &&
@@ -43,11 +64,18 @@ export function RosterEditor({
             >
               <div>
                 <p className="font-semibold">{player?.name ?? t("player")}</p>
-                <p className="text-sm text-muted-foreground">
-                  {player?.rating
-                    ? t("playerRating", { rating: player.rating })
-                    : t("unrated")}
-                </p>
+                {player?.isNew ? (
+                  <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    <Badge tone="warning">{t("newPlayerBadge")}</Badge>
+                    {t("newPlayerSaved")}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {player?.rating
+                      ? t("playerRating", { rating: player.rating })
+                      : t("unrated")}
+                  </p>
+                )}
               </div>
               <div className="flex items-end gap-3">
                 <div className="min-w-0 flex-1 space-y-2">
@@ -125,7 +153,10 @@ export function RosterEditor({
           <Select
             id={`${prefix}-select`}
             value={selected}
-            onChange={(event) => setSelected(event.target.value)}
+            onChange={(event) => {
+              setSelected(event.target.value);
+              if (event.target.value === NEW_PLAYER) setNewName(search.trim());
+            }}
           >
             <option value="">{t("choosePlayer")}</option>
             {available.map((player) => (
@@ -141,30 +172,79 @@ export function RosterEditor({
                 {player.onAnotherTeam ? t("unavailablePlayer") : ""}
               </option>
             ))}
+            {onAddNewPlayer && (
+              <option value={NEW_PLAYER}>
+                {search.trim()
+                  ? t("addNamedPlayerOption", { name: search.trim() })
+                  : t("addNewPlayerOption")}
+              </option>
+            )}
           </Select>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={
-              !selected ||
-              value.length >= limit ||
-              !available.some(
-                (player) => player.id === selected && !player.onAnotherTeam,
-              )
-            }
-            onClick={() => {
-              const jerseys = new Set(value.map((item) => item.jerseyNumber));
-              let number = 1;
-              while (jerseys.has(number)) number++;
-              onChange([
-                ...value,
-                { playerId: selected, jerseyNumber: number },
-              ]);
-              setSelected("");
-            }}
-          >
-            {t("addToRoster")}
-          </Button>
+          {selected === NEW_PLAYER && onAddNewPlayer ? (
+            <div className="space-y-3">
+              <label
+                htmlFor={`${prefix}-new`}
+                className="block text-sm font-semibold"
+              >
+                {t("newPlayerName")}
+              </label>
+              <Input
+                id={`${prefix}-new`}
+                value={newName}
+                maxLength={100}
+                autoComplete="off"
+                onChange={(event) => setNewName(event.target.value)}
+                aria-invalid={!!sameName}
+              />
+              {sameName ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {t("newPlayerExists", { name: sameName.name })}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  {t("newPlayerInlineHelp")}
+                </p>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!typedName || !!sameName || value.length >= limit}
+                onClick={() => {
+                  const id = onAddNewPlayer(typedName);
+                  onChange([
+                    ...value,
+                    { playerId: id, jerseyNumber: nextJersey() },
+                  ]);
+                  setSelected("");
+                  setNewName("");
+                  setSearch("");
+                }}
+              >
+                {t("addToRoster")}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={
+                !selected ||
+                value.length >= limit ||
+                !available.some(
+                  (player) => player.id === selected && !player.onAnotherTeam,
+                )
+              }
+              onClick={() => {
+                onChange([
+                  ...value,
+                  { playerId: selected, jerseyNumber: nextJersey() },
+                ]);
+                setSelected("");
+              }}
+            >
+              {t("addToRoster")}
+            </Button>
+          )}
         </fieldset>
       )}
     </div>

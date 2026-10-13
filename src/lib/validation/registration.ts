@@ -5,7 +5,6 @@ export const eligibilityIssueSchema = z.object({
   code: z.enum([
     "rosterTooSmall",
     "rosterTooLarge",
-    "ratingMissing",
     "ratingTooHigh",
     "ratingUnknown",
     "playerSuspended",
@@ -21,15 +20,31 @@ export const eligibilityIssueSchema = z.object({
   min: z.number().optional(),
   max: z.number().optional(),
 });
-export const registrationPlayerSchema = z.object({
+/** A player as the server lists them, with the divisions where another team already has them. */
+export const catalogPlayerSchema = z.object({
   id: uuid,
   name: z.string(),
   rating: z.string().nullable(),
   suspended: z.boolean(),
   documentsPresent: z.boolean(),
-  onAnotherTeam: z.boolean(),
+  takenDivisionIds: z.array(uuid),
 });
-export type RegistrationPlayer = z.output<typeof registrationPlayerSchema>;
+export type CatalogPlayer = z.output<typeof catalogPlayerSchema>;
+/** A player as seen for one division: they may play in other divisions too. */
+export type RegistrationPlayer = Omit<CatalogPlayer, "takenDivisionIds"> & {
+  onAnotherTeam: boolean;
+  /** Typed in on this roster and not saved to the league yet. */
+  isNew?: boolean;
+};
+export function playersForDivision(
+  catalog: readonly CatalogPlayer[],
+  divisionId: string | undefined,
+): RegistrationPlayer[] {
+  return catalog.map(({ takenDivisionIds, ...player }) => ({
+    ...player,
+    onAnotherTeam: !!divisionId && takenDivisionIds.includes(divisionId),
+  }));
+}
 export interface RegistrationActionResult {
   success?: true;
   id?: string;
@@ -46,14 +61,29 @@ export const rosterEntrySchema = z.strictObject({
   playerId: uuid,
   jerseyNumber: z.number().int().min(0).max(999),
 });
+/** A player typed in while building a roster; created when the registration is saved. */
+export const newPlayerSchema = z.strictObject({
+  id: uuid,
+  name: z.string().trim().min(1).max(100),
+});
+export type NewPlayer = z.output<typeof newPlayerSchema>;
 export const registrationSchema = z
   .strictObject({
     teamId: uuid,
     seasonId: uuid,
     divisionId: uuid,
     roster: z.array(rosterEntrySchema).max(50),
+    newPlayers: z.array(newPlayerSchema).max(50).optional(),
   })
   .superRefine((input, context) => {
+    input.newPlayers?.forEach((player, index) => {
+      if (!input.roster.some((entry) => entry.playerId === player.id))
+        context.addIssue({
+          code: "custom",
+          path: ["newPlayers", index, "id"],
+          message: "newPlayerNotOnRoster",
+        });
+    });
     const ids = new Set<string>();
     const jerseys = new Set<number>();
     input.roster.forEach((entry, index) => {
