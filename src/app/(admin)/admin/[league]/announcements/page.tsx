@@ -1,9 +1,7 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { scheduleOverview } from "@/lib/schedule-data";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import { AnnouncementList } from "@/components/schedule/announcement-list";
 import {
   AnnouncementForm,
@@ -37,9 +35,6 @@ export default async function AnnouncementsPage({
   );
   return (
     <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("backToLeague")}</Link>
-      </Button>
       <div className="space-y-2">
         <h1 className="font-display text-3xl font-semibold">{t("heading")}</h1>
         <p className="text-muted-foreground">{t("intro")}</p>

@@ -1364,9 +1364,16 @@ export type Database = {
           {
             foreignKeyName: "team_ledger_reverses_id_fkey";
             columns: ["reverses_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "team_ledger";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "team_ledger_season_team_id_league_id_season_id_fkey";
+            columns: ["season_team_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id"];
           },
           {
             foreignKeyName: "team_ledger_season_team_id_league_id_season_id_fkey";
@@ -1613,10 +1620,10 @@ export type Database = {
       record_ledger_entry: {
         Args: {
           p_amount_halalas: number;
-          p_fine_reason: string | null;
+          p_fine_reason: string;
           p_kind: string;
           p_league_id: string;
-          p_method: string | null;
+          p_method: string;
           p_note: string;
           p_paid_on: string;
           p_season_team_id: string;

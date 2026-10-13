@@ -72,7 +72,7 @@
   },
   "AdminHome": {
     "dashboard": "League home",
-    "empty": "Nothing needs your attention yet.",
+    "empty": "Nothing needs your attention right now.",
     "publicPage": "View public league page",
     "todo": "Today's to-do",
     "welcomeName": "Welcome back, {name}",
@@ -89,7 +89,35 @@
     "demoDescription": "Explore sample teams, rosters, ratings, and registrations in this fictional league.",
     "members": "People in this league",
     "memberCount": "{count, plural, one {# person} other {# people}}",
-    "unnamedMember": "League member"
+    "unnamedMember": "League member",
+    "greeting": {
+      "morning": "Good morning, {name}",
+      "afternoon": "Good afternoon, {name}",
+      "evening": "Good evening, {name}"
+    },
+    "noSeasonYet": "No published season yet",
+    "todoGames": "{count, plural, one {game waiting for your approval} other {games waiting for your approval}}",
+    "todoRegistrations": "{count, plural, one {team waiting for approval} other {teams waiting for approval}}",
+    "todoChanges": "{count, plural, one {roster change to review} other {roster changes to review}}",
+    "todoPayments": "{count, plural, one {team behind on payments} other {teams behind on payments}}",
+    "todoSchedule": "{count, plural, one {division needs a schedule} other {divisions need a schedule}}",
+    "todoRatings": "{count, plural, one {player needs a rating} other {players need a rating}}",
+    "actionReview": "Review",
+    "actionView": "View",
+    "actionSchedule": "Make",
+    "actionRate": "Rate",
+    "liveNow": "Being played now",
+    "matchup": "{home} vs {away}",
+    "comingUp": "Coming up",
+    "fullSchedule": "Full schedule",
+    "noUpcoming": "No games scheduled yet.",
+    "timeToBeAnnounced": "Time to be announced",
+    "shortcuts": "Shortcuts",
+    "tileSeasons": "Seasons",
+    "tileSchedule": "Schedule",
+    "tileAnnouncements": "Announcements",
+    "tileStandings": "Standings",
+    "tilePlayers": "Players"
   },
   "PublicLeague": {
     "placeholder": "Results and standings update automatically once games are approved."
@@ -896,5 +924,40 @@
     "notAllowed": "Only the commissioner and league staff can do this.",
     "invalidForm": "Something is not right. Check the form and try again.",
     "saveFailed": "Could not save. Check your connection and try again."
+  },
+  "AdminNav": {
+    "label": "League menu",
+    "home": "Home",
+    "teams": "Teams",
+    "games": "Games",
+    "payments": "Payments",
+    "more": "More"
+  },
+  "AdminMore": {
+    "title": "More",
+    "season": "Season",
+    "people": "Teams and players",
+    "public": "Public pages",
+    "account": "Account",
+    "seasons": "Seasons",
+    "seasonsHelp": "Divisions, rules, and registration",
+    "schedule": "Schedule",
+    "scheduleHelp": "Make and change game schedules",
+    "announcements": "Announcements",
+    "announcementsHelp": "Post news to the public page",
+    "registrations": "Team approvals",
+    "registrationsHelp": "Teams and roster changes to review",
+    "players": "Players",
+    "playersHelp": "Checks and suspensions",
+    "ratings": "Rating scale",
+    "ratingsHelp": "Labels such as A, B, C, D",
+    "publicPage": "Public league page",
+    "publicPageHelp": "What your community sees",
+    "publicSchedule": "Public schedule",
+    "standings": "Standings",
+    "teamWorkspace": "Team manager view",
+    "teamWorkspaceHelp": "See what team managers see",
+    "myLeagues": "My leagues",
+    "newLeague": "New league"
   }
 }

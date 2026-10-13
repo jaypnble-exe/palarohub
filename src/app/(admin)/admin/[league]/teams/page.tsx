@@ -22,9 +22,6 @@ export default async function TeamsPage({
   if (error) throw new Error("Unable to load teams.");
   return (
     <main className="space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("leagueHome")}</Link>
-      </Button>
       <h1 className="font-display text-3xl font-semibold">{t("teams")}</h1>
       {!teams?.length ? (
         <p className="rounded-2xl border bg-card p-5">{t("noTeams")}</p>

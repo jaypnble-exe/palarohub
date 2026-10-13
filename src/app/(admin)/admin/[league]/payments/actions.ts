@@ -49,8 +49,10 @@ export async function recordLedgerEntry(
     p_season_team_id: entry.seasonTeamId,
     p_kind: entry.kind,
     p_amount_halalas: entry.amountHalalas,
-    p_method: entry.kind === "payment" ? entry.method : null,
-    p_fine_reason: entry.kind === "fine" ? entry.fineReason : null,
+    // Generated types mark every SQL argument non-null; the function accepts
+    // null for the field that does not apply (method for fines, reason for payments).
+    p_method: (entry.kind === "payment" ? entry.method : null) as string,
+    p_fine_reason: (entry.kind === "fine" ? entry.fineReason : null) as string,
     p_note: entry.note,
     p_paid_on: entry.paidOn,
   });

@@ -104,6 +104,41 @@ export default async function CommissionerHome({
   const unscheduled = (await scheduleOverview(supabase, league.id)).filter(
     (division) => division.teamCount >= 2 && division.gameCount === 0,
   ).length;
+  // Games being played now, and the next few on the schedule.
+  const [live, upcoming] = await Promise.all([
+    supabase
+      .from("published_games")
+      .select(
+        "id,home_team_name,away_team_name,venue,division_name,scheduled_at",
+      )
+      .eq("league_id", league.id)
+      .eq("status", "in_progress")
+      .order("scheduled_at"),
+    supabase
+      .from("published_games")
+      .select(
+        "id,home_team_name,away_team_name,venue,division_name,scheduled_at",
+      )
+      .eq("league_id", league.id)
+      .eq("status", "scheduled")
+      .gte(
+        "scheduled_at",
+        new Date(new Date().getTime() - 3 * 3_600_000).toISOString(),
+      )
+      .order("scheduled_at")
+      .limit(3),
+  ]);
+  if (live.error || upcoming.error) throw new Error("Unable to load games.");
+  const toGame = (game: (typeof live.data)[number]) => ({
+    id: game.id ?? "",
+    home: game.home_team_name ?? "",
+    away: game.away_team_name ?? "",
+    venue: game.venue ?? "",
+    division: game.division_name ?? "",
+    scheduledAt: game.scheduled_at,
+  });
+  const currentSeason =
+    (seasons ?? []).find((season) => season.status === "published") ?? null;
   const isDemo = Boolean(
     settings &&
     typeof settings === "object" &&
@@ -115,18 +150,18 @@ export default async function CommissionerHome({
       league={league}
       displayName={profile.display_name.trim()}
       role={roleTranslations(role)}
-      platformAdmin={platformAdmin}
       members={[...members.values()]}
       isDemo={isDemo}
-      seasons={seasons ?? []}
-      canManage={platformAdmin || role === "commissioner"}
+      seasonName={currentSeason?.name ?? null}
+      liveGames={live.data.map(toGame)}
+      upcomingGames={upcoming.data.map(toGame)}
       tasks={{
+        gamesToApprove: counts[2].count ?? 0,
         registrations: counts[0].count ?? 0,
         changes: counts[1].count ?? 0,
-        unrated: counts[3].count ?? 0,
-        toApprove: counts[2].count ?? 0,
-        behind,
+        teamsBehind: behind,
         unscheduled,
+        unrated: counts[3].count ?? 0,
       }}
     />
   );

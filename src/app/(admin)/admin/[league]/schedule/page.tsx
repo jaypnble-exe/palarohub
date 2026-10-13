@@ -18,9 +18,6 @@ export default async function ScheduleHome({
   const seasons = [...new Set(divisions.map((division) => division.seasonId))];
   return (
     <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("backToLeague")}</Link>
-      </Button>
       <div className="space-y-2">
         <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
         <p className="text-muted-foreground">{t("intro")}</p>

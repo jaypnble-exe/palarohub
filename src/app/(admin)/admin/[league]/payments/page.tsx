@@ -4,7 +4,6 @@ import { getLeagueAccess } from "@/lib/league-access";
 import { seasonPayments } from "@/lib/payments-data";
 import { parsePaymentPolicy } from "@/lib/domain/payments";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 import { PolicyForm } from "@/components/payments/policy-form";
 
 export default async function PaymentsPage({
@@ -42,9 +41,6 @@ export default async function PaymentsPage({
     "inline-flex min-h-11 items-center rounded-xl border-2 bg-background px-4 font-semibold aria-[current=true]:border-navy aria-[current=true]:bg-navy aria-[current=true]:text-on-dark";
   return (
     <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("backToLeague")}</Link>
-      </Button>
       <div className="space-y-2">
         <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
         {season && <p className="text-muted-foreground">{season.name}</p>}

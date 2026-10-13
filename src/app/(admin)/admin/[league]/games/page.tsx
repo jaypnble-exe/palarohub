@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
 import { AccessDenied } from "@/components/access-denied";
-import { Button } from "@/components/ui/button";
 
 /** Games waiting for approval first, then games being played, then recent results. */
 export default async function GamesPage({
@@ -34,9 +33,6 @@ export default async function GamesPage({
   );
   return (
     <main className="mx-auto max-w-2xl space-y-6 py-8">
-      <Button asChild variant="ghost">
-        <Link href={`/admin/${slug}`}>{t("backToLeague")}</Link>
-      </Button>
       <h1 className="font-display text-3xl font-semibold">{t("gamesTitle")}</h1>
       {groups.map(({ status, games: list }) => (
         <section key={status} className="space-y-3">
