@@ -13,8 +13,10 @@ import en from "@/messages/en.json";
 import { RegistrationWizard } from "./wizard";
 import { PlayerChecksForm } from "./player-forms";
 import { ReviewForm } from "./review-form";
+import { TakeBackButton } from "./take-back-button";
 import {
   saveRegistration,
+  withdrawRegistration,
   updatePlayerChecks,
   reviewRegistration,
 } from "@/app/(team)/team/[league]/actions";
@@ -25,6 +27,7 @@ const { push, refresh } = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 vi.mock("@/app/(team)/team/[league]/actions", () => ({
   saveRegistration: vi.fn(),
+  withdrawRegistration: vi.fn(),
   updatePlayerChecks: vi.fn(),
   reviewRegistration: vi.fn(),
   createTeam: vi.fn(),
@@ -123,6 +126,22 @@ function twoDivisionWizard() {
           documentsPresent: false,
           takenDivisionIds: [divisionId],
         },
+        {
+          id: "84000000-0000-4000-8000-000000000002",
+          name: "Ana Reyes",
+          rating: "B",
+          suspended: false,
+          documentsPresent: false,
+          takenDivisionIds: [],
+        },
+        {
+          id: "84000000-0000-4000-8000-000000000003",
+          name: "Maria Santos",
+          rating: "C",
+          suspended: false,
+          documentsPresent: false,
+          takenDivisionIds: [secondDivisionId],
+        },
       ]}
       ratingScale={["A", "B", "C", "D"]}
       deadline="2027-01-01T00:00:00Z"
@@ -132,17 +151,14 @@ function twoDivisionWizard() {
   );
 }
 describe("registering in more than one division", () => {
-  it("offers only the divisions the team has not entered yet", () => {
+  it("shows divisions the team already entered as taken", () => {
     twoDivisionWizard();
-    const options = screen
-      .getByLabelText(en.Registration.division)
-      .querySelectorAll("option");
-    expect([...options].map((option) => option.value)).toEqual([
-      secondDivisionId,
-    ]);
-    expect(
-      screen.getByText(/Already entered: Open/, { exact: false }),
-    ).toBeInTheDocument();
+    const open = screen.getByRole("radio", { name: /Open/ });
+    expect(open).toBeDisabled();
+    expect(open.closest("label")).toHaveTextContent(
+      en.Registration.alreadyEntered,
+    );
+    expect(screen.getByRole("radio", { name: /Masters/ })).toBeChecked();
   });
   it("lets a player already in another division join this one", async () => {
     twoDivisionWizard();
@@ -157,77 +173,79 @@ describe("registering in more than one division", () => {
     ).toBeEnabled();
   });
 });
-describe("adding a new player while building the roster", () => {
-  async function openRoster() {
-    wizard("C");
+describe("building the roster", () => {
+  async function openRoster(fixture = () => wizard("C")) {
+    fixture();
     fireEvent.click(screen.getByRole("button", { name: en.Registration.next }));
     await screen.findByRole("heading", { name: en.Registration.yourRoster });
   }
-  function addNew(name: string) {
-    fireEvent.change(screen.getByLabelText(en.Registration.choosePlayer), {
-      target: { value: "new" },
-    });
-    fireEvent.change(screen.getByLabelText(en.Registration.newPlayerName), {
+  const search = (name: string) =>
+    fireEvent.change(screen.getByLabelText(en.Registration.findOrAddPlayer), {
       target: { value: name },
     });
-  }
-  it("offers it inside the player list and lists it without saving", async () => {
-    await openRoster();
+  const addNewButton = (name: string) =>
+    screen.getByRole("button", {
+      name: `Add \u201c${name}\u201d as a new player`,
+    });
+
+  it("adds an existing player with one tap and the next free jersey", async () => {
+    await openRoster(twoDivisionWizard);
+    fireEvent.click(screen.getByRole("button", { name: "Add Ana Reyes" }));
+    expect(screen.getByLabelText("Jersey number for Ana Reyes")).toHaveValue(2);
+    expect(screen.getByText("Ana Reyes added as #2.")).toBeInTheDocument();
+  });
+  it("does not offer a player who is on another team in this division", async () => {
+    await openRoster(twoDivisionWizard);
     expect(
-      screen.getByRole("option", { name: en.Registration.addNewPlayerOption }),
-    ).toBeInTheDocument();
-    addNew("Pedro Penduko");
-    fireEvent.click(
-      screen.getByRole("button", { name: en.Registration.addToRoster }),
-    );
+      screen.getByRole("button", { name: "Add Maria Santos" }),
+    ).toBeDisabled();
+  });
+  it("counts players against the division size", async () => {
+    await openRoster();
+    expect(screen.getByText("1 player")).toBeInTheDocument();
+    expect(screen.getByText(en.Registration.rosterReady)).toBeInTheDocument();
+  });
+  it("offers a typed name as a new player and lists it without saving", async () => {
+    await openRoster();
+    search("Pedro Penduko");
+    fireEvent.click(addNewButton("Pedro Penduko"));
     expect(screen.getByText("Pedro Penduko")).toBeInTheDocument();
     expect(
       screen.getByText(en.Registration.newPlayerBadge),
     ).toBeInTheDocument();
     expect(saveRegistration).not.toHaveBeenCalled();
   });
-  it("starts from the name typed in the search box", async () => {
+  it("does not offer a new player with the name of an existing one", async () => {
     await openRoster();
-    fireEvent.change(screen.getByLabelText(en.Registration.findPlayer), {
-      target: { value: "Cardo" },
-    });
-    fireEvent.change(screen.getByLabelText(en.Registration.choosePlayer), {
-      target: { value: "new" },
-    });
-    expect(screen.getByLabelText(en.Registration.newPlayerName)).toHaveValue(
-      "Cardo",
-    );
-  });
-  it("points to an existing player with the same name", async () => {
-    await openRoster();
-    addNew(" juan ");
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Juan is already in the list",
-    );
+    search(" juan ");
     expect(
-      screen.getByRole("button", { name: en.Registration.addToRoster }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: /as a new player/ }),
+    ).toBeNull();
+    expect(
+      screen.getByText("Juan is already on your roster."),
+    ).toBeInTheDocument();
   });
-  it("can be removed before saving, and is created only with the saved roster", async () => {
-    vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("removes with undo, and creates new players only with the saved roster", async () => {
     vi.mocked(saveRegistration).mockResolvedValue({
       success: true,
       id: registrationId,
     });
     await openRoster();
-    addNew("Removed Player");
+    search("Removed Player");
+    fireEvent.click(addNewButton("Removed Player"));
     fireEvent.click(
-      screen.getByRole("button", { name: en.Registration.addToRoster }),
+      screen.getByRole("button", { name: "Remove Removed Player" }),
     );
-    const removeButtons = screen.getAllByRole("button", {
-      name: en.Registration.remove,
-    });
-    fireEvent.click(removeButtons[removeButtons.length - 1]);
-    expect(screen.queryByText("Removed Player")).not.toBeInTheDocument();
-    addNew("Pedro Penduko");
+    expect(screen.getByText("Removed Player removed.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: en.Registration.undo }));
+    expect(
+      screen.getByLabelText("Jersey number for Removed Player"),
+    ).toHaveValue(2);
     fireEvent.click(
-      screen.getByRole("button", { name: en.Registration.addToRoster }),
+      screen.getByRole("button", { name: "Remove Removed Player" }),
     );
+    search("Pedro Penduko");
+    fireEvent.click(addNewButton("Pedro Penduko"));
     fireEvent.click(
       screen.getByRole("button", { name: en.Registration.saveDraft }),
     );
@@ -243,6 +261,38 @@ describe("adding a new player while building the roster", () => {
       { playerId, jerseyNumber: 1 },
       { playerId: input.newPlayers[0].id, jerseyNumber: 2 },
     ]);
+  });
+});
+describe("taking a registration back", () => {
+  it("takes it back to edit and says what to do next", async () => {
+    vi.mocked(withdrawRegistration).mockResolvedValue({
+      success: true,
+      id: registrationId,
+    });
+    wrap(<TakeBackButton slug="sindikato" registrationId={registrationId} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Registration.takeBack }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      en.Registration.takenBack,
+    );
+    expect(withdrawRegistration).toHaveBeenCalledWith(
+      "sindikato",
+      registrationId,
+    );
+    expect(refresh).toHaveBeenCalled();
+  });
+  it("explains when the commissioner already reviewed it", async () => {
+    vi.mocked(withdrawRegistration).mockResolvedValue({
+      error: "notWaitingForReview",
+    });
+    wrap(<TakeBackButton slug="sindikato" registrationId={registrationId} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Registration.takeBack }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "no longer waiting for review",
+    );
   });
 });
 describe("registration forms", () => {
@@ -281,7 +331,8 @@ describe("registration forms", () => {
       success: true,
       id: registrationId,
     });
-    expect(screen.getByLabelText(en.Registration.yourTeam)).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /Royals/ })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /Royals/ })).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: en.Registration.next }));
     await screen.findByRole("heading", { name: en.Registration.yourRoster });
     fireEvent.click(screen.getByRole("button", { name: en.Registration.next }));

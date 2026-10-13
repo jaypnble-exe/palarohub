@@ -72,10 +72,15 @@ export function RosterChangeForm({
         catalog={catalog}
         value={roster}
         onChange={setRoster}
+        min={rules.rosterMin}
         limit={rules.rosterMax}
         disabled={mutation.pending}
+        issues={issues}
       />
-      <EligibilityFeedback issues={issues} />
+      <EligibilityFeedback
+        issues={issues.filter((issue) => !issue.playerId)}
+        quiet={issues.some((issue) => issue.playerId)}
+      />
       <div className="space-y-2">
         <label htmlFor="roster-change-reason" className="font-semibold">
           {t("changeReason")}

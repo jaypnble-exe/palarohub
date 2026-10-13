@@ -98,24 +98,40 @@ export function ChoiceCard({
   onChange,
   title,
   description,
+  badge,
+  disabled = false,
 }: {
   name: string;
   checked: boolean;
   onChange: () => void;
   title: React.ReactNode;
   description?: React.ReactNode;
+  /** A short tag after the title, e.g. "Already entered". */
+  badge?: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
-    <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-2xl border-2 border-border bg-card p-4 transition-colors hover:border-navy has-[:checked]:border-navy">
+    <label
+      className={cn(
+        "flex min-h-11 items-start gap-3 rounded-2xl border-2 border-border bg-card p-4 transition-colors has-[:checked]:border-navy has-[:checked]:bg-accent/40",
+        disabled
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer hover:border-navy",
+      )}
+    >
       <input
         type="radio"
         name={name}
         checked={checked}
+        disabled={disabled}
         onChange={onChange}
-        className="mt-1 size-5 accent-primary"
+        className="mt-1 size-5 shrink-0 accent-primary"
       />
-      <span className="space-y-1">
-        <span className="block font-semibold">{title}</span>
+      <span className="min-w-0 space-y-1">
+        <span className="flex flex-wrap items-center gap-2 font-semibold">
+          {title}
+          {badge}
+        </span>
         {description && (
           <span className="block text-sm text-muted-foreground">
             {description}

@@ -4,6 +4,7 @@ import { AccessDenied } from "@/components/access-denied";
 import { RegistrationDetails } from "@/components/registration/details";
 import { RegistrationWizard } from "@/components/registration/wizard";
 import { RosterChangeForm } from "@/components/registration/change-form";
+import { TakeBackButton } from "@/components/registration/take-back-button";
 import { seasonPayments } from "@/lib/payments-data";
 import { PaymentSummary } from "@/components/payments/payment-summary";
 import { LedgerList } from "@/components/payments/ledger-list";
@@ -28,10 +29,15 @@ export default async function ManagerRegistrationPage({
       playerId: entry.player_id,
       jerseyNumber: entry.jersey_number,
     }));
-  const editable =
-    ["draft", "returned"].includes(data.registration.status) &&
+  const registrationOpen =
     data.settings.is_open &&
     new Date(data.settings.deadline).getTime() > new Date().getTime();
+  const returned = data.registration.status === "returned";
+  // A roster the commissioner sent back stays editable after the deadline.
+  const editable =
+    returned || (data.registration.status === "draft" && registrationOpen);
+  const canTakeBack =
+    data.registration.status === "submitted" && registrationOpen;
   const [{ data: divisions, error }, others] = await Promise.all([
     data.supabase
       .from("divisions")
@@ -86,6 +92,9 @@ export default async function ManagerRegistrationPage({
           <h2 className="font-display text-2xl font-semibold">
             {t("editRegistration")}
           </h2>
+          {returned && !registrationOpen && (
+            <Alert tone="info">{t("returnedAfterDeadline")}</Alert>
+          )}
           <RegistrationWizard
             slug={slug}
             registrationId={registrationId}
@@ -136,6 +145,8 @@ export default async function ManagerRegistrationPage({
             </details>
           )}
         </section>
+      ) : canTakeBack ? (
+        <TakeBackButton slug={slug} registrationId={registrationId} />
       ) : (
         data.registration.status !== "submitted" && (
           <Alert tone="info">{t("registrationLocked")}</Alert>

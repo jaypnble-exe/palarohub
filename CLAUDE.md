@@ -140,8 +140,8 @@ Only basketball is built in Phase 1, but nothing outside the sport modules may a
 1. Commissioner creates season, divisions, rules, fees, deadline (step-by-step wizard).
 2. Commissioner shares a registration link.
 3. Team manager registers team and roster; eligibility is checked live.
-4. Team submits; commissioner approves, rejects, or returns with a comment.
-5. Rosters lock after the deadline. Later changes are request-and-approve with the same checks.
+4. Team submits; commissioner approves, rejects, or returns with a comment. Until the deadline, a manager can take back a registration still waiting for review to edit it.
+5. Rosters lock after the deadline, except a roster the commissioner returned, which stays editable until resubmitted. Changes to approved rosters are request-and-approve with the same checks.
 
 ### Team payments
 - Each `season_team` has a **quota** (total fee, e.g. SAR 1,800).

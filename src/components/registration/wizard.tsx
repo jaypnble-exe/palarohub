@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -20,8 +20,15 @@ import { NameForm } from "./name-form";
 import { EligibilityFeedback, RegistrationFeedback } from "./feedback";
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { Select } from "@/components/ui/field";
+import { ChoiceCard } from "@/components/ui/chip";
+import { Badge } from "@/components/ui/badge";
+import { Alert } from "@/components/ui/alert";
+import { Icon } from "@/components/ui/icon";
+import { Stepper } from "@/components/ui/stepper";
+import { ActionBar } from "@/components/ui/action-bar";
 import { formatSar } from "@/lib/format";
+
+const STEPS = ["stepTeam", "stepRoster", "stepSend"] as const;
 
 type Division = {
   id: string;
@@ -30,6 +37,8 @@ type Division = {
   roster_min: number;
   roster_max: number;
 };
+
+/** Team and division → players → review and send. */
 export function RegistrationWizard({
   slug,
   registrationId = null,
@@ -60,10 +69,10 @@ export function RegistrationWizard({
   const format = useFormatter();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RegistrationActionResult>();
   const {
-    register,
     control,
     setValue,
     getValues,
@@ -88,6 +97,13 @@ export function RegistrationWizard({
         ),
     );
   const divisionOptions = openDivisions(values.teamId);
+  const teamName = teams.find((team) => team.id === values.teamId)?.name;
+  function chooseTeam(teamId: string) {
+    setValue("teamId", teamId);
+    const options = openDivisions(teamId);
+    if (!options.some((item) => item.id === values.divisionId))
+      setValue("divisionId", options[0]?.id ?? "");
+  }
   const newPlayers = (values.newPlayers ?? []).map((player) => ({
     id: player.id ?? "",
     name: player.name ?? "",
@@ -160,16 +176,39 @@ export function RegistrationWizard({
       }),
     )();
   }
-  async function next() {
-    if (await trigger(step === 1 ? ["teamId", "divisionId"] : ["roster"])) {
-      setStep(step + 1);
-      setResult(undefined);
-    }
+  function goTo(nextStep: number) {
+    setStep(nextStep);
+    setResult(undefined);
+    // Start each step at its heading, for screen readers too.
+    requestAnimationFrame(() => {
+      headingRef.current?.scrollIntoView?.({ block: "start" });
+      headingRef.current?.focus({ preventScroll: true });
+    });
   }
+  async function next() {
+    if (await trigger(step === 1 ? ["teamId", "divisionId"] : ["roster"]))
+      goTo(step + 1);
+  }
+  const heading = (key: string) => (
+    <h2
+      ref={headingRef}
+      tabIndex={-1}
+      className="scroll-mt-4 font-display text-2xl font-semibold outline-none"
+    >
+      {t(key)}
+    </h2>
+  );
+  const fee = formatSar(format, feeHalalas);
+  const summary = [
+    ["summaryTeam", teamName],
+    ["summaryDivision", division?.name],
+    ["summaryPlayers", t("rosterCount", { count: roster.length })],
+    ["summaryFee", fee],
+  ] as const;
   return (
     <div className="space-y-5">
       <form
-        className="space-y-5"
+        className="space-y-6"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -177,165 +216,192 @@ export function RegistrationWizard({
           else save(true);
         }}
       >
-        <p className="text-sm font-semibold text-muted-foreground">
-          {t("step", { current: step, total: 3 })}
-        </p>
-        <progress
-          value={step}
-          max={3}
-          className="h-2 w-full accent-primary"
-          aria-label={t("step", { current: step, total: 3 })}
-        />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-muted-foreground">
+              {t("step", { current: step, total: 3 })}
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-11 px-3 py-2 text-sm"
+              disabled={pending}
+              onClick={() => save(false)}
+            >
+              {t("saveDraft")}
+            </Button>
+          </div>
+          <Stepper
+            label={t("progressLabel")}
+            steps={STEPS.map((key) => t(key))}
+            current={step - 1}
+            onSelect={(index) => goTo(index + 1)}
+          />
+        </div>
+
         {step === 1 && (
-          <section className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold">
-              {t("chooseTeamDivision")}
-            </h2>
-            <div className="space-y-2">
-              <label htmlFor="registration-team" className="font-semibold">
-                {t("yourTeam")}
-              </label>
-              <input type="hidden" {...register("teamId")} />
-              <Select
-                id="registration-team"
-                value={values.teamId}
-                onChange={(event) => {
-                  const teamId = event.target.value;
-                  setValue("teamId", teamId);
-                  const options = openDivisions(teamId);
-                  if (!options.some((item) => item.id === values.divisionId))
-                    setValue("divisionId", options[0]?.id ?? "");
-                }}
-                disabled={registrationId !== null}
-              >
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="registration-division" className="font-semibold">
-                {t("division")}
-              </label>
-              <Select id="registration-division" {...register("divisionId")}>
-                {divisionOptions.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {t("divisionOption", {
-                      name: item.name,
+          <section className="space-y-6">
+            {heading("chooseTeamDivision")}
+            <fieldset className="space-y-3">
+              <legend className="mb-3 font-semibold">{t("yourTeam")}</legend>
+              {teams.map((team) => (
+                <ChoiceCard
+                  key={team.id}
+                  name="registration-team"
+                  checked={values.teamId === team.id}
+                  disabled={registrationId !== null}
+                  onChange={() => chooseTeam(team.id)}
+                  title={team.name}
+                  description={
+                    registrationId !== null ? t("teamLocked") : undefined
+                  }
+                />
+              ))}
+            </fieldset>
+            <fieldset className="space-y-3">
+              <legend className="mb-3 font-semibold">{t("division")}</legend>
+              {divisions.map((item) => {
+                const entered = !divisionOptions.includes(item);
+                return (
+                  <ChoiceCard
+                    key={item.id}
+                    name="registration-division"
+                    checked={values.divisionId === item.id}
+                    disabled={entered}
+                    onChange={() =>
+                      setValue("divisionId", item.id, { shouldValidate: true })
+                    }
+                    title={item.name}
+                    badge={
+                      entered ? <Badge>{t("alreadyEntered")}</Badge> : undefined
+                    }
+                    description={t("divisionDetails", {
                       rating: item.max_rating,
+                      min: item.roster_min,
+                      max: item.roster_max,
                     })}
-                  </option>
-                ))}
-              </Select>
-              {divisionOptions.length < divisions.length && (
-                <p className="text-sm text-muted-foreground">
-                  {t("alreadyInDivisions", {
-                    divisions: divisions
-                      .filter((item) => !divisionOptions.includes(item))
-                      .map((item) => item.name)
-                      .join(", "),
-                  })}
-                </p>
+                  />
+                );
+              })}
+              {!divisionOptions.length && (
+                <Alert tone="warning">{t("allDivisionsEntered")}</Alert>
               )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("deadlineValue", {
-                date: format.dateTime(new Date(deadline), {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }),
-              })}
-            </p>
-            <p className="text-sm font-semibold">
-              {t("feeValue", {
-                amount: formatSar(format, feeHalalas),
-              })}
-            </p>
+            </fieldset>
+            <dl className="grid grid-cols-2 gap-3">
+              <div className={cn(cardVariants(), "space-y-1 p-4")}>
+                <dt className="text-sm font-semibold text-muted-foreground">
+                  {t("feeLabel")}
+                </dt>
+                <dd className="font-display text-xl font-semibold">{fee}</dd>
+              </div>
+              <div className={cn(cardVariants(), "space-y-1 p-4")}>
+                <dt className="text-sm font-semibold text-muted-foreground">
+                  {t("deadlineLabel")}
+                </dt>
+                <dd className="font-semibold">
+                  {format.dateTime(new Date(deadline), {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </dd>
+              </div>
+            </dl>
+            {divisions.length > 1 && (
+              <p className="text-sm text-muted-foreground">
+                {t("separateFeeHelp")}
+              </p>
+            )}
           </section>
         )}
+
         {step === 2 && (
           <section className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold">
-              {t("yourRoster")}
-            </h2>
-            <p className="text-sm text-muted-foreground">{t("rosterHelp")}</p>
+            <div className="space-y-1">
+              {heading("yourRoster")}
+              <p className="text-sm text-muted-foreground">
+                {t("rosterFor", {
+                  team: teamName ?? "",
+                  division: division?.name ?? "",
+                })}
+              </p>
+            </div>
             <RosterEditor
               catalog={divisionCatalog}
               value={roster}
               onChange={changeRoster}
               onAddNewPlayer={addNewPlayer}
+              min={division?.roster_min}
               limit={division?.roster_max ?? 50}
+              issues={issues}
             />
-            <EligibilityFeedback issues={issues} />
+            <EligibilityFeedback
+              issues={issues.filter((issue) => !issue.playerId)}
+              quiet={issues.some((issue) => issue.playerId)}
+            />
           </section>
         )}
+
         {step === 3 && (
           <section className="space-y-5">
-            <h2 className="font-display text-2xl font-semibold">
-              {t("reviewRegistration")}
-            </h2>
-            <div className={cn(cardVariants(), "space-y-3")}>
-              <p className="text-xl font-semibold">
-                {teams.find((team) => team.id === values.teamId)?.name}
-              </p>
-              <p>{division?.name}</p>
-              <p>
-                {t("feeValue", {
-                  amount: formatSar(format, feeHalalas),
-                })}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {t("submissionHelp")}
-              </p>
-            </div>
+            {heading("reviewRegistration")}
+            <dl className={cn(cardVariants(), "grid grid-cols-2 gap-4")}>
+              {summary.map(([label, value]) => (
+                <div key={label} className="min-w-0 space-y-1">
+                  <dt className="text-sm font-semibold text-muted-foreground">
+                    {t(label)}
+                  </dt>
+                  <dd className="truncate font-semibold">{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <EligibilityFeedback issues={issues} />
             <RosterEditor
               catalog={divisionCatalog}
               value={roster}
               onChange={() => {}}
               disabled
+              issues={issues}
             />
-            <EligibilityFeedback issues={issues} />
+            <Alert tone="info" title={t("whatNext")}>
+              {t("submissionHelp")}
+            </Alert>
           </section>
         )}
+
         {!!Object.keys(errors).length && (
-          <p role="alert" className="text-sm text-destructive">
-            {t("invalidForm")}
-          </p>
+          <Alert tone="danger">{t("invalidForm")}</Alert>
         )}
         <RegistrationFeedback result={result} />
-        <div className="flex flex-wrap gap-3">
+        <ActionBar>
           {step > 1 && (
             <Button
               type="button"
               variant="outline"
               disabled={pending}
-              onClick={() => setStep(step - 1)}
+              onClick={() => goTo(step - 1)}
             >
+              <Icon name="back" className="size-5" />
               {t("back")}
             </Button>
           )}
           <Button
             type="submit"
             className="flex-1"
-            disabled={pending || (step === 3 && issues.length > 0)}
+            disabled={
+              pending ||
+              (step === 1 && !division) ||
+              (step === 3 && issues.length > 0)
+            }
           >
             {t(pending ? "saving" : step < 3 ? "next" : "submit")}
+            {!pending && (
+              <Icon name={step < 3 ? "arrow" : "check"} className="size-5" />
+            )}
           </Button>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          disabled={pending}
-          onClick={() => save(false)}
-        >
-          {t("saveDraft")}
-        </Button>
+        </ActionBar>
       </form>
       {step === 1 && !registrationId && (
-        <details className="rounded-xl border bg-card p-4">
+        <details className={cardVariants()}>
           <summary className="min-h-11 cursor-pointer py-3 font-semibold">
             {t("createAnotherTeam")}
           </summary>
@@ -343,7 +409,7 @@ export function RegistrationWizard({
             slug={slug}
             kind="team"
             embedded
-            onCreated={(id) => setValue("teamId", id)}
+            onCreated={(id) => chooseTeam(id)}
           />
         </details>
       )}

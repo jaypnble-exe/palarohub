@@ -1667,6 +1667,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      withdraw_team_registration: {
+        Args: { p_league_id: string; p_registration_id: string };
+        Returns: undefined;
+      };
       review_team_registration: {
         Args: {
           p_comment?: string;

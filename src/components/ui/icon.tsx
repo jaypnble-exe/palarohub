@@ -22,7 +22,9 @@ export type IconName =
   | "alert"
   | "info"
   | "pin"
-  | "share";
+  | "share"
+  | "close"
+  | "search";
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />,
@@ -140,6 +142,13 @@ const paths: Record<IconName, React.ReactNode> = {
       <circle cx="6" cy="12" r="2.5" />
       <circle cx="18" cy="19" r="2.5" />
       <path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4" />
+    </>
+  ),
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m20 20-4.4-4.4" />
     </>
   ),
 };

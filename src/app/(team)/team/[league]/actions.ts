@@ -37,9 +37,10 @@ function failure(error: {
     return { error: "registrationClosed" };
   if (error.message.includes("deadline_passed"))
     return { error: "deadlinePassed" };
+  if (error.message.includes("registration_not_submitted"))
+    return { error: "notWaitingForReview" };
   if (
     error.message.includes("registration_locked") ||
-    error.message.includes("registration_not_submitted") ||
     error.message.includes("request_not_submitted")
   )
     return { error: "registrationLocked" };
@@ -150,6 +151,22 @@ export async function saveRegistration(
   if (error) return failure(error);
   refresh(slug);
   return { success: true, id: data };
+}
+/** Takes a registration still waiting for review back to a draft, to edit it. */
+export async function withdrawRegistration(
+  slug: string,
+  registrationId: string,
+): Promise<RegistrationActionResult> {
+  if (!validId(registrationId)) return { error: "invalidForm" };
+  const { supabase, league, canRegister } = await getLeagueAccess(slug, "team");
+  if (!canRegister) return { error: "notAllowed" };
+  const { error } = await supabase.rpc("withdraw_team_registration", {
+    p_league_id: league.id,
+    p_registration_id: registrationId,
+  });
+  if (error) return failure(error);
+  refresh(slug);
+  return { success: true, id: registrationId };
 }
 export async function configureRegistration(
   slug: string,
