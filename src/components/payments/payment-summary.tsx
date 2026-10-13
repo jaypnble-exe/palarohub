@@ -47,23 +47,41 @@ export async function PaymentSummary({ team }: { team: TeamPayments }) {
   );
 }
 
+type Translate = (key: string, values?: Record<string, string>) => string;
+type Formatter = Parameters<typeof formatSar>[0];
+
+/** The colour and words for a payment status, for any badge. */
+export function paymentBadge(
+  status: PaymentStatus,
+  t: Translate,
+  format: Formatter,
+): { tone: "danger" | "success" | "neutral"; text: string } {
+  if (status.behind)
+    return {
+      tone: "danger",
+      text: t("behindBy", {
+        amount: formatSar(format, status.behindByHalalas),
+      }),
+    };
+  if (status.paidInFull)
+    return {
+      tone: "success",
+      text:
+        status.balanceHalalas < 0
+          ? t("credit", { amount: formatSar(format, -status.balanceHalalas) })
+          : t("paidInFull"),
+    };
+  return { tone: "neutral", text: t("upToDate") };
+}
+
 /** "Behind by SAR 150", "Up to date", or "Paid in full", in the matching colour. */
 export async function PaymentBadge({ status }: { status: PaymentStatus }) {
   const t = await getTranslations("Payments");
   const format = await getFormatter();
-  if (status.behind)
-    return (
-      <Badge tone="danger">
-        {t("behindBy", { amount: formatSar(format, status.behindByHalalas) })}
-      </Badge>
-    );
-  if (status.paidInFull)
-    return (
-      <Badge tone="success">
-        {status.balanceHalalas < 0
-          ? t("credit", { amount: formatSar(format, -status.balanceHalalas) })
-          : t("paidInFull")}
-      </Badge>
-    );
-  return <Badge>{t("upToDate")}</Badge>;
+  const { tone, text } = paymentBadge(
+    status,
+    (key, values) => t(key, values),
+    format,
+  );
+  return <Badge tone={tone}>{text}</Badge>;
 }

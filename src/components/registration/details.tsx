@@ -9,7 +9,14 @@ type Data = Extract<
   Awaited<ReturnType<typeof loadRegistration>>,
   { denied: false }
 >;
-export async function RegistrationDetails({ data }: { data: Data }) {
+export async function RegistrationDetails({
+  data,
+  showStatus = true,
+}: {
+  data: Data;
+  /** Off where a status banner already explains the registration. */
+  showStatus?: boolean;
+}) {
   const t = await getTranslations("Registration");
   const format = await getFormatter();
   const entries =
@@ -30,8 +37,8 @@ export async function RegistrationDetails({ data }: { data: Data }) {
             amount: formatSar(format, data.registration.fee_halalas),
           })}
         </p>
-        <Badge>{t(`status.${data.registration.status}`)}</Badge>
-        {data.registration.review_comment && (
+        {showStatus && <Badge>{t(`status.${data.registration.status}`)}</Badge>}
+        {showStatus && data.registration.review_comment && (
           <p className="rounded-xl bg-accent p-4 text-sm">
             {data.registration.review_comment}
           </p>

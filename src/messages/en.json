@@ -155,7 +155,71 @@
     "placeholder": "Results and standings update automatically once games are approved."
   },
   "TeamHome": {
-    "placeholder": "Your team workspace will be available here soon."
+    "placeholder": "Your team workspace will be available here soon.",
+    "role": "Team manager",
+    "noTeamYet": "Welcome",
+    "todo": "What to do next",
+    "allSet": "You're all set",
+    "allSetHelp": "Nothing needs doing right now. Check back before your next game.",
+    "todoFix": "The league asked for changes to {team}",
+    "todoDraft": "Finish and send the registration for {team}",
+    "todoPay": "{team} owes {amount} before the next game",
+    "todoRegister": "Register a team for {season} (closes {deadline})",
+    "actionFix": "Fix",
+    "actionContinue": "Continue",
+    "actionView": "View",
+    "actionRegister": "Register",
+    "yourTeams": "Your teams",
+    "statusHelp": {
+      "draft": "Not sent yet. Finish the roster and send it to the league.",
+      "submitted": "Sent. The league is checking your roster.",
+      "returned": "The league asked for changes. Open it to see what to fix.",
+      "approved": "Approved. Your team is in.",
+      "rejected": "Not accepted this season."
+    },
+    "changePending": "Roster change waiting",
+    "nextGame": "Next: vs {opponent}, {when}",
+    "timeToBeAnnounced": "time to be announced",
+    "noTeams": "You have no team yet",
+    "noTeamsOpen": "Registration is open. Create your team and roster.",
+    "noTeamsClosed": "No season is accepting teams right now. The league will share a link when it opens.",
+    "nextGames": "Next games",
+    "allGames": "All games",
+    "liveNow": "Being played",
+    "noUpcoming": "No games scheduled yet.",
+    "latestResults": "Latest results",
+    "matchup": "{home} vs {away}",
+    "result": "{home} {homeScore} – {awayScore} {away}",
+    "shortcuts": "Shortcuts",
+    "tileSchedule": "League schedule",
+    "tileStandings": "Standings",
+    "tileLeague": "League page",
+    "tileRegister": "Register a team",
+    "backToCommissioner": "Back to commissioner home",
+    "gamesTitle": "Your games",
+    "noGames": "No games yet",
+    "noGamesHelp": "Your games appear here once your team is approved and the league makes the schedule.",
+    "paymentsTitle": "Payments",
+    "paymentsHelp": "The league records every payment and fine. Talk to the commissioner if something looks wrong.",
+    "noPayments": "Payments appear here once a team is approved.",
+    "progressLabel": "Registration progress",
+    "stepDraft": "Roster",
+    "stepSent": "Sent",
+    "stepApproved": "Approved",
+    "statusTitle": {
+      "draft": "Not sent yet",
+      "submitted": "Waiting for the league",
+      "returned": "Changes requested",
+      "approved": "Approved",
+      "rejected": "Not accepted"
+    },
+    "statusBody": {
+      "draft": "Finish your roster below, then send it to the league.",
+      "submitted": "The league is checking your roster. You will see their decision here.",
+      "returned": "Fix your roster below and send it again.",
+      "approved": "Your team is in {season}. Roster changes now need the league's approval.",
+      "rejected": "The league did not accept this registration for {season}."
+    }
   },
   "Access": {
     "title": "You do not have access to this page.",
@@ -996,5 +1060,12 @@
     "teamWorkspaceHelp": "See what team managers see",
     "myLeagues": "My leagues",
     "newLeague": "New league"
+  },
+  "TeamNav": {
+    "label": "Team menu",
+    "home": "Home",
+    "games": "Games",
+    "payments": "Payments",
+    "league": "League"
   }
 }

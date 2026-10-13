@@ -9,6 +9,10 @@ import { PaymentSummary } from "@/components/payments/payment-summary";
 import { LedgerList } from "@/components/payments/ledger-list";
 import { cardVariants } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { Alert } from "@/components/ui/alert";
+import { Section } from "@/components/ui/section";
+import { RegistrationStatus } from "@/components/team/registration-status";
+import type { ManagerRegistration } from "@/lib/team-data";
 export default async function ManagerRegistrationPage({
   params,
 }: {
@@ -52,17 +56,20 @@ export default async function ManagerRegistrationPage({
     <main className="mx-auto max-w-2xl space-y-6 py-6">
       <PageHeader
         back={{ href: `/team/${slug}`, label: t("teamHome") }}
+        eyebrow={`${data.season.name} · ${data.division.name}`}
         title={data.registration.team_name}
       />
-      <RegistrationDetails data={data} />
+      <RegistrationStatus
+        status={data.registration.status as ManagerRegistration["status"]}
+        seasonName={data.season.name}
+        comment={data.registration.review_comment}
+      />
+      <RegistrationDetails data={data} showStatus={false} />
       {payments && (
-        <section className="space-y-3">
-          <h2 className="font-display text-2xl font-semibold">
-            {paymentText("teamTitle")}
-          </h2>
+        <Section id="payments" title={paymentText("teamTitle")}>
           <PaymentSummary team={payments} />
           <LedgerList slug={slug} entries={payments.entries} canEdit={false} />
-        </section>
+        </Section>
       )}
       {editable ? (
         <section className="space-y-5">
@@ -93,9 +100,7 @@ export default async function ManagerRegistrationPage({
             {t("rosterChanges")}
           </h2>
           {pendingChange ? (
-            <p className="rounded-xl border bg-card p-4">
-              {t("changeWaiting")}
-            </p>
+            <Alert tone="info">{t("changeWaiting")}</Alert>
           ) : (
             <details className={cardVariants()}>
               <summary className="min-h-11 cursor-pointer py-3 font-semibold">
@@ -118,20 +123,16 @@ export default async function ManagerRegistrationPage({
           )}
         </section>
       ) : (
-        <p className="rounded-xl border bg-card p-4 text-sm">
-          {t(
-            data.registration.status === "submitted"
-              ? "awaitingReview"
-              : "registrationLocked",
-          )}
-        </p>
+        data.registration.status !== "submitted" && (
+          <Alert tone="info">{t("registrationLocked")}</Alert>
+        )
       )}
       {data.changes
         .filter((change) => change.status !== "submitted")
         .map((change) => (
           <div
             key={change.id}
-            className="space-y-2 rounded-xl border bg-card p-4 text-sm"
+            className={`${cardVariants()} space-y-2 text-sm`}
           >
             <p className="font-semibold">
               {t(`changeStatus.${change.status}`)}
