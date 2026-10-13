@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   requestPasswordReset,
-  sendMagicLink,
   signInWithPassword,
   signUpWithPassword,
   type AuthResult,
@@ -20,15 +19,21 @@ import { ChipGroup } from "@/components/ui/chip";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-type Mode = "signIn" | "signUp" | "reset" | "link";
+type Mode = "signIn" | "signUp" | "reset";
 
 /**
- * Email and password first. "Forgot password?" and "Email me a sign-in link"
- * are backups for people who cannot or would rather not use a password.
+ * Email and password. "Forgot password?" emails a link to choose a new one.
+ * People arriving from a registration link start on "I'm new".
  */
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({
+  next,
+  startNew = false,
+}: {
+  next: string;
+  startNew?: boolean;
+}) {
   const t = useTranslations("Login");
-  const [mode, setMode] = useState<Mode>("signIn");
+  const [mode, setMode] = useState<Mode>(startNew ? "signUp" : "signIn");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,9 +66,7 @@ export function LoginForm({ next }: { next: string }) {
           ? await signInWithPassword({ email, password }, next)
           : mode === "signUp"
             ? await signUpWithPassword({ name, email, password }, next)
-            : mode === "reset"
-              ? await requestPasswordReset({ email })
-              : await sendMagicLink({ email }, next);
+            : await requestPasswordReset({ email });
       if ("success" in outcome && outcome.redirectTo) {
         // A full load so every page sees the new session.
         window.location.assign(outcome.redirectTo);
@@ -93,12 +96,8 @@ export function LoginForm({ next }: { next: string }) {
       )}
       {!passwordMode && (
         <div className="space-y-1">
-          <h2 className="text-xl font-semibold">
-            {t(mode === "reset" ? "resetTitle" : "linkTitle")}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {t(mode === "reset" ? "resetHelp" : "linkHelp")}
-          </p>
+          <h2 className="text-xl font-semibold">{t("resetTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("resetHelp")}</p>
         </div>
       )}
       <form
@@ -182,9 +181,7 @@ export function LoginForm({ next }: { next: string }) {
                 ? "signInButton"
                 : mode === "signUp"
                   ? "signUpButton"
-                  : mode === "reset"
-                    ? "resetButton"
-                    : "sendLink",
+                  : "resetButton",
           )}
         </Button>
       </form>
@@ -210,15 +207,6 @@ export function LoginForm({ next }: { next: string }) {
             onClick={() => switchTo("reset")}
           >
             {t("forgotPassword")}
-          </button>
-        )}
-        {mode !== "link" && (
-          <button
-            type="button"
-            className="min-h-11 font-semibold text-orange-dark hover:underline"
-            onClick={() => switchTo("link")}
-          >
-            {t("useLink")}
           </button>
         )}
       </div>

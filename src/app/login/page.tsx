@@ -2,12 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { hasSupabaseConfig } from "@/lib/supabase/env";
-import { safeNextPath } from "@/lib/validation/auth";
+import { registrationSeason, safeNextPath } from "@/lib/validation/auth";
 import { LoginForm } from "@/components/login-form";
 import { Button } from "@/components/ui/button";
 import { signInWithGoogle } from "@/app/auth/actions";
 import { Alert } from "@/components/ui/alert";
 import { isGoogleEnabled } from "@/lib/auth-settings";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function LoginPage({
   searchParams,
@@ -20,6 +21,19 @@ export default async function LoginPage({
   const t = await getTranslations("Login");
   const configured = hasSupabaseConfig();
   const google = configured && (await isGoogleEnabled());
+  // New team managers arrive from a registration link: start them on "I'm new".
+  const seasonId = configured ? registrationSeason(next) : undefined;
+  const season = seasonId
+    ? (
+        await (
+          await createClient()
+        )
+          .from("seasons")
+          .select("name")
+          .eq("id", seasonId)
+          .maybeSingle()
+      ).data
+    : null;
   const errorKey = ["unavailable", "googleFailed", "callbackFailed"].includes(
     error ?? "",
   )
@@ -34,7 +48,14 @@ export default async function LoginPage({
       {errorKey && <Alert tone="danger">{t(errorKey)}</Alert>}
       {configured ? (
         <>
-          <LoginForm next={next} />
+          {seasonId && (
+            <Alert tone="info">
+              {season
+                ? t("registeringFor", { season: season.name })
+                : t("registeringTeam")}
+            </Alert>
+          )}
+          <LoginForm next={next} startNew={Boolean(seasonId)} />
           {google && (
             <>
               <p className="text-center text-sm text-muted-foreground">

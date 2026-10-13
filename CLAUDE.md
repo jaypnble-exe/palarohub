@@ -36,7 +36,7 @@ Roles are **per league** (a person can hold different roles in different leagues
 - **Tailwind CSS + shadcn/ui**
 - **react-hook-form + zod** for forms; zod schemas shared between client and server
 - **Supabase**: Postgres, Auth, Realtime, Storage
-- **Supabase Auth**: Google sign-in + email magic link only. **No phone/SMS login** for now.
+- **Supabase Auth**: email + password (forgot password emails a reset link), Google when enabled. No email sign-in links. **No phone/SMS login** for now.
 - **PWA**: Serwist (service worker) + Dexie (IndexedDB) for offline scoring
 - **@react-pdf/renderer** for PDF scoresheets
 - **next-intl** for UI text (English only; no other languages planned)
@@ -264,7 +264,7 @@ tracked migrations using `supabase link` and `supabase db push`, never a cloud r
 ## Roadmap
 
 **Phase 1 – MVP (pilot season)**
-1. Auth (Google + email magic link), leagues, members, roles, RLS
+1. Auth (email + password, Google), leagues, members, roles, RLS
 2. Seasons, divisions, rules, rating scale
 3. Teams, players, rating history, registration flow with eligibility checks
 4. Schedule (round-robin generator) and announcements

@@ -13,7 +13,7 @@ import {
   signUpSchema,
 } from "@/lib/validation/auth";
 
-/** Where email links (sign-in, confirmation, reset) bring people back to. */
+/** Where email links (account confirmation, password reset) bring people back to. */
 function callbackUrl(next: string) {
   const callback = new URL("/auth/callback", getSiteUrl());
   callback.searchParams.set("next", safeNextPath(next));
@@ -24,7 +24,7 @@ function callbackUrl(next: string) {
 export type AuthResult =
   | {
       success: true;
-      message?: "linkSent" | "confirmEmail" | "resetSent";
+      message?: "confirmEmail" | "resetSent";
       /** Where to go now that the person is signed in. */
       redirectTo?: string;
     }
@@ -38,7 +38,6 @@ export type AuthResult =
         | "accountExists"
         | "weakPassword"
         | "tooManyRequests"
-        | "sendFailed"
         | "signInFailed";
     };
 
@@ -121,25 +120,6 @@ export async function updatePassword(input: unknown): Promise<AuthResult> {
   });
   if (error) return authError(error);
   return { success: true };
-}
-
-export async function sendMagicLink(
-  input: unknown,
-  next: string,
-): Promise<AuthResult> {
-  const parsed = emailSchema.safeParse(input);
-  if (!parsed.success) return { error: "invalidEmail" };
-  if (!hasSupabaseConfig()) return { error: "unavailable" };
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email,
-    options: { emailRedirectTo: callbackUrl(next) },
-  });
-  if (error)
-    return {
-      error: error.status === 429 ? "tooManyRequests" : "sendFailed",
-    };
-  return { success: true, message: "linkSent" };
 }
 
 export async function signInWithGoogle(next: string) {

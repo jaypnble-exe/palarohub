@@ -14,14 +14,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import en from "@/messages/en.json";
 import {
   requestPasswordReset,
-  sendMagicLink,
   signInWithPassword,
   signUpWithPassword,
 } from "@/app/auth/actions";
 import { LoginForm } from "./login-form";
 
 vi.mock("@/app/auth/actions", () => ({
-  sendMagicLink: vi.fn(),
   signInWithPassword: vi.fn(),
   signUpWithPassword: vi.fn(),
   requestPasswordReset: vi.fn(),
@@ -184,33 +182,34 @@ describe("backups", () => {
     });
   });
 
-  it("still offers a sign-in link", async () => {
-    vi.mocked(sendMagicLink).mockResolvedValue({
-      success: true,
-      message: "linkSent",
-    });
-    renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: en.Login.useLink }));
-    type(en.Login.email, "member@example.test");
-    fireEvent.click(screen.getByRole("button", { name: en.Login.sendLink }));
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      en.Login.linkSent,
-    );
-    expect(sendMagicLink).toHaveBeenCalledWith(
-      { email: "member@example.test" },
-      "/admin/sindikato",
-    );
-  });
-
   it("shows plain feedback if the request fails", async () => {
-    vi.mocked(sendMagicLink).mockRejectedValue(new Error("network"));
+    vi.mocked(requestPasswordReset).mockRejectedValue(new Error("network"));
     renderLogin();
-    fireEvent.click(screen.getByRole("button", { name: en.Login.useLink }));
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Login.forgotPassword }),
+    );
     type(en.Login.email, "member@example.test");
-    fireEvent.click(screen.getByRole("button", { name: en.Login.sendLink }));
+    fireEvent.click(screen.getByRole("button", { name: en.Login.resetButton }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       en.Login.signInFailed,
     );
+  });
+
+  it("no longer offers an email sign-in link", () => {
+    renderLogin();
+    expect(screen.queryByText(/sign-in link/i)).not.toBeInTheDocument();
+  });
+
+  it("starts new team managers on creating an account", () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
+        <LoginForm next="/sindikato/register/s1" startNew />
+      </NextIntlClientProvider>,
+    );
+    expect(
+      screen.getByRole("button", { name: en.Login.signUpTab }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText(en.Login.name)).toBeInTheDocument();
   });
 });
 

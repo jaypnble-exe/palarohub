@@ -39,3 +39,8 @@ export function safeNextPath(value: string | null | undefined): string {
     return "/leagues";
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+/** "/sindikato/register/<season>" → the season id, when someone came from a registration link. */
+export function registrationSeason(next: string): string | undefined {
+  return /^\/[a-z0-9-]+\/register\/([0-9a-f-]{36})(?:[/?#]|$)/i.exec(next)?.[1];
+}

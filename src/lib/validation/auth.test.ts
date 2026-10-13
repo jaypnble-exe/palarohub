@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   newPasswordSchema,
+  registrationSeason,
   safeNextPath,
   signInSchema,
   signUpSchema,
@@ -86,5 +87,19 @@ describe("password rules", () => {
     });
     expect(mismatch.success).toBe(false);
     expect(mismatch.error?.issues[0]?.message).toBe("mismatch");
+  });
+});
+
+describe("registration arrivals", () => {
+  it('spots a registration link so new managers start on "I\'m new"', () => {
+    const season = "50000000-0000-4000-8000-000000000001";
+    expect(registrationSeason(`/sindikato/register/${season}`)).toBe(season);
+    expect(registrationSeason(`/sindikato/register/${season}?ref=wa`)).toBe(
+      season,
+    );
+    expect(registrationSeason("/admin/sindikato")).toBeUndefined();
+    expect(
+      registrationSeason("/sindikato/register/not-a-season"),
+    ).toBeUndefined();
   });
 });
