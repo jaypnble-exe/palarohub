@@ -144,7 +144,12 @@
     "ofTotal": "{value} of {total}",
     "statGamesDetail": "Approved results",
     "statCollected": "Payments collected",
-    "statCollectedDetail": "of {total} expected"
+    "statCollectedDetail": "of {total} expected",
+    "registrationOpenTitle": "Team registration is open",
+    "registrationOpenText": "{season} · teams can register until {deadline}.",
+    "registeredCount": "{count, plural, =0 {No teams have registered yet. Share the link with team managers.} one {# team has registered so far.} other {# teams have registered so far.}}",
+    "registrationShareText": "Register your team for {season} here:",
+    "registrationSettings": "Change fee, deadline, or close registration"
   },
   "PublicLeague": {
     "placeholder": "Results and standings update automatically once games are approved."

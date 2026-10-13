@@ -174,7 +174,20 @@ describe("commissioner home", () => {
         <AdminNav slug="sindikato" />
       </NextIntlClientProvider>,
     );
-    const home = renderToStaticMarkup(await Dashboard(props));
+    const home = renderToStaticMarkup(
+      <NextIntlClientProvider locale="en" messages={en}>
+        {await Dashboard({
+          ...props,
+          registration: {
+            url: "https://palarohub.com/sindikato/register/50000000-0000-4000-8000-000000000001",
+            settingsHref: "#",
+            deadline: "2026-11-11T18:00:00.000Z",
+            seasonName: "Sindikato Cup 2026",
+            registered: 3,
+          },
+        })}
+      </NextIntlClientProvider>,
+    );
     writeFileSync(process.env.DASHBOARD_PREVIEW, `${nav}\n${home}`);
   });
 
@@ -237,5 +250,53 @@ describe("commissioner home", () => {
     expect(
       within(next).getByRole("link", { name: en.AdminHome.scorerPin }),
     ).toHaveAttribute("href", "/admin/sindikato/schedule/d1");
+  });
+
+  it("puts the registration link on the home screen while teams can register", async () => {
+    const url = "https://palarohub.com/sindikato/register/s1";
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        {await Dashboard({
+          ...props,
+          registration: {
+            url,
+            settingsHref: "/admin/sindikato/seasons/s1/registration",
+            deadline: "2026-11-11T18:00:00.000Z",
+            seasonName: "Sindikato Cup 2026",
+            registered: 3,
+          },
+        })}
+      </NextIntlClientProvider>,
+    );
+    const card = screen.getByRole("region", {
+      name: en.AdminHome.registrationOpenTitle,
+    });
+    expect(within(card).getByText(url)).toBeInTheDocument();
+    expect(
+      within(card).getByText("3 teams have registered so far."),
+    ).toBeInTheDocument();
+    const whatsapp = within(card).getByRole("link", {
+      name: en.Share.whatsapp,
+    });
+    expect(decodeURIComponent(whatsapp.getAttribute("href") ?? "")).toContain(
+      url,
+    );
+    expect(
+      within(card).getByRole("button", { name: en.Share.copyLink }),
+    ).toBeInTheDocument();
+    expect(
+      within(card).getByRole("link", {
+        name: en.AdminHome.registrationSettings,
+      }),
+    ).toHaveAttribute("href", "/admin/sindikato/seasons/s1/registration");
+  });
+
+  it("hides the registration card once registration is closed", async () => {
+    render(await Dashboard({ ...props, registration: null }));
+    expect(
+      screen.queryByRole("region", {
+        name: en.AdminHome.registrationOpenTitle,
+      }),
+    ).toBeNull();
   });
 });

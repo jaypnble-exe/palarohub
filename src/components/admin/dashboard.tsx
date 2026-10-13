@@ -12,6 +12,7 @@ import { LinkCard } from "@/components/ui/link-card";
 import { Section } from "@/components/ui/section";
 import { CountBadge, StatTile } from "@/components/ui/stat";
 import { TileGrid } from "@/components/ui/tile-grid";
+import { ShareButtons } from "@/components/share-buttons";
 import { cn } from "@/lib/utils";
 import { buildTodos, type DashboardTasks } from "./todos";
 
@@ -34,6 +35,14 @@ export interface DashboardSeason {
   expectedHalalas: number;
 }
 
+export interface DashboardRegistration {
+  url: string;
+  settingsHref: string;
+  deadline: string;
+  seasonName: string;
+  registered: number;
+}
+
 export interface DashboardSetup {
   seasonId: string | null;
   hasSeason: boolean;
@@ -50,6 +59,8 @@ interface DashboardProps {
   isDemo: boolean;
   season: DashboardSeason | null;
   setup: DashboardSetup;
+  /** Present only while the current season accepts team registrations. */
+  registration?: DashboardRegistration | null;
   liveGames: DashboardGame[];
   upcomingGames: DashboardGame[];
   tasks: DashboardTasks;
@@ -70,6 +81,7 @@ export async function Dashboard({
   isDemo,
   season,
   setup,
+  registration = null,
   liveGames,
   upcomingGames,
   tasks,
@@ -215,6 +227,45 @@ export async function Dashboard({
               );
             })}
           </ol>
+        </Section>
+      )}
+
+      {registration && (
+        <Section id="registration" title={t("registrationOpenTitle")}>
+          <Card tone="highlight" className="space-y-4">
+            <div className="space-y-1">
+              <p className="font-semibold">
+                {t("registrationOpenText", {
+                  season: registration.seasonName,
+                  deadline: format.dateTime(new Date(registration.deadline), {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }),
+                })}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("registeredCount", { count: registration.registered })}
+              </p>
+            </div>
+            <p className="break-all rounded-xl bg-accent px-3 py-2 font-mono text-sm">
+              {registration.url}
+            </p>
+            <ShareButtons
+              url={registration.url}
+              text={t("registrationShareText", {
+                season: registration.seasonName,
+              })}
+            />
+            <Link
+              href={registration.settingsHref}
+              className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-dark hover:underline"
+            >
+              {t("registrationSettings")}
+            </Link>
+          </Card>
         </Section>
       )}
 

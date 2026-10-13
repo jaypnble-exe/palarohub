@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { requireUser, isPlatformAdmin } from "@/lib/auth";
+import { requireUser, isPlatformAdmin, getSiteUrl } from "@/lib/auth";
 import { AccessDenied } from "@/components/access-denied";
 import { Dashboard } from "@/components/admin/dashboard";
 import { scheduleOverview } from "@/lib/schedule-data";
@@ -110,42 +110,58 @@ export default async function CommissionerHome({
   // Games being played now, the next few on the schedule, and season totals.
   const gameFields =
     "id,division_id,home_team_name,away_team_name,venue,division_name,scheduled_at";
-  const [live, upcoming, seasonGames, registration] = await Promise.all([
-    supabase
-      .from("published_games")
-      .select(gameFields)
-      .eq("league_id", league.id)
-      .eq("status", "in_progress")
-      .order("scheduled_at"),
-    supabase
-      .from("published_games")
-      .select(gameFields)
-      .eq("league_id", league.id)
-      .eq("status", "scheduled")
-      .gte(
-        "scheduled_at",
-        new Date(new Date().getTime() - 3 * 3_600_000).toISOString(),
-      )
-      .order("scheduled_at")
-      .limit(3),
-    currentSeason
-      ? supabase
-          .from("published_games")
-          .select("status")
-          .eq("league_id", league.id)
-          .eq("season_id", currentSeason.id)
-          .neq("status", "cancelled")
-      : { data: [] as { status: string | null }[], error: null },
-    currentSeason
-      ? supabase
-          .from("registration_settings")
-          .select("season_id")
-          .eq("league_id", league.id)
-          .eq("season_id", currentSeason.id)
-          .maybeSingle()
-      : { data: null, error: null },
-  ]);
-  if (live.error || upcoming.error || seasonGames.error || registration.error)
+  const [live, upcoming, seasonGames, registration, registered] =
+    await Promise.all([
+      supabase
+        .from("published_games")
+        .select(gameFields)
+        .eq("league_id", league.id)
+        .eq("status", "in_progress")
+        .order("scheduled_at"),
+      supabase
+        .from("published_games")
+        .select(gameFields)
+        .eq("league_id", league.id)
+        .eq("status", "scheduled")
+        .gte(
+          "scheduled_at",
+          new Date(new Date().getTime() - 3 * 3_600_000).toISOString(),
+        )
+        .order("scheduled_at")
+        .limit(3),
+      currentSeason
+        ? supabase
+            .from("published_games")
+            .select("status")
+            .eq("league_id", league.id)
+            .eq("season_id", currentSeason.id)
+            .neq("status", "cancelled")
+        : { data: [] as { status: string | null }[], error: null },
+      currentSeason
+        ? supabase
+            .from("registration_settings")
+            .select("season_id,is_open,deadline")
+            .eq("league_id", league.id)
+            .eq("season_id", currentSeason.id)
+            .maybeSingle()
+        : { data: null, error: null },
+      // Teams that have sent their registration this season (waiting or approved).
+      currentSeason
+        ? supabase
+            .from("season_teams")
+            .select("id", { count: "exact", head: true })
+            .eq("league_id", league.id)
+            .eq("season_id", currentSeason.id)
+            .in("status", ["submitted", "approved"])
+        : { count: 0, error: null },
+    ]);
+  if (
+    live.error ||
+    upcoming.error ||
+    seasonGames.error ||
+    registration.error ||
+    registered.error
+  )
     throw new Error("Unable to load games.");
   const toGame = (game: (typeof live.data)[number]) => ({
     id: game.id ?? "",
@@ -185,6 +201,19 @@ export default async function CommissionerHome({
     teamsApproved: seasonTeams.length >= 2,
     scheduled: divisions.some((division) => division.gameCount > 0),
   };
+  // While teams can register, the share link sits on the home screen.
+  const registrationOpen =
+    currentSeason &&
+    registration.data?.is_open &&
+    new Date(registration.data.deadline).getTime() > new Date().getTime()
+      ? {
+          url: `${getSiteUrl()}/${slug}/register/${currentSeason.id}`,
+          settingsHref: `/admin/${slug}/seasons/${currentSeason.id}/registration`,
+          deadline: registration.data.deadline,
+          seasonName: currentSeason.name,
+          registered: registered.count ?? 0,
+        }
+      : null;
   const isDemo = Boolean(
     settings &&
     typeof settings === "object" &&
@@ -200,6 +229,7 @@ export default async function CommissionerHome({
       isDemo={isDemo}
       season={season}
       setup={setup}
+      registration={registrationOpen}
       liveGames={live.data.map(toGame)}
       upcomingGames={upcoming.data.map(toGame)}
       tasks={{
