@@ -697,6 +697,7 @@ export function BasketballScorebook({
               state={state}
               rules={rules}
               remainingMs={shotClockMs}
+              gameClockMs={clockMs}
               teamNames={teamNames}
               record={record}
               disabled={blocked}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   sides,
+  shotClockApplies,
   type BasketballGameState,
   type BasketballRules,
   type Side,
@@ -56,6 +57,7 @@ export function ShotClockControls({
   state,
   rules,
   remainingMs,
+  gameClockMs,
   teamNames,
   record,
   disabled,
@@ -63,6 +65,7 @@ export function ShotClockControls({
   state: BasketballGameState;
   rules: BasketballRules;
   remainingMs: number;
+  gameClockMs: number;
   teamNames: Record<Side, string>;
   record: RecordEvent;
   disabled: boolean;
@@ -70,7 +73,7 @@ export function ShotClockControls({
   const t = useTranslations("Scorer");
   const [correctionsOpen, setCorrectionsOpen] = useState(false);
   const fired = useRef<string | null>(null);
-  const enabled = state.phase === "live";
+  const enabled = state.phase === "live" && shotClockApplies(gameClockMs);
   const expired = enabled && state.clock.running && remainingMs <= 0;
   useEffect(() => {
     // Once per run of the shot clock (it resets with a new asOf or value).

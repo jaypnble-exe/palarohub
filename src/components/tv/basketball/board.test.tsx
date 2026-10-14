@@ -59,6 +59,48 @@ function show(rows: TvEventRow[]) {
 }
 
 describe("TV scoreboard", () => {
+  it("hides the shot clock at 24 seconds and restores it in the next quarter", () => {
+    vi.useFakeTimers();
+    const rows = seededRows();
+    const last = rows.at(-1)!;
+    const at = new Date().toISOString();
+    const action = (
+      sequence: number,
+      type: string,
+      clockMs: number | null,
+      payload: object = {},
+    ): TvEventRow => ({
+      id: `e0000000-0000-4000-8000-${String(sequence).padStart(12, "0")}`,
+      sequence,
+      type,
+      clockMs,
+      payload,
+      occurredAt: at,
+      createdAt: at,
+    });
+    const live = [
+      ...rows,
+      action(last.sequence + 1, "shot_clock", 25_000, { seconds: 24 }),
+      action(last.sequence + 2, "clock_start", 25_000),
+    ];
+    const view = render(show(live));
+    expect(screen.getByLabelText(en.Tv.shotClock)).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.queryByLabelText(en.Tv.shotClock)).toBeNull();
+    expect(screen.getByText("24.0")).toBeInTheDocument();
+    act(() => vi.advanceTimersByTime(1000));
+    expect(screen.getByText("23.0")).toBeInTheDocument();
+    view.rerender(
+      show([
+        ...live,
+        action(last.sequence + 3, "clock_stop", 0),
+        action(last.sequence + 4, "period_end", 0),
+        action(last.sequence + 5, "period_start", null),
+      ]),
+    );
+    expect(screen.getByText("Q4")).toBeInTheDocument();
+    expect(screen.getByLabelText(en.Tv.shotClock)).toHaveTextContent("24");
+  });
   it("shows the automatic reset from a recorded rebound without a separate clock action", () => {
     const rows = seededRows();
     const view = render(show(rows));

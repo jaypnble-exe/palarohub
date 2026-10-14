@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import {
   basketballRulesSchema,
+  shotClockApplies,
   inPenalty,
   reduceBasketballGame,
   sides,
@@ -307,7 +308,7 @@ export function BasketballTv({
               {live ? formatClock(clockMs) : "0:00"}
             </p>
           )}
-          {live && (
+          {live && shotClockApplies(clockMs) && (
             <p
               className={cn(
                 "w-[12vw] rounded-[1vw] border-[0.3vw] px-[1.5vw] text-center font-display text-[6vw] leading-tight font-bold tabular-nums",

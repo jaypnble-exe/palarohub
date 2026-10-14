@@ -2,6 +2,7 @@
 import { useTranslations } from "next-intl";
 import {
   inPenalty,
+  shotClockApplies,
   sides,
   teamFoulsThisPeriod,
   timeoutGroup,
@@ -187,7 +188,7 @@ export function Scoreboard({
           >
             {live ? formatClock(clockMs) : "–"}
           </p>
-          {live && (
+          {live && shotClockApplies(clockMs) && (
             <p
               className={cn(
                 "grid min-w-16 place-items-center rounded-lg border-2 px-2 font-display text-3xl leading-tight font-semibold tabular-nums",

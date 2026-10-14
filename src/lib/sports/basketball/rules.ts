@@ -30,6 +30,11 @@ export const basketballRulesSchema = z.strictObject({
 });
 
 export type BasketballRules = z.infer<typeof basketballRulesSchema>;
+/** League rule: the final 24 seconds of every period use only the game clock. */
+export function shotClockApplies(gameClockMs: number) {
+  return gameClockMs > 24_000;
+}
+
 export const defaultBasketballRules = Object.freeze(
   basketballRulesSchema.parse({}),
 );

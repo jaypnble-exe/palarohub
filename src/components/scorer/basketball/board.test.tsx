@@ -3,6 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   cleanup,
+  act,
   fireEvent,
   render,
   screen,
@@ -28,6 +29,7 @@ vi.mock("@/lib/game-live", () => ({
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 const id = (prefix: string, n: number) =>
@@ -424,6 +426,49 @@ describe("basketball scorer screen", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset 14" }));
     expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
   });
+
+  it.each([24_000, 23_000])(
+    "keeps the game clock running with an expired shot clock when %i ms remain",
+    async (gameClockMs) => {
+      vi.useFakeTimers();
+      const events = startedGame();
+      const sequence = events.length;
+      const createdAt = new Date().toISOString();
+      events.push(
+        {
+          id: id("e", sequence + 1),
+          sequence: sequence + 1,
+          type: "clock_start",
+          payload: {},
+          clockMs: gameClockMs,
+          createdAt,
+        },
+        {
+          id: id("e", sequence + 2),
+          sequence: sequence + 2,
+          type: "shot_clock",
+          payload: { seconds: 0 },
+          clockMs: gameClockMs,
+          createdAt,
+        },
+      );
+      const { rpc, supabase } = client();
+      renderBoard(events, supabase);
+      expect(screen.queryByLabelText(/Shot clock:/)).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: en.Scorer.clockCorrections }),
+      ).toBeNull();
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+      await act(async () => vi.advanceTimersByTimeAsync(500));
+      expect(
+        screen.getByRole("button", { name: en.Scorer.stopClock }),
+      ).toBeEnabled();
+      expect(
+        screen.getByText(((gameClockMs - 500) / 1000).toFixed(1)),
+      ).toBeInTheDocument();
+      expect(sentTypes(rpc)).not.toContain("clock_stop");
+    },
+  );
 
   it("records rebounds with automatic resets and keeps manual resets under Clock corrections", () => {
     renderBoard(startedGame());
