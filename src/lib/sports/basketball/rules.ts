@@ -8,7 +8,11 @@ const timeoutsSchema = z.strictObject({
 
 const shotClockSchema = z
   .strictObject({
-    enabled: z.boolean().default(false),
+    // Accept legacy saved flags, but every basketball game now uses a shot clock.
+    enabled: z
+      .boolean()
+      .default(true)
+      .transform(() => true),
     seconds: z.number().int().min(10).max(35).default(24),
     resetSeconds: z.number().int().min(1).max(35).default(14),
   })
@@ -21,7 +25,7 @@ export const basketballRulesSchema = z.strictObject({
   quarterMinutes: z.number().int().min(1).max(30).default(10),
   overtimeMinutes: z.number().int().min(1).max(15).default(5),
   timeouts: timeoutsSchema.prefault({}),
-  // Off by default: many community leagues play without a shot clock.
+  // Older seasons without these settings receive the mandatory 24/14 defaults.
   shotClock: shotClockSchema.prefault({}),
 });
 

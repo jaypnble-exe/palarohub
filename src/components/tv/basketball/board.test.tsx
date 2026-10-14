@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -10,7 +10,10 @@ import { defaultBasketballRules } from "@/lib/sports/basketball";
 import type { TvEventRow, TvGame } from "@/lib/tv-feed";
 import { BasketballTv } from "./board";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 /** The seeded live game (Royals 36, Kings 31, Q3 4:12) as the TV feed sends it. */
 function seededRows(): TvEventRow[] {
@@ -56,6 +59,46 @@ function show(rows: TvEventRow[]) {
 }
 
 describe("TV scoreboard", () => {
+  it("shows the automatic reset from a recorded rebound without a separate clock action", () => {
+    const rows = seededRows();
+    const view = render(show(rows));
+    const last = rows.at(-1)!;
+    const rebound: TvEventRow = {
+      id: "e0000000-0000-4000-8000-000000000903",
+      sequence: last.sequence + 1,
+      type: "stat",
+      payload: {
+        team: "home",
+        playerId: "90000000-0000-4000-8000-000000000102",
+        kind: "rebound",
+        reboundType: "offensive",
+        rimHit: true,
+      },
+      clockMs: 252000,
+      occurredAt: last.occurredAt,
+      createdAt: last.createdAt,
+    };
+    view.rerender(show([...rows, rebound]));
+    expect(screen.getByLabelText(en.Tv.shotClock)).toHaveTextContent("14");
+    expect(screen.getByText("4:12")).toBeInTheDocument();
+  });
+  it("rotates sponsors every eight seconds while keeping the scoreboard visible", () => {
+    vi.useFakeTimers();
+    render(show(seededRows()));
+    const sponsor = screen.getByRole("complementary", {
+      name: en.Tv.sponsoredBy,
+    });
+    expect(sponsor).toHaveTextContent("Giordano");
+    act(() => vi.advanceTimersByTime(8000));
+    expect(sponsor).toHaveTextContent("BPI");
+    act(() => vi.advanceTimersByTime(8000));
+    expect(sponsor).toHaveTextContent("McDonald's");
+    act(() => vi.advanceTimersByTime(8000));
+    expect(sponsor).toHaveTextContent("Giordano");
+    expect(screen.getByText("4:12")).toBeInTheDocument();
+    expect(screen.getByText(en.Tv.timeoutBanner)).toBeInTheDocument();
+  });
+
   it("shows the score, the clock and each team's fouls and timeouts", () => {
     render(show(seededRows()));
     const royals = screen.getByRole("region", { name: "Riyadh Royals" });

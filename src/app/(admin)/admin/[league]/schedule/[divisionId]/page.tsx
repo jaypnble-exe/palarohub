@@ -52,6 +52,7 @@ export default async function DivisionSchedulePage({
   if (!schedule) notFound();
   const { division, teams, games } = schedule;
   const t = await getTranslations("Schedule");
+  const scorer = await getTranslations("Scorer");
   const siteUrl = getSiteUrl();
   const now = new Date();
   const publicUrl = `${siteUrl}/${slug}/schedule?division=${division.id}`;
@@ -166,34 +167,51 @@ export default async function DivisionSchedulePage({
         <GameList
           games={shown}
           emptyTitle={t(`noneIn.${filter}`)}
-          actions={(game) =>
-            canBeScored(game.status) || isSchedulable(game.status) ? (
-              <div className="space-y-3 border-t pt-3">
-                {canBeScored(game.status) &&
-                  (soon(game) ? (
-                    scoring(game)
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {t("scoringOpensSoon")}
-                    </p>
-                  ))}
-                {isSchedulable(game.status) && (
-                  <GameEditor
-                    slug={slug}
-                    game={{ ...game, status: game.status as GameStatus }}
-                  />
+          actions={(game) => (
+            <>
+              {canBeScored(game.status) || isSchedulable(game.status) ? (
+                <div className="space-y-3 border-t pt-3">
+                  {canBeScored(game.status) &&
+                    (soon(game) ? (
+                      scoring(game)
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {t("scoringOpensSoon")}
+                      </p>
+                    ))}
+                  {isSchedulable(game.status) && (
+                    <GameEditor
+                      slug={slug}
+                      game={{ ...game, status: game.status as GameStatus }}
+                    />
+                  )}
+                </div>
+              ) : game.status === "submitted" || game.status === "approved" ? (
+                <Link
+                  href={`/admin/${slug}/games/${game.id}`}
+                  className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-orange-dark hover:underline"
+                >
+                  {t(
+                    game.status === "submitted" ? "reviewResult" : "viewResult",
+                  )}
+                  <Icon name="arrow" className="size-4" />
+                </Link>
+              ) : null}
+              {game.status !== "cancelled" &&
+                (!canBeScored(game.status) || !soon(game)) && (
+                  <Button asChild variant="outline" className="mt-3">
+                    <a
+                      href={`/tv/${game.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Icon name="live" className="size-4" />
+                      {scorer("openTv")}
+                    </a>
+                  </Button>
                 )}
-              </div>
-            ) : game.status === "submitted" || game.status === "approved" ? (
-              <Link
-                href={`/admin/${slug}/games/${game.id}`}
-                className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-orange-dark hover:underline"
-              >
-                {t(game.status === "submitted" ? "reviewResult" : "viewResult")}
-                <Icon name="arrow" className="size-4" />
-              </Link>
-            ) : null
-          }
+            </>
+          )}
         />
       </section>
 

@@ -3,7 +3,6 @@
 import { useId } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { defaultBasketballRules } from "./index";
 
 export function BasketballRulesFields({
@@ -33,6 +32,7 @@ export function BasketballRulesFields({
     ...(value.shotClock && typeof value.shotClock === "object"
       ? (value.shotClock as Record<string, unknown>)
       : {}),
+    enabled: true,
   } as typeof defaultBasketballRules.shotClock;
   const setShotClock = (next: Partial<typeof shotClock>) =>
     onChange?.({ ...value, shotClock: { ...shotClock, ...next } });
@@ -87,43 +87,38 @@ export function BasketballRulesFields({
         </div>
       ))}
       <div className="space-y-4 rounded-xl border bg-background p-4 sm:col-span-2">
-        <Switch
-          label={t("shotClock")}
-          description={t("shotClockHelp")}
-          checked={shotClock.enabled}
-          disabled={disabled}
-          onChange={(enabled) => setShotClock({ enabled })}
-        />
-        {shotClock.enabled && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(
-              [
-                ["seconds", 10, 35],
-                ["resetSeconds", 1, 35],
-              ] as const
-            ).map(([key, min, max]) => (
-              <div key={key} className="space-y-2">
-                <label
-                  htmlFor={`${prefix}-${key}`}
-                  className="text-sm font-semibold"
-                >
-                  {t(key === "seconds" ? "shotClockSeconds" : "shotClockReset")}
-                </label>
-                <Input
-                  id={`${prefix}-${key}`}
-                  type="number"
-                  min={min}
-                  max={max}
-                  step={1}
-                  value={shotClock[key]}
-                  onChange={(event) =>
-                    setShotClock({ [key]: Number(event.target.value) })
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="space-y-1">
+          <p className="font-semibold">{t("shotClock")}</p>
+          <p className="text-sm text-muted-foreground">{t("shotClockHelp")}</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {(
+            [
+              ["seconds", 10, 35],
+              ["resetSeconds", 1, 35],
+            ] as const
+          ).map(([key, min, max]) => (
+            <div key={key} className="space-y-2">
+              <label
+                htmlFor={`${prefix}-${key}`}
+                className="text-sm font-semibold"
+              >
+                {t(key === "seconds" ? "shotClockSeconds" : "shotClockReset")}
+              </label>
+              <Input
+                id={`${prefix}-${key}`}
+                type="number"
+                min={min}
+                max={max}
+                step={1}
+                value={shotClock[key]}
+                onChange={(event) =>
+                  setShotClock({ [key]: Number(event.target.value) })
+                }
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </fieldset>
   );

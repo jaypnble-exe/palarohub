@@ -24,9 +24,11 @@ import {
   periodName,
 } from "@/components/scorer/basketball/helpers";
 import { cn } from "@/lib/utils";
+import { tvSponsors } from "@/lib/tv-sponsors";
 import { flashesFor, type Flash } from "./flashes";
 
 const FLASH_MS = 3500;
+const SPONSOR_ROTATION_MS = 8000;
 
 const flashTone: Record<Flash["tone"], string> = {
   celebrate: "bg-primary text-white",
@@ -40,7 +42,7 @@ function useNow(running: boolean) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!running) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 100);
+    const timer = window.setInterval(() => setNow(Date.now()), 50);
     return () => window.clearInterval(timer);
   }, [running]);
   return now;
@@ -54,15 +56,32 @@ export function BasketballTv({
   game,
   rows,
   screenOffsetMs,
+  scorerTimeOffsetMs,
 }: {
   game: TvGame;
   rows: readonly TvEventRow[];
   /** Server time minus this screen's time. */
   screenOffsetMs: number;
+  /** Scorer time minus TV time, measured directly by a round trip. */
+  scorerTimeOffsetMs?: number;
 }) {
   const t = useTranslations("Tv");
   const scorer = useTranslations("Scorer");
   const format = useFormatter();
+  const sponsors = tvSponsors[game.leagueSlug];
+  const sponsorCount = sponsors?.length ?? 0;
+  const [sponsorIndex, setSponsorIndex] = useState(0);
+  const sponsor = sponsorCount
+    ? sponsors?.[sponsorIndex % sponsorCount]
+    : undefined;
+  useEffect(() => {
+    if (sponsorCount < 2) return;
+    const timer = window.setInterval(
+      () => setSponsorIndex((current) => (current + 1) % sponsorCount),
+      SPONSOR_ROTATION_MS,
+    );
+    return () => window.clearInterval(timer);
+  }, [game.leagueSlug, sponsorCount]);
   const rules = useMemo(
     () => basketballRulesSchema.parse(game.rules ?? {}),
     [game.rules],
@@ -86,7 +105,11 @@ export function BasketballTv({
     () => reduceBasketballGame(events, rules),
     [events, rules],
   );
-  const offset = useMemo(() => scorerOffsetMs(rows), [rows]);
+  const inferredOffset = useMemo(() => scorerOffsetMs(rows), [rows]);
+  const offset =
+    scorerTimeOffsetMs === undefined
+      ? inferredOffset
+      : screenOffsetMs - scorerTimeOffsetMs;
   const live = state.phase === "live";
   const now = useNow(live && state.clock.running);
   const clockMs = remainingOnScreen({
@@ -257,9 +280,9 @@ export function BasketballTv({
         </span>
       </header>
 
-      <main className="grid min-h-0 flex-1 grid-cols-[1fr_auto_1fr] items-center">
+      <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_36vw_minmax(0,1fr)] items-center">
         {sides.map(panel)}
-        <div className="order-2 flex flex-col items-center gap-[2vh] px-[1vw]">
+        <div className="order-2 flex min-w-0 flex-col items-center gap-[2vh] px-[1vw]">
           <p className="rounded-[1vw] bg-white/10 px-[2vw] py-[0.6vh] font-display text-[3.6vw] leading-none font-semibold tracking-wider uppercase">
             {period}
           </p>
@@ -277,17 +300,17 @@ export function BasketballTv({
           ) : (
             <p
               className={cn(
-                "rounded-[1.5vw] bg-black/40 px-[2.5vw] py-[1vh] font-display text-[11vw] leading-none font-bold tabular-nums ring-1 ring-white/10",
+                "w-full rounded-[1.5vw] bg-black/40 px-[1.5vw] py-[1vh] text-center font-display text-[11vw] leading-none font-bold tabular-nums whitespace-nowrap ring-1 ring-white/10",
                 live && !state.clock.running && "text-orange-soft",
               )}
             >
               {live ? formatClock(clockMs) : "0:00"}
             </p>
           )}
-          {live && rules.shotClock.enabled && (
+          {live && (
             <p
               className={cn(
-                "rounded-[1vw] border-[0.3vw] px-[1.5vw] font-display text-[6vw] leading-tight font-bold tabular-nums",
+                "w-[12vw] rounded-[1vw] border-[0.3vw] px-[1.5vw] text-center font-display text-[6vw] leading-tight font-bold tabular-nums",
                 shotClockMs <= 5000
                   ? "border-destructive bg-destructive text-white"
                   : "border-white/30 text-orange-soft",
@@ -332,30 +355,66 @@ export function BasketballTv({
         </div>
       </main>
 
-      {/* The bottom strip: a flash, the game state, or the sponsor line. Never over the score. */}
-      <footer className="h-[13vh] shrink-0 px-[3vw] pb-[2.5vh]">
-        {flash ? (
-          <div
-            key={flash.id}
-            role="status"
-            className={cn(
-              "animate-flash-in flex h-full items-center justify-center gap-[2vw] rounded-[1.5vw] px-[2vw] text-center font-display text-[4.4vw] leading-none font-bold tracking-wide uppercase shadow-2xl",
-              flashTone[flash.tone],
-            )}
+      {/* Game announcements and sponsorship stay below the scores. */}
+      <footer className="flex h-[13vh] shrink-0 gap-[1.5vw] px-[3vw] pb-[2.5vh]">
+        <div className="min-w-0 flex-1">
+          {flash ? (
+            <div
+              key={flash.id}
+              role="status"
+              className={cn(
+                "animate-flash-in flex h-full items-center justify-center gap-[2vw] rounded-[1.5vw] px-[2vw] text-center font-display text-[4.4vw] leading-none font-bold tracking-wide uppercase shadow-2xl",
+                flashTone[flash.tone],
+                sponsor && "text-[3.2vw]",
+              )}
+            >
+              {t(`flash.${flash.key}`, flash.values)}
+            </div>
+          ) : banner ? (
+            <div
+              className={cn(
+                "flex h-full items-center justify-center rounded-[1.5vw] bg-white/10 font-display text-[4vw] font-bold tracking-wider uppercase",
+                sponsor && "text-[3vw]",
+              )}
+            >
+              {banner}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-between rounded-[1.5vw] bg-black/20 px-[2.5vw] text-[1.8vw] font-semibold text-on-dark-muted">
+              <span>{game.seasonName}</span>
+              <span className="font-display tracking-[0.25em] text-white uppercase">
+                {t("poweredBy")}
+              </span>
+            </div>
+          )}
+        </div>
+        {sponsor && (
+          <aside
+            aria-label={t("sponsoredBy")}
+            className="flex min-h-0 w-[25vw] shrink-0 flex-col items-center justify-center gap-[0.5vh] rounded-[1.5vw] border border-white/20 bg-white px-[1.5vw] py-[0.5vh] text-center text-navy"
           >
-            {t(`flash.${flash.key}`, flash.values)}
-          </div>
-        ) : banner ? (
-          <div className="flex h-full items-center justify-center rounded-[1.5vw] bg-white/10 font-display text-[4vw] font-bold tracking-wider uppercase">
-            {banner}
-          </div>
-        ) : (
-          <div className="flex h-full items-center justify-between rounded-[1.5vw] bg-black/20 px-[2.5vw] text-[1.8vw] font-semibold text-on-dark-muted">
-            <span>{game.seasonName}</span>
-            <span className="font-display tracking-[0.25em] text-white uppercase">
-              {t("poweredBy")}
-            </span>
-          </div>
+            <p className="shrink-0 text-[min(1vw,1.6vh)] leading-tight font-semibold tracking-[0.2em] uppercase">
+              {t("sponsoredBy")}
+            </p>
+            <p className="max-w-full shrink-0 text-[min(2.7vw,3.6vh)] leading-tight font-bold tracking-[0.08em] whitespace-nowrap uppercase">
+              {sponsor}
+            </p>
+            {sponsorCount > 1 && (
+              <div className="flex shrink-0 gap-[0.4vw]" aria-hidden="true">
+                {sponsors!.map((name, index) => (
+                  <span
+                    key={`${name}-${index}`}
+                    className={cn(
+                      "size-[min(0.4vw,0.7vh)] shrink-0 rounded-full",
+                      index === sponsorIndex % sponsorCount
+                        ? "bg-navy"
+                        : "bg-navy/20",
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+          </aside>
         )}
       </footer>
     </div>

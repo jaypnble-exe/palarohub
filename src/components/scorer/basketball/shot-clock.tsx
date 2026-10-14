@@ -16,7 +16,7 @@ export function useShotClock(state: BasketballGameState) {
   const running = state.clock.running;
   useEffect(() => {
     if (!running) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 200);
+    const timer = window.setInterval(() => setNow(Date.now()), 50);
     return () => window.clearInterval(timer);
   }, [running]);
   if (!running || !state.clock.asOf) return state.shotClock.remainingMs;
@@ -68,8 +68,9 @@ export function ShotClockControls({
   disabled: boolean;
 }) {
   const t = useTranslations("Scorer");
+  const [correctionsOpen, setCorrectionsOpen] = useState(false);
   const fired = useRef<string | null>(null);
-  const enabled = rules.shotClock.enabled && state.phase === "live";
+  const enabled = state.phase === "live";
   const expired = enabled && state.clock.running && remainingMs <= 0;
   useEffect(() => {
     // Once per run of the shot clock (it resets with a new asOf or value).
@@ -92,29 +93,59 @@ export function ShotClockControls({
   if (!enabled) return null;
   return (
     <>
-      <div className="flex gap-2">
+      <div className="relative shrink-0">
         <Button
           type="button"
           variant="outline"
           className="min-h-14 px-3"
-          disabled={disabled}
-          onClick={() =>
-            record("shot_clock", { seconds: rules.shotClock.seconds })
-          }
+          aria-expanded={correctionsOpen}
+          onClick={() => setCorrectionsOpen((open) => !open)}
         >
-          {t("resetShotClock", { seconds: rules.shotClock.seconds })}
+          {t("clockCorrections")}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="min-h-14 px-3"
-          disabled={disabled}
-          onClick={() =>
-            record("shot_clock", { seconds: rules.shotClock.resetSeconds })
-          }
-        >
-          {t("resetShotClock", { seconds: rules.shotClock.resetSeconds })}
-        </Button>
+        {correctionsOpen && (
+          <div
+            role="group"
+            aria-label={t("clockCorrections")}
+            className="absolute right-0 bottom-full z-30 mb-2 w-[min(20rem,calc(100vw-2rem))] space-y-3 rounded-2xl border bg-background p-4 shadow-xl"
+          >
+            <p className="text-sm text-muted-foreground">
+              {t("clockCorrectionsHelp")}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-14 px-3"
+                disabled={disabled}
+                onClick={() => {
+                  if (
+                    record("shot_clock", { seconds: rules.shotClock.seconds })
+                  )
+                    setCorrectionsOpen(false);
+                }}
+              >
+                {t("resetShotClock", { seconds: rules.shotClock.seconds })}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-14 px-3"
+                disabled={disabled}
+                onClick={() => {
+                  if (
+                    record("shot_clock", {
+                      seconds: rules.shotClock.resetSeconds,
+                    })
+                  )
+                    setCorrectionsOpen(false);
+                }}
+              >
+                {t("resetShotClock", { seconds: rules.shotClock.resetSeconds })}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
       {asking && (
         <div

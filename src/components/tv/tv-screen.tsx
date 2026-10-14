@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/browser";
 import {
@@ -10,9 +10,11 @@ import {
 } from "@/lib/tv-feed";
 import { Icon } from "@/components/ui/icon";
 import { BasketballTv } from "./basketball/board";
+import { gameLiveChannel, scorerTimeSample } from "@/lib/game-live";
 
 /** How often to ask for new actions: quickly during play, slowly otherwise. */
-const LIVE_POLL_MS = 1500;
+const LIVE_POLL_MS = 250;
+const CONNECTED_POLL_MS = 2000;
 const IDLE_POLL_MS = 15000;
 
 /**
@@ -30,46 +32,141 @@ export function TvScreen({ gameId }: { gameId: string }) {
     "loading",
   );
   const [offline, setOffline] = useState(false);
-  const last = useRef(0);
+  const [scorerOffset, setScorerOffset] = useState<number>();
 
   useEffect(() => {
     let stopped = false;
     let timer: number | undefined;
-    async function poll() {
-      const sent = Date.now();
-      const { data, error } = await supabase.rpc("tv_game", {
-        p_game_id: gameId,
-        p_after: last.current,
-      });
+    let fetching = false;
+    let requested = false;
+    let connected = false;
+    let last = 0;
+    let latestId: string | undefined;
+    let best: { roundTrip: number; at: number } | undefined;
+    const requests = new Map<string, number>();
+    setScorerOffset(undefined);
+    setRows([]);
+    setGame(undefined);
+    setStatus("loading");
+    const channel = gameLiveChannel(supabase, gameId, {
+      saved: () => refresh(),
+      connected(ready) {
+        connected = ready;
+        refresh();
+      },
+      clockReply(reply) {
+        if (stopped) return;
+        const sent = requests.get(reply.requestId);
+        if (sent === undefined || reply.eventId !== latestId) return;
+        const now = Date.now();
+        const sample = scorerTimeSample(sent, now, reply);
+        if (!sample) return;
+        if (
+          !best ||
+          now - best.at > 15000 ||
+          sample.roundTrip <= best.roundTrip
+        ) {
+          best = { roundTrip: sample.roundTrip, at: now };
+          setScorerOffset(sample.offset);
+        }
+      },
+    });
+    function refresh() {
       if (stopped) return;
-      let wait = IDLE_POLL_MS;
-      if (error) setOffline(true);
-      else if (data === null) setStatus("missing");
-      else {
-        const feed = tvFeedSchema.safeParse(data);
-        if (feed.success) {
-          setOffline(false);
-          setGame(feed.data.game);
-          // Server time minus this screen's time, halfway through the request.
-          setOffset(
-            Date.parse(feed.data.serverTime) - (sent + (Date.now() - sent) / 2),
-          );
-          if (feed.data.events.length) {
-            last.current = feed.data.events.at(-1)!.sequence;
-            setRows((current) => mergeEvents(current, feed.data.events));
-          }
-          setStatus("ready");
-          if (["in_progress", "scheduled"].includes(feed.data.game.status))
-            wait =
-              feed.data.game.status === "in_progress" ? LIVE_POLL_MS : 5000;
+      window.clearTimeout(timer);
+      if (fetching) requested = true;
+      else void poll();
+    }
+    function calibrate() {
+      const now = Date.now();
+      for (const [id, sent] of requests)
+        if (now - sent > 2000) requests.delete(id);
+      if (best && now - best.at > 15000) {
+        best = undefined;
+        setScorerOffset(undefined);
+      }
+      const requestId = crypto.randomUUID();
+      requests.set(requestId, now);
+      channel.send("clock_request", { requestId });
+    }
+    async function poll() {
+      fetching = true;
+      const sent = Date.now();
+      let wait = LIVE_POLL_MS;
+      try {
+        const { data, error } = await supabase.rpc("tv_game", {
+          p_game_id: gameId,
+          p_after: last,
+        });
+        if (stopped) return;
+        if (error) setOffline(true);
+        else if (data === null) setStatus("missing");
+        else {
+          const feed = tvFeedSchema.safeParse(data);
+          if (feed.success) {
+            setOffline(false);
+            setGame(feed.data.game);
+            // Server time minus this screen's time, halfway through the request.
+            setOffset(
+              Date.parse(feed.data.serverTime) -
+                (sent + (Date.now() - sent) / 2),
+            );
+            if (feed.data.events.length) {
+              const first = latestId === undefined;
+              last = feed.data.events.at(-1)!.sequence;
+              latestId = feed.data.events.at(-1)!.id;
+              setRows((current) => mergeEvents(current, feed.data.events));
+              if (
+                first ||
+                feed.data.events.some((event) =>
+                  [
+                    "clock_start",
+                    "clock_stop",
+                    "period_start",
+                    "period_end",
+                  ].includes(event.type),
+                )
+              )
+                calibrate();
+            }
+            setStatus("ready");
+            wait = ["in_progress", "scheduled"].includes(feed.data.game.status)
+              ? connected
+                ? CONNECTED_POLL_MS
+                : LIVE_POLL_MS
+              : IDLE_POLL_MS;
+          } else setOffline(true);
+        }
+      } catch {
+        if (!stopped) setOffline(true);
+        wait = 1000;
+      } finally {
+        fetching = false;
+        if (!stopped) {
+          if (requested) {
+            requested = false;
+            timer = window.setTimeout(poll, 0);
+          } else timer = window.setTimeout(poll, wait);
         }
       }
-      timer = window.setTimeout(poll, wait);
     }
-    void poll();
+    refresh();
+    const clockTimer = window.setInterval(calibrate, 2000);
+    const visible = () => {
+      if (document.visibilityState === "visible") {
+        refresh();
+        calibrate();
+      }
+    };
+    document.addEventListener("visibilitychange", visible);
+    window.addEventListener("online", refresh);
     return () => {
       stopped = true;
       window.clearTimeout(timer);
+      window.clearInterval(clockTimer);
+      document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("online", refresh);
+      channel.close();
     };
   }, [supabase, gameId]);
 
@@ -123,7 +220,12 @@ export function TvScreen({ gameId }: { gameId: string }) {
   return (
     <div className={idle ? "cursor-none" : undefined}>
       {game.sport === "basketball" ? (
-        <BasketballTv game={game} rows={rows} screenOffsetMs={offset} />
+        <BasketballTv
+          game={game}
+          rows={rows}
+          screenOffsetMs={offset}
+          scorerTimeOffsetMs={scorerOffset}
+        />
       ) : (
         <p className="p-8 text-center">{t("sportNotSupported")}</p>
       )}

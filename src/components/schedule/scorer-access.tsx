@@ -74,18 +74,19 @@ export function ScorerAccess({
         </Button>
       </div>
       {/* Opens in a new tab, for the laptop or TV at the gym. */}
-      <a
-        href={`/tv/${gameId}`}
-        target="_blank"
-        rel="noopener noreferrer"
+      <Button
+        asChild
+        variant="outline"
         className={cn(
-          "inline-flex min-h-11 items-center gap-2 text-sm font-semibold hover:underline",
-          dark ? "text-orange-soft" : "text-orange-dark",
+          dark &&
+            "border-white/40 bg-transparent text-on-dark hover:bg-white/10",
         )}
       >
-        <Icon name="live" className="size-4" />
-        {t("openTv")}
-      </a>
+        <a href={`/tv/${gameId}`} target="_blank" rel="noopener noreferrer">
+          <Icon name="live" className="size-4" />
+          {t("openTv")}
+        </a>
+      </Button>
       {open && (
         <div
           className={cn(

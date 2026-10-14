@@ -19,6 +19,11 @@ import {
 import type { createClient } from "@/lib/supabase/browser";
 import { createMemoryScorebookStore } from "@/lib/offline/scorebook-store";
 import { BasketballScorebook } from "./board";
+import { gameLiveChannel } from "@/lib/game-live";
+
+vi.mock("@/lib/game-live", () => ({
+  gameLiveChannel: vi.fn(() => ({ send: vi.fn(), close: vi.fn() })),
+}));
 
 afterEach(() => {
   cleanup();
@@ -413,8 +418,39 @@ describe("basketball scorer screen", () => {
     );
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Scorer.clockCorrections }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "Reset 14" }));
     expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
+  });
+
+  it("records rebounds with automatic resets and keeps manual resets under Clock corrections", () => {
+    renderBoard(startedGame());
+    expect(screen.queryByRole("button", { name: "Reset 24" })).toBeNull();
+    tapPlayer("Royal 1");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Offensive rebound (14s)" }),
+    );
+    expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: en.Scorer.undo }));
+    expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Hawks" })).getByRole(
+        "button",
+        { name: /Hawk 1/ },
+      ),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Defensive rebound (24s)" }),
+    );
+    expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Scorer.clockCorrections }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset 14" }));
+    expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reset 24" })).toBeNull();
   });
 
   it("sets the arrow from the opening tip and flips it on a jump ball", () => {
@@ -501,6 +537,8 @@ describe("basketball scorer screen", () => {
     await waitFor(() =>
       expect(again.dump().map((row) => row.state)).toEqual(["synced"]),
     );
+    const live = vi.mocked(gameLiveChannel).mock.results.at(-1)!.value;
+    expect(live.send).toHaveBeenCalledWith("saved", {});
   });
 
   it("sends actions left on this device from an earlier visit", async () => {

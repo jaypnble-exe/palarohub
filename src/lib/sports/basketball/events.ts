@@ -126,7 +126,21 @@ export const basketballEventSchema = z.discriminatedUnion("type", [
   event("timeout", z.strictObject({ team: side })),
   event(
     "stat",
-    z.strictObject({ team: side, playerId, kind: z.enum(statKinds) }),
+    z
+      .strictObject({
+        team: side,
+        playerId,
+        kind: z.enum(statKinds),
+        // Optional for legacy stat events, which did not distinguish rebounds.
+        reboundType: z.enum(["offensive", "defensive"]).optional(),
+        rimHit: z.boolean().optional(),
+      })
+      .refine(
+        (stat) =>
+          (stat.kind === "rebound" ||
+            (stat.reboundType === undefined && stat.rimHit === undefined)) &&
+          (stat.rimHit === undefined || stat.reboundType === "offensive"),
+      ),
   ),
   // Sets the possession arrow by hand, to correct it.
   event("possession", z.strictObject({ team: side })),

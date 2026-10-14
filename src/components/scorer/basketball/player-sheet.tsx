@@ -193,6 +193,84 @@ export function PlayerSheet({
                     </Button>
                   ))}
                 </div>
+                <p className={group}>{t("playerStats")}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-12 text-sm"
+                    onClick={() =>
+                      done(
+                        record("stat", {
+                          team: side,
+                          playerId,
+                          kind: "rebound",
+                          reboundType: "offensive",
+                          rimHit: true,
+                        }),
+                      )
+                    }
+                  >
+                    {t("offensiveRebound", {
+                      seconds: rules.shotClock.resetSeconds,
+                    })}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="min-h-12 text-sm"
+                    onClick={() =>
+                      done(
+                        record("stat", {
+                          team: side,
+                          playerId,
+                          kind: "rebound",
+                          reboundType: "defensive",
+                        }),
+                      )
+                    }
+                  >
+                    {t("defensiveRebound", {
+                      seconds: rules.shotClock.seconds,
+                    })}
+                  </Button>
+                  {(["assist", "steal", "block", "turnover"] as const).map(
+                    (kind) => (
+                      <Button
+                        key={kind}
+                        type="button"
+                        variant="outline"
+                        className="min-h-12 text-sm"
+                        onClick={() =>
+                          done(record("stat", { team: side, playerId, kind }))
+                        }
+                      >
+                        {t(`statKind.${kind}`)}
+                      </Button>
+                    ),
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="min-h-11 text-sm col-span-2"
+                    onClick={() =>
+                      done(
+                        record("stat", {
+                          team: side,
+                          playerId,
+                          kind: "rebound",
+                          reboundType: "offensive",
+                          rimHit: false,
+                        }),
+                      )
+                    }
+                  >
+                    {t("offensiveReboundNoRim")}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("reboundClockHelp")}
+                </p>
                 <p className={group}>{t("fouls")}</p>
                 <Button
                   type="button"

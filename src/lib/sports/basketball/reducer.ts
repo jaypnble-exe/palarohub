@@ -102,13 +102,15 @@ export interface BasketballGameState {
   clock: { running: boolean; remainingMs: number; asOf: string | null };
   teams: Record<Side, TeamState>;
   possession: Side | null;
+  /** Team controlling the ball; independent of the alternating-possession arrow. */
+  ballControl: Side | null;
   officials: {
     referees: string[];
     scorer: string | null;
     timekeeper: string | null;
     shotClockOperator?: string | null;
   } | null;
-  /** Runs and stops with the game clock; only used when the league has one. */
+  /** Runs and stops with the game clock; reset by recorded possession changes. */
   shotClock: { remainingMs: number };
   /** Free throws the next shooting team still has to take. */
   freeThrowsDue: { team: Side; count: number } | null;
@@ -148,7 +150,6 @@ export type BasketballEventError =
   | "voidTargetMissing"
   | "voidTargetInvalid"
   | "notFinal"
-  | "shotClockOff"
   | "arrowAlreadySet"
   | "arrowNotSet"
   | "notArrowTeam";
@@ -184,6 +185,7 @@ export function initialBasketballState(): BasketballGameState {
     clock: { running: false, remainingMs: 0, asOf: null },
     teams: { home: emptyTeam(), away: emptyTeam() },
     possession: null,
+    ballControl: null,
     officials: null,
     shotClock: { remainingMs: 0 },
     freeThrowsDue: null,
@@ -200,7 +202,7 @@ export function initialBasketballState(): BasketballGameState {
 
 /** Full shot clock in milliseconds, or 0 when the league plays without one. */
 export function shotClockMs(rules: BasketballRules) {
-  return rules.shotClock?.enabled ? rules.shotClock.seconds * 1000 : 0;
+  return rules.shotClock.seconds * 1000;
 }
 
 /**
@@ -348,7 +350,6 @@ function semanticError(
       return phase === "final" ? null : "notFinal";
     case "shot_clock":
     case "shot_clock_violation":
-      if (!rules.shotClock?.enabled) return "shotClockOff";
       return phase === "live" ? null : "notLive";
     case "period_start":
       if (phase === "live") return "periodInProgress";
@@ -503,6 +504,11 @@ function applyFoul(
   state.freeThrowsDue = freeThrows
     ? { team: opponent, count: freeThrows }
     : null;
+  // Ordinary free-throw awards reset to a full shot clock while play is stopped.
+  // Technicals resume the interrupted possession; frontcourt/rebound resets
+  // remain operator decisions because this log does not track court position.
+  if (state.phase === "live" && kind === "personal" && freeThrows)
+    state.shotClock.remainingMs = shotClockMs(rules);
   if (!playerId) {
     // Older games recorded every bench technical as the coach's.
     const offender = event.payload.offender ?? "coach";
@@ -638,6 +644,7 @@ function applyEvent(
       state.shotClock.remainingMs = event.payload.seconds * 1000;
       return;
     case "shot_clock_violation": {
+      state.ballControl = otherSide(event.payload.team);
       state.teams[event.payload.team].shotClockViolations++;
       if (state.clock.running) stopClock(state, event);
       state.shotClock.remainingMs = shotClockMs(rules);
@@ -647,6 +654,7 @@ function applyEvent(
     case "period_start":
       state.phase = "live";
       state.period++;
+      state.ballControl = state.period > 1 ? state.possession : null;
       state.startedAt ??= event.createdAt;
       state.shotClock.remainingMs = shotClockMs(rules);
       state.freeThrowsDue = null;
@@ -678,6 +686,7 @@ function applyEvent(
       return;
     case "score": {
       const { team: side, playerId, points, made } = event.payload;
+      if (points > 1) state.ballControl = made ? otherSide(side) : side;
       const team = state.teams[side];
       const line = team.players[playerId];
       const shots =
@@ -732,19 +741,36 @@ function applyEvent(
       effect(state, event, "timeout", event.payload.team);
       return;
     }
-    case "stat":
+    case "stat": {
       player(state, event.payload.team, event.payload.playerId).stats[
         event.payload.kind
       ]++;
+      const { team, kind, reboundType, rimHit } = event.payload;
+      if (kind === "rebound" && reboundType) {
+        state.ballControl = team;
+        if (reboundType === "defensive")
+          state.shotClock.remainingMs = shotClockMs(rules);
+        else if (rimHit !== false)
+          state.shotClock.remainingMs = rules.shotClock.resetSeconds * 1000;
+      } else if (kind === "turnover" || kind === "steal") {
+        const next = kind === "turnover" ? otherSide(team) : team;
+        // A turnover and the matching steal describe one possession change.
+        if (state.ballControl !== next)
+          state.shotClock.remainingMs = shotClockMs(rules);
+        state.ballControl = next;
+      }
       return;
+    }
     case "possession":
       state.possession = event.payload.team;
       return;
     case "jump_ball_won":
+      state.ballControl = event.payload.team;
       state.possession = otherSide(event.payload.team);
       effect(state, event, "openingTip", event.payload.team);
       return;
     case "alternating_possession":
+      state.ballControl = event.payload.team;
       effect(state, event, "jumpBall", event.payload.team);
       state.possession = otherSide(event.payload.team);
       if (state.clock.running) stopClock(state, event);

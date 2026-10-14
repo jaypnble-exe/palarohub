@@ -26,13 +26,14 @@ interface TeamRow {
   id: string;
   teamName: string;
   manager: string;
+  divisionId: string;
   divisionName: string;
   status: RegistrationStatus;
   players: number;
   payment?: { tone: "danger" | "success" | "neutral"; text: string };
 }
 
-/** Every team registered in a season, as a table the commissioner can filter. */
+/** Season registrations grouped by division, with status filters for review. */
 export default async function TeamsPage({
   params,
   searchParams,
@@ -64,7 +65,7 @@ export default async function TeamsPage({
       ? supabase
           .from("season_teams")
           .select(
-            "id,team_id,team_name,status,divisions(name),teams(profiles(display_name))",
+            "id,team_id,team_name,status,division_id,divisions(name),teams(profiles(display_name))",
           )
           .eq("league_id", league.id)
           .eq("season_id", season.id)
@@ -101,6 +102,7 @@ export default async function TeamsPage({
         id: row.id,
         teamName: row.team_name,
         manager: row.teams?.profiles?.display_name || t("noManager"),
+        divisionId: row.division_id,
         divisionName: row.divisions?.name ?? "",
         status: row.status as RegistrationStatus,
         players: players.get(row.id) ?? 0,
@@ -115,6 +117,23 @@ export default async function TeamsPage({
     filter === "all"
       ? all
       : all.filter((row) => statusGroup(row.status) === filter);
+  const divisions = new Map<
+    string,
+    { id: string; name: string; teams: TeamRow[] }
+  >();
+  for (const row of rows) {
+    const division = divisions.get(row.divisionId);
+    if (division) division.teams.push(row);
+    else
+      divisions.set(row.divisionId, {
+        id: row.divisionId,
+        name: row.divisionName,
+        teams: [row],
+      });
+  }
+  const divisionGroups = [...divisions.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true }),
+  );
   const inSeason = new Set(
     (registrations.data ?? []).map((row) => row.team_id),
   );
@@ -179,79 +198,102 @@ export default async function TeamsPage({
           {!rows.length ? (
             <EmptyState icon="teams" title={t("noneInFilter")} />
           ) : (
-            <DataTable
-              label={t("tableLabel", { season: season.name })}
-              rows={rows}
-              rowKey={(row) => row.id}
-              rowHref={(row) => `/admin/${slug}/registrations/${row.id}`}
-              rowLabel={(row) => t("openTeam", { team: row.teamName })}
-              openLabel={t("open")}
-              columns={[
-                {
-                  key: "team",
-                  header: t("colTeam"),
-                  cell: (row) => (
-                    <span className="flex items-center gap-3">
-                      <Avatar
-                        name={row.teamName}
-                        className="size-9 text-base"
-                      />
-                      <span className="min-w-0">
-                        <span className="block font-semibold">
-                          {row.teamName}
-                        </span>
-                        <span className="block text-muted-foreground">
-                          {row.manager}
-                        </span>
-                      </span>
-                    </span>
-                  ),
-                },
-                {
-                  key: "division",
-                  header: t("colDivision"),
-                  cell: (row) => row.divisionName,
-                },
-                {
-                  key: "players",
-                  header: t("colPlayers"),
-                  align: "right",
-                  cell: (row) => row.players,
-                },
-                { key: "status", header: t("colStatus"), cell: status },
-                {
-                  key: "payment",
-                  header: t("colPayment"),
-                  className: "hidden md:table-cell",
-                  cell: (row) =>
-                    row.payment ? (
-                      <Badge tone={row.payment.tone}>{row.payment.text}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">–</span>
-                    ),
-                },
-              ]}
-              phone={(row) => ({
-                title: row.teamName,
-                subtitle: (
-                  <>
-                    {t("phoneLine", {
-                      division: row.divisionName,
-                      count: row.players,
+            <div className="space-y-6">
+              {divisionGroups.map((division) => (
+                <section
+                  key={division.id}
+                  aria-labelledby={`division-${division.id}`}
+                  className={`${cardVariants()} space-y-4`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2
+                      id={`division-${division.id}`}
+                      className="text-lg font-semibold"
+                    >
+                      {division.name}
+                    </h2>
+                    <Badge>
+                      {t("divisionTeamCount", { count: division.teams.length })}
+                    </Badge>
+                  </div>
+                  <DataTable
+                    label={t("divisionTableLabel", {
+                      division: division.name,
+                      season: season.name,
                     })}
-                    <span className="block truncate">{row.manager}</span>
-                  </>
-                ),
-                trailing: (
-                  <>
-                    {status(row)}
-                    {row.payment && row.payment.tone !== "neutral" && (
-                      <Badge tone={row.payment.tone}>{row.payment.text}</Badge>
-                    )}
-                  </>
-                ),
-              })}
-            />
+                    rows={division.teams}
+                    rowKey={(row) => row.id}
+                    rowHref={(row) => `/admin/${slug}/registrations/${row.id}`}
+                    rowLabel={(row) => t("openTeam", { team: row.teamName })}
+                    openLabel={t("open")}
+                    columns={[
+                      {
+                        key: "team",
+                        header: t("colTeam"),
+                        cell: (row) => (
+                          <span className="flex items-center gap-3">
+                            <Avatar
+                              name={row.teamName}
+                              className="size-9 text-base"
+                            />
+                            <span className="min-w-0">
+                              <span className="block font-semibold">
+                                {row.teamName}
+                              </span>
+                              <span className="block text-muted-foreground">
+                                {row.manager}
+                              </span>
+                            </span>
+                          </span>
+                        ),
+                      },
+                      {
+                        key: "players",
+                        header: t("colPlayers"),
+                        align: "right",
+                        cell: (row) => row.players,
+                      },
+                      { key: "status", header: t("colStatus"), cell: status },
+                      {
+                        key: "payment",
+                        header: t("colPayment"),
+                        className: "hidden md:table-cell",
+                        cell: (row) =>
+                          row.payment ? (
+                            <Badge tone={row.payment.tone}>
+                              {row.payment.text}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">–</span>
+                          ),
+                      },
+                    ]}
+                    phone={(row) => ({
+                      title: row.teamName,
+                      subtitle: (
+                        <>
+                          {t("phoneLine", {
+                            division: row.divisionName,
+                            count: row.players,
+                          })}
+                          <span className="block truncate">{row.manager}</span>
+                        </>
+                      ),
+                      trailing: (
+                        <>
+                          {status(row)}
+                          {row.payment && row.payment.tone !== "neutral" && (
+                            <Badge tone={row.payment.tone}>
+                              {row.payment.text}
+                            </Badge>
+                          )}
+                        </>
+                      ),
+                    })}
+                  />
+                </section>
+              ))}
+            </div>
           )}
         </>
       )}

@@ -677,21 +677,31 @@ export function BasketballScorebook({
           )}
         </Button>
         {state.phase === "live" && (
-          <Button
-            type="button"
-            className={cn(
-              "min-h-14 flex-1 text-xl",
-              state.clock.running
-                ? "bg-destructive text-white hover:bg-destructive/90"
-                : "bg-success text-white hover:bg-success/90",
-            )}
-            disabled={blocked}
-            onClick={() =>
-              record(state.clock.running ? "clock_stop" : "clock_start", {})
-            }
-          >
-            {t(state.clock.running ? "stopClock" : "startClock")}
-          </Button>
+          <div className="flex w-full items-stretch gap-2 sm:w-auto sm:flex-1">
+            <Button
+              type="button"
+              className={cn(
+                "min-h-14 flex-1 text-xl",
+                state.clock.running
+                  ? "bg-destructive text-white hover:bg-destructive/90"
+                  : "bg-success text-white hover:bg-success/90",
+              )}
+              disabled={blocked || Boolean(state.freeThrowsDue)}
+              onClick={() =>
+                record(state.clock.running ? "clock_stop" : "clock_start", {})
+              }
+            >
+              {t(state.clock.running ? "stopClock" : "startClock")}
+            </Button>
+            <ShotClockControls
+              state={state}
+              rules={rules}
+              remainingMs={shotClockMs}
+              teamNames={teamNames}
+              record={record}
+              disabled={blocked}
+            />
+          </div>
         )}
         {state.phase === "live" && (
           <Button
@@ -727,14 +737,6 @@ export function BasketballScorebook({
             </span>
           </Button>
         )}
-        <ShotClockControls
-          state={state}
-          rules={rules}
-          remainingMs={shotClockMs}
-          teamNames={teamNames}
-          record={record}
-          disabled={blocked}
-        />
         {state.phase === "break" && (
           <>
             {!(

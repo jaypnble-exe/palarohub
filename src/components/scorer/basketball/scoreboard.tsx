@@ -187,7 +187,7 @@ export function Scoreboard({
           >
             {live ? formatClock(clockMs) : "–"}
           </p>
-          {live && rules.shotClock?.enabled && (
+          {live && (
             <p
               className={cn(
                 "grid min-w-16 place-items-center rounded-lg border-2 px-2 font-display text-3xl leading-tight font-semibold tabular-nums",

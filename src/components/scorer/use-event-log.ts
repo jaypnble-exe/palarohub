@@ -4,6 +4,7 @@ import type { createClient } from "@/lib/supabase/browser";
 import { toRecordedEvent } from "@/lib/game-events";
 import type { ScorebookStore } from "@/lib/offline/scorebook-store";
 import type { GameEventEnvelope } from "@/lib/sports/types";
+import { gameLiveChannel } from "@/lib/game-live";
 
 type Client = ReturnType<typeof createClient>;
 type LoggedEvent = GameEventEnvelope & { type: string; payload: object };
@@ -40,6 +41,32 @@ export function useEventLog<E extends LoggedEvent>(
   const sending = useRef(false);
   const stopped = useRef(false);
   const queue = useRef(pending);
+  const live = useRef<ReturnType<typeof gameLiveChannel> | null>(null);
+  const lastSaved = useRef(
+    initial.events
+      .filter(
+        (event) => !initial.pending.some((item) => item.event.id === event.id),
+      )
+      .at(-1)?.id,
+  );
+  useEffect(() => {
+    const channel = gameLiveChannel(supabase, gameId, {
+      clockRequest(requestId, receivedAt) {
+        if (stopped.current || !lastSaved.current) return;
+        channel.send("clock_reply", {
+          requestId,
+          receivedAt,
+          repliedAt: Date.now(),
+          eventId: lastSaved.current,
+        });
+      },
+    });
+    live.current = channel;
+    return () => {
+      live.current = null;
+      channel.close();
+    };
+  }, [supabase, gameId]);
   // Runs before the sending effect below, so flush always sees the latest queue.
   useEffect(() => {
     queue.current = pending;
@@ -63,6 +90,8 @@ export function useEventLog<E extends LoggedEvent>(
     }
     sending.current = false;
     if (!error) {
+      lastSaved.current = batch.at(-1)!.event.id;
+      live.current?.send("saved", {});
       const sent = batch.map(({ event }) => event.id);
       const done = new Set(sent);
       const left = queue.current.filter(({ event }) => !done.has(event.id));

@@ -10,6 +10,7 @@ import { ReviewActions } from "@/components/review/review-actions";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Alert } from "@/components/ui/alert";
+import { Icon } from "@/components/ui/icon";
 
 export default async function GameReviewPage({
   params,
@@ -24,6 +25,7 @@ export default async function GameReviewPage({
   if (!record || record.game.leagueId !== league.id) notFound();
   const t = await getTranslations("Review");
   const schedule = await getTranslations("Schedule");
+  const scorer = await getTranslations("Scorer");
   const format = await getFormatter();
   const { game, summary, teamNames, state } = record;
   const ejected = (summary?.ejectedPlayers ?? []).map((player) => ({
@@ -42,6 +44,20 @@ export default async function GameReviewPage({
           </>
         }
         title={schedule("matchup", teamNames)}
+        actions={
+          game.status !== "cancelled" && (
+            <Button asChild variant="outline">
+              <a
+                href={`/tv/${game.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Icon name="live" className="size-4" />
+                {scorer("openTv")}
+              </a>
+            </Button>
+          )
+        }
       />
 
       {summary ? (

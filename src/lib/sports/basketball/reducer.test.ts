@@ -628,6 +628,35 @@ describe("basketball box score and event parsing", () => {
     );
     expect(parse("timeout", { team: "home", reason: "x" })).toBe(false);
     expect(parse("shot_clock", {})).toBe(false);
+    expect(parse("stat", { team: "home", playerId: h1, kind: "rebound" })).toBe(
+      true,
+    );
+    expect(
+      parse("stat", {
+        team: "home",
+        playerId: h1,
+        kind: "rebound",
+        reboundType: "offensive",
+        rimHit: false,
+      }),
+    ).toBe(true);
+    expect(
+      parse("stat", {
+        team: "home",
+        playerId: h1,
+        kind: "steal",
+        reboundType: "offensive",
+      }),
+    ).toBe(false);
+    expect(
+      parse("stat", {
+        team: "home",
+        playerId: h1,
+        kind: "rebound",
+        reboundType: "defensive",
+        rimHit: true,
+      }),
+    ).toBe(false);
     expect(
       basketball.eventSchema.safeParse({
         ...base,
@@ -805,11 +834,122 @@ describe("official scoresheet details", () => {
     expect(state.effects.at(-1)?.kind).toBe("shotClockViolation");
   });
 
-  it("refuses shot clock actions in a league without one", () => {
+  it("accepts shot clock actions with the default rules", () => {
     const game = tipOff();
     const event = game.add("shot_clock", { seconds: 24 });
     const state = reduceBasketballGame(game.events.slice(0, -1), rules);
-    expect(validateBasketballEvent(state, event, rules)).toBe("shotClockOff");
+    expect(validateBasketballEvent(state, event, rules)).toBeNull();
+  });
+
+  it.each([
+    ["offensive", true, 14_000],
+    ["defensive", undefined, 24_000],
+    ["offensive", false, 3_000],
+  ] as const)(
+    "resets a %s rebound with rim contact %s to %i ms",
+    (reboundType, rimHit, remainingMs) => {
+      const game = tipOff();
+      game.add("jump_ball_won", { team: "home" });
+      game.add("clock_start", {}, 600_000);
+      game.add(
+        "score",
+        { team: "home", playerId: h1, points: 2, made: false },
+        599_000,
+      );
+      const team = reboundType === "offensive" ? "home" : "away";
+      const playerId = team === "home" ? h1 : a1;
+      game.add(
+        "stat",
+        { team, playerId, kind: "rebound", reboundType, rimHit },
+        579_000,
+      );
+      const state = game.state();
+      expect(state.shotClock.remainingMs).toBe(remainingMs);
+      expect(state.teams[team].players[playerId].stats.rebound).toBe(1);
+      expect(state.ballControl).toBe(team);
+      expect(state.possession).toBe("away");
+      expect(state.clock.running).toBe(true);
+    },
+  );
+
+  it.each(["turnover", "steal"] as const)(
+    "resets once when %s is recorded before its matching possession-change stat",
+    (first) => {
+      const game = tipOff();
+      game.add("jump_ball_won", { team: "home" });
+      game.add("clock_start", {}, 600_000);
+      const turnover = {
+        team: "home",
+        playerId: h1,
+        kind: "turnover",
+      } as const;
+      const steal = { team: "away", playerId: a1, kind: "steal" } as const;
+      game.add("stat", first === "turnover" ? turnover : steal, 590_000);
+      expect(game.state().shotClock.remainingMs).toBe(24_000);
+      game.add("stat", first === "turnover" ? steal : turnover, 588_000);
+      const state = game.state();
+      expect(state.shotClock.remainingMs).toBe(22_000);
+      expect(state.ballControl).toBe("away");
+      expect(state.possession).toBe("away");
+      expect(state.teams.home.players[h1].stats.turnover).toBe(1);
+      expect(state.teams.away.players[a1].stats.steal).toBe(1);
+    },
+  );
+
+  it("preserves the clock for old unclassified rebounds and unrelated stats", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add("clock_stop", {}, 579_000);
+    for (const kind of ["rebound", "assist", "block"] as const)
+      game.add("stat", { team: "home", playerId: h1, kind });
+    expect(game.state().shotClock.remainingMs).toBe(3000);
+  });
+
+  it("undoes the stat and its automatic reset together", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add("clock_stop", {}, 579_000);
+    const rebound = game.add("stat", {
+      team: "home",
+      playerId: h1,
+      kind: "rebound",
+      reboundType: "offensive",
+      rimHit: true,
+    });
+    expect(game.state().shotClock.remainingMs).toBe(14_000);
+    game.add("void", { eventId: rebound.id });
+    expect(game.state().shotClock.remainingMs).toBe(3000);
+    expect(game.state().teams.home.players[h1].stats.rebound).toBe(0);
+  });
+
+  it("stops both clocks and resets to 24 for an ordinary foul awarding free throws", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add(
+      "foul",
+      { team: "away", playerId: a1, kind: "personal", freeThrows: 2 },
+      579_000,
+    );
+    const state = game.state(withShotClock);
+    expect(state.clock).toMatchObject({ running: false, remainingMs: 579_000 });
+    expect(state.shotClock.remainingMs).toBe(24_000);
+    expect(state.freeThrowsDue).toEqual({ team: "home", count: 2 });
+    game.add("score", { team: "home", playerId: h1, points: 1, made: true });
+    game.add("score", { team: "home", playerId: h1, points: 1, made: true });
+    expect(game.state(withShotClock).shotClock.remainingMs).toBe(24_000);
+    expect(game.state(withShotClock).clock.running).toBe(false);
+  });
+
+  it("preserves the remaining shot clock for a technical free throw", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add(
+      "foul",
+      { team: "home", playerId: h1, kind: "technical", freeThrows: 1 },
+      579_000,
+    );
+    expect(game.state(withShotClock).shotClock.remainingMs).toBe(3000);
+    expect(game.state(withShotClock).clock.running).toBe(false);
   });
 
   it("records confirmations and protests only after the final buzzer", () => {

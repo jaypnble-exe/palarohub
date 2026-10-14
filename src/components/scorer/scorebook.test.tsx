@@ -49,6 +49,13 @@ const setup: ScorerSetup = {
 /** A Supabase stand-in: a signed-in commissioner who may or may not be the scorer yet. */
 function fakeSupabase(initiallyScorer: boolean) {
   let scorer = initiallyScorer;
+  const realtime = {
+    on: vi.fn(),
+    subscribe: vi.fn(),
+    send: vi.fn().mockResolvedValue("ok"),
+  };
+  realtime.on.mockReturnValue(realtime);
+  realtime.subscribe.mockReturnValue(realtime);
   const rpc = vi.fn(async (name: string) => {
     if (name === "scorer_game_setup") return { data: setup, error: null };
     if (name === "claim_scorer_access") {
@@ -70,6 +77,8 @@ function fakeSupabase(initiallyScorer: boolean) {
     return chain;
   });
   return {
+    channel: vi.fn(() => realtime),
+    removeChannel: vi.fn().mockResolvedValue("ok"),
     rpc,
     from,
     auth: {

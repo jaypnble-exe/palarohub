@@ -21,7 +21,7 @@ export function useGameClock(clock: Clock) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!clock.running) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 200);
+    const timer = window.setInterval(() => setNow(Date.now()), 50);
     return () => window.clearInterval(timer);
   }, [clock.running]);
   return remainingAt(clock, now);
@@ -139,7 +139,17 @@ export function describeEvent(
       return t("log.timeout", { team: teamNames[event.payload.team] });
     case "stat":
       return t("log.stat", {
-        kind: t(`statKind.${event.payload.kind}`),
+        kind: t(
+          `statKind.${
+            event.payload.kind === "rebound" && event.payload.reboundType
+              ? event.payload.reboundType === "defensive"
+                ? "defensiveRebound"
+                : event.payload.rimHit === false
+                  ? "offensiveReboundNoRim"
+                  : "offensiveRebound"
+              : event.payload.kind
+          }`,
+        ),
         player: who(event.payload.team, event.payload.playerId),
       });
     case "possession":
