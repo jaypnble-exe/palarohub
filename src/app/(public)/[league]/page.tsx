@@ -34,6 +34,7 @@ export default async function PublicLeaguePage({
   if (seasonError) throw new Error("Unable to load published seasons.");
   const registrationText = await getTranslations("Registration");
   const scheduleText = await getTranslations("Schedule");
+  const competition = await getTranslations("Competition");
   const [settings, teams, announcements] = await Promise.all([
     supabase
       .from("registration_settings")
@@ -90,6 +91,11 @@ export default async function PublicLeaguePage({
         <Button asChild variant="outline">
           <Link href={`/${slug}/standings`}>{scheduleText("standings")}</Link>
         </Button>
+        {(["stats", "brackets", "awards"] as const).map((section) => (
+          <Button key={section} asChild variant="outline">
+            <Link href={`/${slug}/${section}`}>{competition(section)}</Link>
+          </Button>
+        ))}
       </div>
       {settings.data?.map((setting) => (
         <Button key={setting.season_id} asChild variant="outline">

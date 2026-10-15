@@ -251,8 +251,13 @@ describe("basketball scorer screen", () => {
     renderBoard(startedGame());
     const timeout = () =>
       within(homePanel()).getByRole("button", { name: en.Scorer.timeout });
+    expect(within(timeout()).getByText("2")).toBeVisible();
+    expect(timeout()).toHaveAccessibleDescription("2 timeouts");
     fireEvent.click(timeout());
+    expect(within(timeout()).getByText("1")).toBeVisible();
     fireEvent.click(timeout());
+    expect(within(timeout()).getByText("0")).toBeVisible();
+    expect(timeout()).toHaveAccessibleDescription("no timeouts");
     fireEvent.click(timeout());
     expect(
       screen.getByText(en.Scorer.errors.noTimeoutsLeft),
@@ -415,14 +420,13 @@ describe("basketball scorer screen", () => {
     const question = screen.getByRole("alertdialog", {
       name: en.Scorer.shotClockExpired,
     });
+    expect(question.parentElement).toBe(document.body);
+    expect(question.closest("footer")).toBeNull();
     fireEvent.click(
       within(question).getByRole("button", { name: "Violation: Hawks" }),
     );
     expect(screen.queryByRole("alertdialog")).toBeNull();
     expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: en.Scorer.clockCorrections }),
-    );
     fireEvent.click(screen.getByRole("button", { name: "Reset 14" }));
     expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
   });
@@ -458,6 +462,8 @@ describe("basketball scorer screen", () => {
       expect(
         screen.queryByRole("button", { name: en.Scorer.clockCorrections }),
       ).toBeNull();
+      expect(screen.queryByRole("button", { name: "Reset 24" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Reset 14" })).toBeNull();
       expect(screen.queryByRole("alertdialog")).toBeNull();
       await act(async () => vi.advanceTimersByTimeAsync(500));
       expect(
@@ -470,9 +476,9 @@ describe("basketball scorer screen", () => {
     },
   );
 
-  it("records rebounds with automatic resets and keeps manual resets under Clock corrections", () => {
+  it("records rebounds with automatic resets and keeps manual resets directly accessible", () => {
     renderBoard(startedGame());
-    expect(screen.queryByRole("button", { name: "Reset 24" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Reset 24" })).toBeVisible();
     tapPlayer("Royal 1");
     fireEvent.click(
       screen.getByRole("button", { name: "Offensive rebound (14s)" }),
@@ -490,15 +496,77 @@ describe("basketball scorer screen", () => {
       screen.getByRole("button", { name: "Defensive rebound (24s)" }),
     );
     expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: en.Scorer.clockCorrections }),
-    );
     fireEvent.click(screen.getByRole("button", { name: "Reset 14" }));
     expect(screen.getByLabelText("Shot clock: 14 seconds")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Reset 24" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Reset 24" }));
+    expect(screen.getByLabelText("Shot clock: 24 seconds")).toBeInTheDocument();
   });
 
-  it("sets the arrow from the opening tip and flips it on a jump ball", () => {
+  it("validates a clock correction, records its audit entry, and allows Undo", async () => {
+    const store = renderBoard(startedGame());
+    fireEvent.click(screen.getByRole("button", { name: en.Scorer.editClock }));
+    const dialog = screen.getByRole("dialog", { name: en.Scorer.editClock });
+    const time = within(dialog).getByLabelText(en.Scorer.correctedTime);
+    const apply = within(dialog).getByRole("button", {
+      name: en.Scorer.applyClockCorrection,
+    });
+    fireEvent.change(time, { target: { value: "12:00" } });
+    fireEvent.click(apply);
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "00:00.0 to 10:00.0",
+    );
+    fireEvent.change(time, { target: { value: "02:35.4" } });
+    fireEvent.click(apply);
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      en.Scorer.clockReasonRequired,
+    );
+    fireEvent.change(
+      within(dialog).getByLabelText(en.Scorer.clockCorrectionReason),
+      { target: { value: " Referee reviewed the time " } },
+    );
+    fireEvent.click(apply);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(
+      within(screen.getByRole("banner")).getByText("2:36"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: en.Scorer.startClock }),
+    ).toBeEnabled();
+    await waitFor(() => expect(store.dump()).toHaveLength(1));
+    expect(store.dump()[0].event).toMatchObject({
+      type: "clock_adjust",
+      clockMs: 600000,
+      payload: { remainingMs: 155400, reason: "Referee reviewed the time" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Scorer.showPlayByPlay }),
+    );
+    expect(
+      within(
+        screen.getByRole("region", { name: en.Scorer.playByPlay }),
+      ).getByText(
+        "Clock corrected from 10:00.0 to 02:35.4: Referee reviewed the time",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: en.Scorer.undo }));
+    expect(
+      within(screen.getByRole("banner")).getByText("10:00"),
+    ).toBeInTheDocument();
+  });
+
+  it("requires stopping the game clock before opening the editor", () => {
+    renderBoard(startedGame());
+    fireEvent.click(screen.getByRole("button", { name: en.Scorer.startClock }));
+    expect(
+      screen.getByRole("button", { name: en.Scorer.editClock }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: en.Scorer.stopClock }));
+    expect(
+      screen.getByRole("button", { name: en.Scorer.editClock }),
+    ).toBeEnabled();
+  });
+
+  it("sets the arrow from the opening tip and changes it through the possession buttons", () => {
     renderBoard(startedGame());
     const tip = screen.getByRole("region", {
       name: en.Scorer.openingTipTitle,
@@ -509,21 +577,17 @@ describe("basketball scorer screen", () => {
         "Royals won the opening tip. The possession arrow now points to Hawks.",
       ),
     ).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Jump ball: Hawks ball by the arrow",
-      }),
-    );
-    expect(
-      screen.getByText(
-        "Jump ball: Hawks get the ball. The arrow now points to Royals.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", {
-        name: "Jump ball: Royals ball by the arrow",
-      }),
-    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Jump ball:/ })).toBeNull();
+    const homeArrow = within(homePanel()).getByRole("button", {
+      name: en.Scorer.possession,
+    });
+    const awayArrow = within(
+      screen.getByRole("region", { name: "Hawks" }),
+    ).getByRole("button", { name: en.Scorer.possession });
+    expect(awayArrow).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(homeArrow);
+    expect(homeArrow).toHaveAttribute("aria-pressed", "true");
+    expect(awayArrow).toHaveAttribute("aria-pressed", "false");
   });
 
   it("lets this device take the game back", async () => {

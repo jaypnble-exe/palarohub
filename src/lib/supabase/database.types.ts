@@ -97,6 +97,189 @@ export type Database = {
           },
         ];
       };
+      bracket_slots: {
+        Row: {
+          away_required: number;
+          away_seed: number | null;
+          away_source: string | null;
+          away_team_id: string | null;
+          bracket_id: string;
+          division_id: string;
+          home_required: number;
+          home_seed: number | null;
+          home_source: string | null;
+          home_team_id: string | null;
+          id: string;
+          league_id: string;
+          position: number;
+          round_no: number;
+          season_id: string;
+          winner_id: string | null;
+        };
+        Insert: {
+          away_required: number;
+          away_seed?: number | null;
+          away_source?: string | null;
+          away_team_id?: string | null;
+          bracket_id: string;
+          division_id: string;
+          home_required: number;
+          home_seed?: number | null;
+          home_source?: string | null;
+          home_team_id?: string | null;
+          id?: string;
+          league_id: string;
+          position: number;
+          round_no: number;
+          season_id: string;
+          winner_id?: string | null;
+        };
+        Update: {
+          away_required?: number;
+          away_seed?: number | null;
+          away_source?: string | null;
+          away_team_id?: string | null;
+          bracket_id?: string;
+          division_id?: string;
+          home_required?: number;
+          home_seed?: number | null;
+          home_source?: string | null;
+          home_team_id?: string | null;
+          id?: string;
+          league_id?: string;
+          position?: number;
+          round_no?: number;
+          season_id?: string;
+          winner_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "bracket_slots_away_source_bracket_id_league_id_fkey";
+            columns: ["away_source", "bracket_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "bracket_slots";
+            referencedColumns: ["id", "bracket_id", "league_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_away_team_id_league_id_season_id_division_id_fkey";
+            columns: ["away_team_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_away_team_id_league_id_season_id_division_id_fkey";
+            columns: ["away_team_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_bracket_id_league_id_season_id_division_id_fkey";
+            columns: ["bracket_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "brackets";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_home_source_bracket_id_league_id_fkey";
+            columns: ["home_source", "bracket_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "bracket_slots";
+            referencedColumns: ["id", "bracket_id", "league_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_home_team_id_league_id_season_id_division_id_fkey";
+            columns: ["home_team_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_home_team_id_league_id_season_id_division_id_fkey";
+            columns: ["home_team_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_winner_id_league_id_season_id_division_id_fkey";
+            columns: ["winner_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "bracket_slots_winner_id_league_id_season_id_division_id_fkey";
+            columns: ["winner_id", "league_id", "season_id", "division_id"];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+        ];
+      };
+      brackets: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          division_id: string;
+          id: string;
+          league_id: string;
+          preset: string;
+          season_id: string;
+          seeds: string[];
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          division_id: string;
+          id?: string;
+          league_id: string;
+          preset: string;
+          season_id: string;
+          seeds: string[];
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          division_id?: string;
+          id?: string;
+          league_id?: string;
+          preset?: string;
+          season_id?: string;
+          seeds?: string[];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brackets_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "brackets_division_id_league_id_season_id_fkey";
+            columns: ["division_id", "league_id", "season_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "brackets_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       divisions: {
         Row: {
           created_at: string;
@@ -219,6 +402,75 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "leagues";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      game_player_awards: {
+        Row: {
+          confirmed_at: string;
+          efficiency: number;
+          game_id: string;
+          league_id: string;
+          metrics: Json;
+          player_id: string;
+          player_name: string;
+          side: string;
+        };
+        Insert: {
+          confirmed_at?: string;
+          efficiency: number;
+          game_id: string;
+          league_id: string;
+          metrics: Json;
+          player_id: string;
+          player_name: string;
+          side: string;
+        };
+        Update: {
+          confirmed_at?: string;
+          efficiency?: number;
+          game_id?: string;
+          league_id?: string;
+          metrics?: Json;
+          player_id?: string;
+          player_name?: string;
+          side?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "game_player_awards_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_player_awards_game_id_league_id_fkey";
+            columns: ["game_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "published_games";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_player_awards_league_id_fkey";
+            columns: ["league_id"];
+            isOneToOne: false;
+            referencedRelation: "leagues";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "game_player_awards_player_id_league_id_fkey";
+            columns: ["player_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "league_player_catalog";
+            referencedColumns: ["id", "league_id"];
+          },
+          {
+            foreignKeyName: "game_player_awards_player_id_league_id_fkey";
+            columns: ["player_id", "league_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id", "league_id"];
           },
         ];
       };
@@ -461,6 +713,8 @@ export type Database = {
       games: {
         Row: {
           away_season_team_id: string;
+          bracket_game_number: number | null;
+          bracket_slot_id: string | null;
           created_at: string;
           created_by: string;
           division_id: string;
@@ -476,6 +730,8 @@ export type Database = {
         };
         Insert: {
           away_season_team_id: string;
+          bracket_game_number?: number | null;
+          bracket_slot_id?: string | null;
           created_at?: string;
           created_by: string;
           division_id: string;
@@ -491,6 +747,8 @@ export type Database = {
         };
         Update: {
           away_season_team_id?: string;
+          bracket_game_number?: number | null;
+          bracket_slot_id?: string | null;
           created_at?: string;
           created_by?: string;
           division_id?: string;
@@ -518,6 +776,18 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "season_teams";
             referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_bracket_slot_fk";
+            columns: [
+              "bracket_slot_id",
+              "league_id",
+              "season_id",
+              "division_id",
+            ];
+            isOneToOne: false;
+            referencedRelation: "bracket_slots";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
           },
           {
             foreignKeyName: "games_created_by_fkey";
@@ -1037,7 +1307,7 @@ export type Database = {
           accepted_at?: string | null;
           active?: boolean;
           created_at?: string;
-          division_id?: string;
+          division_id: string;
           id?: string;
           jersey_number: number;
           league_id: string;
@@ -1062,6 +1332,30 @@ export type Database = {
           season_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "roster_entries_division_fkey";
+            columns: [
+              "registration_id",
+              "league_id",
+              "season_id",
+              "division_id",
+            ];
+            isOneToOne: false;
+            referencedRelation: "published_season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
+          {
+            foreignKeyName: "roster_entries_division_fkey";
+            columns: [
+              "registration_id",
+              "league_id",
+              "season_id",
+              "division_id",
+            ];
+            isOneToOne: false;
+            referencedRelation: "season_teams";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
+          },
           {
             foreignKeyName: "roster_entries_league_id_fkey";
             columns: ["league_id"];
@@ -1105,7 +1399,9 @@ export type Database = {
           division_id: string;
           fee_halalas: number;
           id: string;
+          jersey_design_path: string | null;
           league_id: string;
+          logo_path: string | null;
           review_comment: string;
           reviewed_at: string | null;
           season_id: string;
@@ -1119,7 +1415,9 @@ export type Database = {
           division_id: string;
           fee_halalas: number;
           id?: string;
+          jersey_design_path?: string | null;
           league_id: string;
+          logo_path?: string | null;
           review_comment?: string;
           reviewed_at?: string | null;
           season_id: string;
@@ -1133,7 +1431,9 @@ export type Database = {
           division_id?: string;
           fee_halalas?: number;
           id?: string;
+          jersey_design_path?: string | null;
           league_id?: string;
+          logo_path?: string | null;
           review_comment?: string;
           reviewed_at?: string | null;
           season_id?: string;
@@ -1451,6 +1751,8 @@ export type Database = {
           away_score: number | null;
           away_season_team_id: string | null;
           away_team_name: string | null;
+          bracket_game_number: number | null;
+          bracket_slot_id: string | null;
           division_id: string | null;
           division_name: string | null;
           home_score: number | null;
@@ -1478,6 +1780,18 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "season_teams";
             referencedColumns: ["id", "league_id", "season_id"];
+          },
+          {
+            foreignKeyName: "games_bracket_slot_fk";
+            columns: [
+              "bracket_slot_id",
+              "league_id",
+              "season_id",
+              "division_id",
+            ];
+            isOneToOne: false;
+            referencedRelation: "bracket_slots";
+            referencedColumns: ["id", "league_id", "season_id", "division_id"];
           },
           {
             foreignKeyName: "games_division_id_league_id_season_id_fkey";
@@ -1577,6 +1891,27 @@ export type Database = {
         };
         Returns: undefined;
       };
+      approve_game_with_player: {
+        Args: {
+          p_away_score: number;
+          p_game_id: string;
+          p_home_score: number;
+          p_last_sequence: number;
+          p_league_id: string;
+          p_player_id?: string;
+          p_summary: Json;
+          p_suspend_player_ids?: string[];
+        };
+        Returns: undefined;
+      };
+      career_games: {
+        Args: {
+          p_league_id: string;
+          p_player_id?: string;
+          p_season_id?: string;
+        };
+        Returns: Json;
+      };
       check_registration_eligibility: {
         Args: {
           p_division_id: string;
@@ -1589,6 +1924,15 @@ export type Database = {
       };
       claim_scorer_access: {
         Args: { p_game_id: string; p_pin?: string };
+        Returns: string;
+      };
+      create_bracket: {
+        Args: {
+          p_division_id: string;
+          p_league_id: string;
+          p_preset: string;
+          p_team_ids: string[];
+        };
         Returns: string;
       };
       create_league_with_commissioner: {
@@ -1667,14 +2011,6 @@ export type Database = {
         };
         Returns: undefined;
       };
-      tv_game: {
-        Args: { p_after?: number; p_game_id: string };
-        Returns: Json;
-      };
-      withdraw_team_registration: {
-        Args: { p_league_id: string; p_registration_id: string };
-        Returns: undefined;
-      };
       review_team_registration: {
         Args: {
           p_comment?: string;
@@ -1735,6 +2071,7 @@ export type Database = {
         Args: { p_game_id: string; p_last_sequence: number };
         Returns: undefined;
       };
+      tv_game: { Args: { p_after?: number; p_game_id: string }; Returns: Json };
       update_game: {
         Args: {
           p_game_id: string;
@@ -1743,6 +2080,10 @@ export type Database = {
           p_status: string;
           p_venue: string;
         };
+        Returns: undefined;
+      };
+      withdraw_team_registration: {
+        Args: { p_league_id: string; p_registration_id: string };
         Returns: undefined;
       };
     };

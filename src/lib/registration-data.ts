@@ -3,6 +3,7 @@ import { z } from "zod";
 import { notFound } from "next/navigation";
 import { getLeagueAccess } from "./league-access";
 import type { Database } from "./supabase/database.types";
+import { registrationMedia } from "./registration-media";
 import {
   catalogPlayerSchema,
   playersForDivision,
@@ -122,10 +123,12 @@ export async function loadRegistration(
   if (!season.data || !division.data || !settings.data || !team.data)
     throw new Error("Registration configuration is missing.");
   const playerCatalog = parsePlayerCatalog(catalog.data);
+  const media = await registrationMedia(supabase, registration);
   return {
     denied: false as const,
     ...access,
     registration,
+    media,
     season: season.data,
     division: division.data,
     settings: settings.data,

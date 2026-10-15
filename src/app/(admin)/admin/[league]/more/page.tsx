@@ -15,6 +15,7 @@ export default async function MorePage({
   const { league, canView, canManage } = await getLeagueAccess(slug);
   if (!canView) return <AccessDenied />;
   const t = await getTranslations("AdminMore");
+  const competition = await getTranslations("Competition");
   const base = `/admin/${slug}`;
   const sections: { title: string; tiles: Tile[] }[] = [
     {
@@ -37,6 +38,11 @@ export default async function MorePage({
           icon: "announcements",
           label: t("announcements"),
           description: t("announcementsHelp"),
+        },
+        {
+          href: `${base}/brackets`,
+          icon: "standings",
+          label: competition("manageBrackets"),
         },
       ],
     },
@@ -81,6 +87,21 @@ export default async function MorePage({
           href: `/${slug}/standings`,
           icon: "standings",
           label: t("standings"),
+        },
+        {
+          href: `/${slug}/stats`,
+          icon: "players",
+          label: competition("stats"),
+        },
+        {
+          href: `/${slug}/brackets`,
+          icon: "standings",
+          label: competition("brackets"),
+        },
+        {
+          href: `/${slug}/awards`,
+          icon: "ratings",
+          label: competition("awards"),
         },
       ],
     },

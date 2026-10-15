@@ -11,6 +11,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Alert } from "@/components/ui/alert";
 import { Icon } from "@/components/ui/icon";
+import { getSportModule } from "@/lib/sports/registry";
+import { loadPlayerAwards } from "@/lib/player-awards";
+import { PlayerOfGameCard } from "@/components/public/player-of-game";
 
 export default async function GameReviewPage({
   params,
@@ -19,7 +22,7 @@ export default async function GameReviewPage({
 }) {
   const { league: slug, gameId } = await params;
   if (!z.uuid().safeParse(gameId).success) notFound();
-  const { supabase, league, canView } = await getLeagueAccess(slug);
+  const { supabase, league, canView, canManage } = await getLeagueAccess(slug);
   if (!canView) return <AccessDenied />;
   const record = await loadGameRecord(supabase, gameId);
   if (!record || record.game.leagueId !== league.id) notFound();
@@ -28,6 +31,10 @@ export default async function GameReviewPage({
   const scorer = await getTranslations("Scorer");
   const format = await getFormatter();
   const { game, summary, teamNames, state } = record;
+  const awards =
+    game.status === "approved"
+      ? await loadPlayerAwards(supabase, league.id, { gameId })
+      : [];
   const ejected = (summary?.ejectedPlayers ?? []).map((player) => ({
     playerId: player.playerId,
     label: `#${player.jersey} ${player.name} (${teamNames[player.team]})`,
@@ -90,9 +97,15 @@ export default async function GameReviewPage({
           slug={slug}
           gameId={game.id}
           ejected={ejected}
-          canApprove={Boolean(summary)}
+          canApprove={Boolean(summary) && record.unreadableEvents === 0}
+          candidates={getSportModule(record.sport).playerOfGameCandidates(
+            state,
+          )}
+          canSelectPlayer={canManage}
         />
       )}
+
+      {awards[0] && <PlayerOfGameCard slug={slug} award={awards[0]} />}
 
       {record.events.length > 0 && (
         <BoxScores state={state} teamNames={teamNames} />

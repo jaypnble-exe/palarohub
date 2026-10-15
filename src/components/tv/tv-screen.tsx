@@ -23,6 +23,10 @@ const IDLE_POLL_MS = 15000;
  * draws the game with its sport's TV layout.
  */
 export function TvScreen({ gameId }: { gameId: string }) {
+  return <GameTvScreen key={gameId} gameId={gameId} />;
+}
+
+function GameTvScreen({ gameId }: { gameId: string }) {
   const t = useTranslations("Tv");
   const supabase = useMemo(() => createClient(), []);
   const [game, setGame] = useState<TvGame>();
@@ -44,10 +48,6 @@ export function TvScreen({ gameId }: { gameId: string }) {
     let latestId: string | undefined;
     let best: { roundTrip: number; at: number } | undefined;
     const requests = new Map<string, number>();
-    setScorerOffset(undefined);
-    setRows([]);
-    setGame(undefined);
-    setStatus("loading");
     const channel = gameLiveChannel(supabase, gameId, {
       saved: () => refresh(),
       connected(ready) {
@@ -122,6 +122,7 @@ export function TvScreen({ gameId }: { gameId: string }) {
                   [
                     "clock_start",
                     "clock_stop",
+                    "clock_adjust",
                     "period_start",
                     "period_end",
                   ].includes(event.type),

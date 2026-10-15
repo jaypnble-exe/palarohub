@@ -31,7 +31,7 @@ export async function seasonStandings(
     supabase
       .from("published_games")
       .select(
-        "division_id,home_season_team_id,away_season_team_id,home_score,away_score",
+        "division_id,home_season_team_id,away_season_team_id,home_score,away_score,bracket_slot_id",
       )
       .eq("league_id", leagueId)
       .eq("season_id", seasonId)
@@ -44,6 +44,7 @@ export async function seasonStandings(
       const sport = getSportModule(division.sport);
       const results = games.data.flatMap((game) =>
         game.division_id === division.id &&
+        !game.bracket_slot_id &&
         game.home_season_team_id &&
         game.away_season_team_id &&
         game.home_score !== null &&

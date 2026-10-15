@@ -412,3 +412,73 @@ in-memory test database (336 in all); the migration is not yet applied to cloud.
 
 That completes Phase 1 (pilot season MVP). Next: browser QA on a tablet and
 phone, then Phase 2 (TV scoreboard, live dashboard, public live scores).
+
+## Player careers, brackets, and statistical awards
+
+Open `/sindikato/stats` for division player averages. Each player links to
+`/sindikato/players/[playerId]` for career averages, season history, shooting
+percentages, and recent games. Statistics use approved results and their approved
+event histories; players must have entered a game to record an appearance.
+Shooting percentages use total makes divided by total attempts. Incomplete or
+inconsistent histories are excluded with a notice.
+
+Commissioners create playoffs at `/admin/sindikato/brackets` after all regular
+games in the division are approved or cancelled. Confirm the qualifying teams
+and their seed order before creating the bracket; seeds are then locked. Two to
+16 teams are supported, with automatic byes, single elimination, best of three,
+best of five, or a twice-to-beat first round for higher seeds. Later rounds in
+the twice-to-beat preset are single elimination. Approved results advance the
+series and create the next game as postponed, ready for staff to schedule.
+Public brackets appear at `/sindikato/brackets`. Playoff results do not change
+regular-season standings.
+
+`/sindikato/awards` automatically recognizes division leaders in total points,
+rebounds, assists, steals, blocks, and made threes, including playoff games.
+Tied leaders share an award; statistics with no positive total have no winner.
+Leaders remain provisional while games or brackets are pending. No subjective
+MVP selection is inferred from these statistics.
+
+Game approval now suggests **Player of the Game** from winning-team players who
+entered the game. Basketball efficiency is points + rebounds + assists + steals
+
+- blocks - missed field goals - missed free throws - turnovers. Tied leaders
+  are flagged, and the commissioner can select another winning-team participant.
+  Only recorded stats contribute, so incomplete optional statistics can affect
+  the suggestion. Approval confirms the selection and snapshots its name, stats,
+  and efficiency atomically with the result. When candidates exist, staff can
+  return the game for corrections; the commissioner confirms and approves it.
+
+Confirmed awards appear at `/sindikato/games/[gameId]`, linked from approved
+games on the public schedule, and in the player's career award history.
+Existing approved results are not assigned awards retroactively. Migration
+`20261015000200_player_of_game.sql` adds the immutable award record and approval
+RPC; its database tests cover authorization, invalid selections, rollback,
+snapshot accuracy, and public visibility.
+
+## Registration artwork
+
+The team manager's registration wizard includes a required team logo and an
+optional jersey design. PNG, JPG, and WebP images up to 5 MB are supported. A
+draft can be saved before uploading a logo, but submission requires a stored
+logo belonging to that team. Managers can preview and replace images while
+editing a draft or returned registration, and remove the optional jersey design.
+Taking back a submitted registration follows the existing deadline rules.
+
+Artwork is saved per registration and shown on manager and staff review pages.
+The private `team-registration-media` bucket permits uploads for the manager's
+own team only; signed previews are available to that manager and league staff.
+Stored files cannot be overwritten or deleted through client policies, keeping
+previously submitted images intact. Uploads verify the image signature rather
+than trusting the supplied filename. Unsaved uploads can leave unreferenced
+objects; automated cleanup is not included.
+
+Migrations `20261015000300_registration_team_media.sql` and
+`20261015000400_registration_optional_ratings.sql` are applied to the linked cloud
+project. The latter restores the optional-rating rule already used by the app
+and tracked multi-division migration on databases with the older definition.
+
+Migration `20261015000100_careers_brackets.sql` is applied to the linked cloud
+project and database types are regenerated. The transactional database test in
+`supabase/tests/careers_brackets.test.sql` covers permissions, seed validation,
+byes, series progression, champions, and approved-history visibility. It rolls
+back its fixtures. Public HTTP checks pass; browser visual QA remains pending.

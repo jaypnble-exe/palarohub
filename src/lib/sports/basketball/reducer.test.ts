@@ -400,6 +400,90 @@ describe("basketball substitutions and timeouts", () => {
 });
 
 describe("basketball clock and minutes", () => {
+  it.each([595_000, 580_000])(
+    "corrects the stopped clock to %i without changing playing time or shot clock",
+    (remainingMs) => {
+      const game = tipOff();
+      game.add("clock_start", {}, 600_000);
+      game.add("clock_stop", {}, 590_000);
+      const before = game.state();
+      const correction = game.add(
+        "clock_adjust",
+        { remainingMs, reason: "Referee correction" },
+        590_000,
+      );
+      const state = game.state();
+      expect(state.clock).toMatchObject({
+        remainingMs,
+        running: false,
+        asOf: correction.createdAt,
+      });
+      expect(state.shotClock).toEqual(before.shotClock);
+      expect(state.teams).toEqual(before.teams);
+      game.add("void", { eventId: correction.id });
+      expect(game.state().clock).toEqual(before.clock);
+    },
+  );
+
+  it("counts elapsed play normally after adding time back", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add("clock_stop", {}, 590_000);
+    game.add(
+      "clock_adjust",
+      { remainingMs: 595_000, reason: "Referee restores five seconds" },
+      590_000,
+    );
+    game.add("clock_start", {}, 595_000);
+    game.add("clock_stop", {}, 590_000);
+    expect(game.state().teams.home.players[h1].playedMs).toBe(15000);
+    expect(game.state().clock.remainingMs).toBe(590_000);
+  });
+
+  it("refuses a correction while the clock runs", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add(
+      "clock_adjust",
+      { remainingMs: 500_000, reason: "Correction" },
+      599_000,
+    );
+    expect(lastEntry(game)?.error).toBe("stopClockFirst");
+    expect(game.state().clock.running).toBe(true);
+  });
+
+  it.each([-1, 600001, 100.5])(
+    "rejects a correction outside the period bounds: %i",
+    (remainingMs) => {
+      const game = tipOff();
+      game.add("clock_adjust", { remainingMs, reason: "Correction" }, 600_000);
+      expect(lastEntry(game)?.error).toBe("invalidClockCorrection");
+    },
+  );
+
+  it("requires a reason and applies the overtime duration limit", () => {
+    const game = tipOff();
+    game.add("clock_adjust", { remainingMs: 500_000, reason: " " }, 600_000);
+    expect(lastEntry(game)?.error).toBe("invalidClockCorrection");
+    for (let period = 1; period <= 4; period++) {
+      game.add("period_end", {});
+      game.add("period_start", {});
+    }
+    game.add(
+      "clock_adjust",
+      { remainingMs: 300_001, reason: "Correction" },
+      300_000,
+    );
+    expect(lastEntry(game)?.error).toBe("invalidClockCorrection");
+    game.add(
+      "clock_adjust",
+      { remainingMs: 0, reason: "Time expired" },
+      300_000,
+    );
+    expect(lastEntry(game)?.error).toBeNull();
+    expect(game.state().clock.remainingMs).toBe(0);
+  });
+
   it("credits running game time to the players on court", () => {
     const game = tipOff();
     game.add("clock_start", {}, 600_000);
@@ -587,6 +671,17 @@ describe("basketball corrections", () => {
 });
 
 describe("basketball box score and event parsing", () => {
+  it("counts starters and substitutes in careers, but excludes unused bench players", () => {
+    const game = tipOff();
+    game.add("clock_start", {}, 600_000);
+    game.add("clock_stop", {}, 570_000);
+    game.add("substitution", { team: "home", out: h1, in: h6 }, 570_000);
+    const rows = basketball.playerPerformances(game.state());
+    expect(rows.find((row) => row.playerId === h1)?.metrics.minutes).toBe(0.5);
+    expect(rows.some((row) => row.playerId === h6)).toBe(true);
+    expect(rows.some((row) => row.playerId === home[6])).toBe(false);
+    expect(rows.find((row) => row.playerId === h6)?.metrics.minutes).toBe(0);
+  });
   it("totals present players in roster order", () => {
     const game = tipOff();
     game.add("score", { team: "home", playerId: h1, points: 3, made: true });

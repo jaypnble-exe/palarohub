@@ -126,7 +126,19 @@ export default async function PublicSchedulePage({
         />
       )}
       {season ? (
-        <GameList games={games} />
+        <GameList
+          games={games}
+          actions={(game) =>
+            game.status === "approved" && (
+              <Link
+                href={`/${slug}/games/${game.id}`}
+                className="inline-flex min-h-11 items-center font-semibold text-orange-dark hover:underline"
+              >
+                {t("viewResult")}
+              </Link>
+            )
+          }
+        />
       ) : (
         <EmptyState title={t("noGames")} />
       )}

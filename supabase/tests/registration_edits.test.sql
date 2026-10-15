@@ -2,8 +2,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
 select no_plan();
-create function public.test_edit_payload(team uuid,players uuid[]) returns jsonb language sql immutable as $$
- select jsonb_build_object('teamId',team,'seasonId','a3000000-0000-4000-8000-000000000001','divisionId','a4000000-0000-4000-8000-000000000001','roster',coalesce((select jsonb_agg(jsonb_build_object('playerId',id,'jerseyNumber',ordinality)) from unnest(players) with ordinality as p(id,ordinality)),'[]'));
+create function public.test_edit_payload(team uuid,players uuid[]) returns jsonb language sql stable as $$
+ select jsonb_build_object('teamId',team,'logoPath',(select league_id::text from public.teams where id=team)||'/'||team::text||'/logo/00000000-0000-4000-8000-000000000001.png','seasonId','a3000000-0000-4000-8000-000000000001','divisionId','a4000000-0000-4000-8000-000000000001','roster',coalesce((select jsonb_agg(jsonb_build_object('playerId',id,'jerseyNumber',ordinality)) from unnest(players) with ordinality as p(id,ordinality)),'[]'));
 $$;
 insert into auth.users(id,email,raw_user_meta_data) values
 ('a1000000-0000-4000-8000-000000000001','edits-commissioner@example.test','{}'),
@@ -28,6 +28,10 @@ insert into public.players(id,league_id,display_name,created_by) select ('a60000
 insert into public.player_checks(league_id,player_id) select league_id,id from public.players where id::text like 'a6000000-%';
 insert into public.player_ratings(league_id,player_id,rating,effective_from,set_by,reason) select league_id,id,'C',now()-interval '1 day',created_by,'Initial evaluation' from public.players where id::text like 'a6000000-%';
 
+-- Uploaded logos for the registration fixtures (object metadata only).
+insert into storage.objects(bucket_id,name,metadata)
+ select 'team-registration-media',league_id::text||'/'||id::text||'/logo/00000000-0000-4000-8000-000000000001.png',
+ '{"mimetype":"image/png","size":70}'::jsonb from public.teams where id::text like 'a5000000-%';
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"a1000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
 select lives_ok($$select public.save_team_registration('a2000000-0000-4000-8000-000000000001',public.test_edit_payload('a5000000-0000-4000-8000-000000000001',array['a6000000-0000-4000-8000-000000000001']::uuid[]),true)$$,'the manager submits a registration');

@@ -21,6 +21,7 @@ function failure(error: {
     ["team_not_in_division", "teamNotInDivision"],
     ["published_season_required", "seasonNotPublished"],
     ["game_locked", "gameLocked"],
+    ["bracket_game_locked", "gameLocked"],
     ["game_not_found", "gameNotFound"],
     ["game_not_open", "gameNotOpen"],
   ] as const)

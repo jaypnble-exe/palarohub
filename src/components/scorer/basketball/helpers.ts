@@ -6,6 +6,7 @@ import type {
   BasketballRules,
   Side,
 } from "@/lib/sports/basketball";
+import { formatClockTime } from "@/lib/sports/basketball";
 
 type Clock = BasketballGameState["clock"];
 
@@ -93,6 +94,12 @@ export function describeEvent(
       return t("log.clockStart");
     case "clock_stop":
       return t("log.clockStop");
+    case "clock_adjust":
+      return t("log.clockAdjusted", {
+        from: formatClockTime(event.clockMs ?? 0),
+        to: formatClockTime(event.payload.remainingMs),
+        reason: event.payload.reason,
+      });
     case "score":
       return t(event.payload.made ? "log.made" : "log.missed", {
         player: who(event.payload.team, event.payload.playerId),

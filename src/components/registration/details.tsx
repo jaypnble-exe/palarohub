@@ -4,6 +4,7 @@ import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { formatSar } from "@/lib/format";
+import { RegistrationMediaPreview } from "./team-media";
 
 type Data = Extract<
   Awaited<ReturnType<typeof loadRegistration>>,
@@ -13,12 +14,14 @@ export async function RegistrationDetails({
   data,
   showStatus = true,
   showRoster = true,
+  showArtwork = true,
 }: {
   data: Data;
   /** Off where a status banner already explains the registration. */
   showStatus?: boolean;
   /** Off while the roster is being edited; the editor already shows it. */
   showRoster?: boolean;
+  showArtwork?: boolean;
 }) {
   const t = await getTranslations("Registration");
   const format = await getFormatter();
@@ -28,6 +31,7 @@ export async function RegistrationDetails({
       : data.entries.filter((entry) => entry.active);
   return (
     <div className="space-y-6">
+      {showArtwork && <RegistrationMediaPreview assets={data.media} />}
       {showRoster && (
         <>
           <section className={cn(cardVariants(), "space-y-3")}>

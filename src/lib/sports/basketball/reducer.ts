@@ -147,6 +147,8 @@ export type BasketballEventError =
   | "noTimeoutsLeft"
   | "clockRunning"
   | "clockStopped"
+  | "stopClockFirst"
+  | "invalidClockCorrection"
   | "voidTargetMissing"
   | "voidTargetInvalid"
   | "notFinal"
@@ -371,6 +373,17 @@ function semanticError(
     case "clock_stop":
       if (phase !== "live") return "notLive";
       return state.clock.running ? null : "clockStopped";
+    case "clock_adjust":
+      if (phase !== "live") return "notLive";
+      if (state.clock.running) return "stopClockFirst";
+      return event.clockMs === null ||
+        !event.payload.reason.trim() ||
+        event.payload.reason.trim().length > 300 ||
+        !Number.isInteger(event.payload.remainingMs) ||
+        event.payload.remainingMs < 0 ||
+        event.payload.remainingMs > periodLengthMs(state.period, rules)
+        ? "invalidClockCorrection"
+        : null;
     case "score":
     case "stat":
       if (phase !== "live") return "notLive";
@@ -683,6 +696,14 @@ function applyEvent(
       return;
     case "clock_stop":
       stopClock(state, event);
+      return;
+    case "clock_adjust":
+      // A correction changes the display, not elapsed playing time or the shot clock.
+      state.clock = {
+        running: false,
+        remainingMs: event.payload.remainingMs,
+        asOf: event.createdAt,
+      };
       return;
     case "score": {
       const { team: side, playerId, points, made } = event.payload;

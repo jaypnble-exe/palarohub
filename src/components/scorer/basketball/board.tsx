@@ -8,6 +8,7 @@ import type { ScorebookStore } from "@/lib/offline/scorebook-store";
 import {
   lastUndoableEvent,
   mustSubstitute,
+  periodLengthMs,
   reduceBasketballGame,
   sides,
   timeoutsLeft,
@@ -41,6 +42,7 @@ import { FreeThrows } from "./free-throws";
 import { ShotClockControls, useShotClock } from "./shot-clock";
 import { RunningScore } from "./running-score";
 import { Confirmations } from "./confirmations";
+import { ClockEditor } from "./clock-editor";
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Alert } from "@/components/ui/alert";
@@ -117,6 +119,7 @@ export function BasketballScorebook({
   const [showLog, setShowLog] = useState(false);
   const [showRunning, setShowRunning] = useState(false);
   const [tipSkipped, setTipSkipped] = useState(false);
+  const [editingClock, setEditingClock] = useState(false);
   const shotClockMs = useShotClock(state);
   const teamNames = useMemo(
     () => ({ home: setup.teams.home.name, away: setup.teams.away.name }),
@@ -441,7 +444,7 @@ export function BasketballScorebook({
                   key={side}
                   className={cn(
                     cardVariants({ padding: "sm" }),
-                    "@container space-y-3 border-t-4",
+                    "@container min-w-0 space-y-3 border-t-4",
                     side === "home" ? "border-t-primary" : "border-t-navy",
                   )}
                   aria-label={teamNames[side]}
@@ -523,14 +526,14 @@ export function BasketballScorebook({
                       <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
                         {t("bench", { count: bench.length })}
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="no-scrollbar flex gap-2 overflow-x-auto overscroll-x-contain py-1">
                         {bench.map((id) => (
                           <button
                             key={id}
                             type="button"
                             disabled={blocked}
                             onClick={() => setSheet({ side, playerId: id })}
-                            className="min-h-11 rounded-xl border bg-accent/50 px-3 text-sm font-semibold transition hover:border-navy data-[out=true]:line-through data-[out=true]:opacity-60"
+                            className="min-h-11 shrink-0 rounded-xl border bg-accent/50 px-3 text-sm font-semibold whitespace-nowrap transition hover:border-navy data-[out=true]:line-through data-[out=true]:opacity-60"
                             data-out={Boolean(team.players[id].disqualified)}
                           >
                             <span className="sr-only">
@@ -550,22 +553,28 @@ export function BasketballScorebook({
                     </div>
                   )}
                   <div className="grid grid-cols-3 gap-2 border-t pt-3">
-                    <div className="space-y-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="min-h-12 w-full px-2"
-                        disabled={blocked || state.phase !== "live"}
-                        onClick={() => record("timeout", { team: side })}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-12 w-full gap-2 px-2 text-sm"
+                      aria-label={t("timeout")}
+                      aria-describedby={`timeout-left-${side}`}
+                      disabled={blocked || state.phase !== "live"}
+                      onClick={() => record("timeout", { team: side })}
+                    >
+                      {t("timeout")}
+                      <span
+                        aria-hidden="true"
+                        className="grid size-6 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold tabular-nums"
                       >
-                        {t("timeout")}
-                      </Button>
-                      <p className="text-center text-xs text-muted-foreground">
+                        {timeoutsLeft(state, side, rules)}
+                      </span>
+                      <span id={`timeout-left-${side}`} className="sr-only">
                         {t("timeoutsLeft", {
                           count: timeoutsLeft(state, side, rules),
                         })}
-                      </p>
-                    </div>
+                      </span>
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
@@ -709,6 +718,18 @@ export function BasketballScorebook({
             type="button"
             variant="outline"
             className="min-h-14"
+            disabled={blocked || state.clock.running}
+            title={state.clock.running ? t("errors.stopClockFirst") : undefined}
+            onClick={() => setEditingClock(true)}
+          >
+            {t("editClock")}
+          </Button>
+        )}
+        {state.phase === "live" && (
+          <Button
+            type="button"
+            variant="outline"
+            className="min-h-14"
             disabled={blocked}
             onClick={() => {
               if (window.confirm(t("confirmEndPeriod", { period })))
@@ -716,26 +737,6 @@ export function BasketballScorebook({
             }}
           >
             {t("endPeriod", { period })}
-          </Button>
-        )}
-        {state.phase === "live" && state.possession && (
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-14 flex-col gap-0 px-3"
-            disabled={blocked}
-            aria-label={t("jumpBallFor", {
-              team: teamNames[state.possession],
-            })}
-            onClick={() => {
-              const team = state.possession;
-              if (team) record("alternating_possession", { team });
-            }}
-          >
-            <span>{t("jumpBall")}</span>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {t("jumpBallBall", { team: teamNames[state.possession] })}
-            </span>
           </Button>
         )}
         {state.phase === "break" && (
@@ -808,6 +809,15 @@ export function BasketballScorebook({
         />
       )}
 
+      {editingClock && state.phase === "live" && (
+        <ClockEditor
+          remainingMs={state.clock.remainingMs}
+          maxMs={periodLengthMs(state.period, rules)}
+          disabled={blocked || state.clock.running}
+          record={record}
+          onClose={() => setEditingClock(false)}
+        />
+      )}
       {sheet && (
         <PlayerSheet
           state={state}

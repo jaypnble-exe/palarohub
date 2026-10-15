@@ -59,6 +59,35 @@ function show(rows: TvEventRow[]) {
 }
 
 describe("TV scoreboard", () => {
+  it("applies a logged time correction without changing the score or shot clock", () => {
+    const rows = seededRows();
+    const view = render(show(rows));
+    const shotClock = screen.getByLabelText(en.Tv.shotClock).textContent;
+    const last = rows.at(-1)!;
+    view.rerender(
+      show([
+        ...rows,
+        {
+          id: "e0000000-0000-4000-8000-000000000904",
+          sequence: last.sequence + 1,
+          type: "clock_adjust",
+          payload: { remainingMs: 155400, reason: "Referee correction" },
+          clockMs: 252000,
+          occurredAt: last.occurredAt,
+          createdAt: last.createdAt,
+        },
+      ]),
+    );
+    expect(screen.getByText("2:36")).toBeInTheDocument();
+    expect(screen.getByLabelText(en.Tv.shotClock)).toHaveTextContent(
+      shotClock!,
+    );
+    expect(
+      within(screen.getByRole("region", { name: "Riyadh Royals" })).getByText(
+        "36",
+      ),
+    ).toBeInTheDocument();
+  });
   it("hides the shot clock at 24 seconds and restores it in the next quarter", () => {
     vi.useFakeTimers();
     const rows = seededRows();

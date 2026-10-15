@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { z } from "zod";
 import { getTranslations, getFormatter } from "next-intl/server";
 import { getLeagueAccess } from "@/lib/league-access";
@@ -9,6 +10,8 @@ import {
 } from "@/components/registration/player-forms";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
+import { careerGames } from "@/lib/competition-data";
 export default async function PlayerPage({
   params,
 }: {
@@ -48,6 +51,8 @@ export default async function PlayerPage({
   if ([player, ratings, checks, scale, seasons].some((result) => result.error))
     throw new Error("Unable to load player details.");
   if (!player.data) notFound();
+  const career = await careerGames(supabase, league.id, undefined, playerId);
+  const competition = await getTranslations("Competition");
   const t = await getTranslations("Registration");
   const format = await getFormatter();
   const labels = [
@@ -61,6 +66,15 @@ export default async function PlayerPage({
       <PageHeader
         back={{ href: `/admin/${slug}/players`, label: t("backPlayers") }}
         title={player.data.display_name}
+        actions={
+          career.games.length > 0 ? (
+            <Button asChild variant="outline">
+              <Link href={`/${slug}/players/${playerId}`}>
+                {competition("careerProfile")}
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
       {canManage && (
         <PlayerRatingForm

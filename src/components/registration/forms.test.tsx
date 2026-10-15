@@ -50,7 +50,12 @@ function wrap(ui: React.ReactNode) {
     </NextIntlClientProvider>,
   );
 }
-function wizard(rating: string | null = null, existing = false) {
+const logoPath = `87000000-0000-4000-8000-000000000001/${teamId}/logo/88000000-0000-4000-8000-000000000001.png`;
+function wizard(
+  rating: string | null = null,
+  existing = false,
+  withLogo = true,
+) {
   wrap(
     <RegistrationWizard
       slug="sindikato"
@@ -59,6 +64,7 @@ function wizard(rating: string | null = null, existing = false) {
         teamId,
         seasonId,
         divisionId,
+        logoPath: withLogo ? logoPath : null,
         roster: [{ playerId, jerseyNumber: 1 }],
       }}
       teams={[{ id: teamId, name: "Royals" }]}
@@ -296,6 +302,37 @@ describe("taking a registration back", () => {
   });
 });
 describe("registration forms", () => {
+  it("requires a logo to send, while permitting an unfinished draft", async () => {
+    wizard(null, false, false);
+    vi.mocked(saveRegistration).mockResolvedValue({
+      success: true,
+      id: registrationId,
+    });
+    fireEvent.click(screen.getByRole("button", { name: en.Registration.next }));
+    await screen.findByRole("heading", { name: en.Registration.yourRoster });
+    fireEvent.click(screen.getByRole("button", { name: en.Registration.next }));
+    await screen.findByRole("heading", {
+      name: en.Registration.reviewRegistration,
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Registration.submit }),
+    );
+    expect(saveRegistration).not.toHaveBeenCalled();
+    expect(
+      screen.getAllByText(en.Registration.teamLogoRequired).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(
+      screen.getByRole("button", { name: en.Registration.saveDraft }),
+    );
+    await waitFor(() =>
+      expect(saveRegistration).toHaveBeenCalledWith(
+        "sindikato",
+        null,
+        expect.objectContaining({ logoPath: null }),
+        false,
+      ),
+    );
+  });
   it("saves a draft and lets an unrated roster be submitted", async () => {
     wizard();
     vi.mocked(saveRegistration).mockResolvedValue({

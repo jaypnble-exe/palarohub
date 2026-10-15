@@ -83,9 +83,12 @@ export default async function ManagerRegistrationPage({
           teamId: data.team.id,
           seasonId: data.season.id,
           divisionId: data.division.id,
+          logoPath: data.registration.logo_path,
+          jerseyDesignPath: data.registration.jersey_design_path,
           roster,
         }}
         teams={[data.team]}
+        initialMedia={data.media}
         divisions={divisions ?? []}
         taken={others.data.map((row) => ({
           teamId: data.team.id,
@@ -119,6 +122,7 @@ export default async function ManagerRegistrationPage({
         data={data}
         showStatus={false}
         showRoster={!editable}
+        showArtwork={!editable}
       />
       {payments && (
         <Section id="payments" title={paymentText("teamTitle")}>

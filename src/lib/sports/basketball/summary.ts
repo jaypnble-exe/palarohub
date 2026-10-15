@@ -32,7 +32,10 @@ export function summarizeBasketballGame(
           captainId: team.captainId,
           timeouts: team.timeouts,
           shotClockViolations: team.shotClockViolations,
-          players: rows,
+          players: rows.map((row) => ({
+            ...row,
+            entered: team.players[row.playerId].entered,
+          })),
           totals,
         },
       ];

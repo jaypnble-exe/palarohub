@@ -21,6 +21,10 @@ function failure(error: {
   code?: string;
   details?: string;
 }): RegistrationActionResult {
+  if (error.message.includes("team_logo_required"))
+    return { error: "teamLogoRequired" };
+  if (error.message.includes("invalid_team_media"))
+    return { error: "invalidTeamMedia" };
   if (error.message.includes("roster_ineligible")) {
     let issues: RegistrationActionResult["issues"];
     try {

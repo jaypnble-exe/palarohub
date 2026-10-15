@@ -214,7 +214,7 @@ export function BasketballTv({
         </h2>
         <p
           className={cn(
-            "font-display text-[19vw] leading-[0.82] font-bold tabular-nums",
+            "pb-[3vh] font-display text-[19vw] leading-[0.82] font-bold tabular-nums",
             winner && "text-primary",
           )}
         >

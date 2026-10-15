@@ -2,8 +2,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set search_path=public,extensions;
 select no_plan();
-create function public.test_registration_payload(team uuid,season uuid,division uuid,players uuid[]) returns jsonb language sql immutable as $$
- select jsonb_build_object('teamId',team,'seasonId',season,'divisionId',division,'roster',coalesce((select jsonb_agg(jsonb_build_object('playerId',id,'jerseyNumber',ordinality)) from unnest(players) with ordinality as p(id,ordinality)),'[]'));
+create function public.test_registration_payload(team uuid,season uuid,division uuid,players uuid[]) returns jsonb language sql stable as $$
+ select jsonb_build_object('teamId',team,'logoPath',(select league_id::text from public.teams where id=team)||'/'||team::text||'/logo/00000000-0000-4000-8000-000000000001.png','seasonId',season,'divisionId',division,'roster',coalesce((select jsonb_agg(jsonb_build_object('playerId',id,'jerseyNumber',ordinality)) from unnest(players) with ordinality as p(id,ordinality)),'[]'));
 $$;
 insert into auth.users(id,email,raw_user_meta_data) values
 ('71000000-0000-4000-8000-000000000001','registration-commissioner@example.test','{}'),
@@ -43,6 +43,10 @@ insert into public.player_ratings(league_id,player_id,rating,effective_from,set_
 select is((select count(*)::integer from pg_class where oid in('public.registration_settings'::regclass,'public.teams'::regclass,'public.players'::regclass,'public.player_checks'::regclass,'public.player_ratings'::regclass,'public.season_teams'::regclass,'public.roster_entries'::regclass,'public.roster_change_requests'::regclass,'public.registration_reviews'::regclass) and relrowsecurity),9,'all registration tables have RLS');
 select throws_ok($$update public.player_ratings set rating='D' where player_id='76000000-0000-4000-8000-000000000001'$$,'23514','history_is_append_only','even trusted SQL cannot overwrite rating history');
 
+-- Uploaded logos for the registration fixtures (object metadata only).
+insert into storage.objects(bucket_id,name,metadata)
+ select 'team-registration-media',league_id::text||'/'||id::text||'/logo/00000000-0000-4000-8000-000000000001.png',
+ '{"mimetype":"image/png","size":70}'::jsonb from public.teams where id::text like '75000000-%';
 set local role anon;
 select is((select count(*)::integer from public.published_season_teams where league_id::text like '72000000-%'),0,'no unapproved teams appear in the public projection');
 select throws_ok('select * from public.players','42501',null,'public cannot read the private player registry');

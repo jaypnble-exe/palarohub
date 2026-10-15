@@ -86,8 +86,17 @@ describe.each([
       summary.awayScore,
       events.length,
     ]);
-    expect(JSON.parse(stored![4].replaceAll("''", "'"))).toEqual(
-      JSON.parse(JSON.stringify(summary.summary)),
-    );
+    const rebuilt = JSON.parse(JSON.stringify(summary.summary));
+    // Historic snapshots predate explicit appearance metadata. Their recorded
+    // scores and every existing box-score field must still match exactly.
+    for (const side of ["home", "away"] as const) {
+      for (const player of rebuilt.teams[side].players) {
+        expect(player.entered).toBe(
+          state.teams[side].players[player.playerId].entered,
+        );
+        delete player.entered;
+      }
+    }
+    expect(JSON.parse(stored![4].replaceAll("''", "'"))).toEqual(rebuilt);
   });
 });

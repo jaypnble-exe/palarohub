@@ -15,6 +15,15 @@ const tables: Record<string, unknown[]> = {
     { id: "aces", division_id: "div-a", team_name: "Aces" },
   ],
   published_games: [
+    // Playoff results must never change elimination standings or frozen seeds.
+    {
+      division_id: "div-b",
+      home_season_team_id: "titans",
+      away_season_team_id: "royals",
+      home_score: 90,
+      away_score: 50,
+      bracket_slot_id: "playoff",
+    },
     {
       division_id: "div-b",
       home_season_team_id: "royals",

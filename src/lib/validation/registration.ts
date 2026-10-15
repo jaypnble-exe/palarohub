@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { teamMediaPathSchema } from "./team-media";
 
 const uuid = z.uuid();
 export const eligibilityIssueSchema = z.object({
@@ -72,6 +73,8 @@ export const registrationSchema = z
     teamId: uuid,
     seasonId: uuid,
     divisionId: uuid,
+    logoPath: teamMediaPathSchema.nullable().optional(),
+    jerseyDesignPath: teamMediaPathSchema.nullable().optional(),
     roster: z.array(rosterEntrySchema).max(50),
     newPlayers: z.array(newPlayerSchema).max(50).optional(),
   })

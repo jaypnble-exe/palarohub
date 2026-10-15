@@ -13,6 +13,8 @@ import {
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/field";
+import { PlayerOfGameStats } from "@/components/public/player-of-game";
+import type { PlayerPerformance } from "@/lib/domain/career-stats";
 
 /** Approve the result (with chosen suspensions) or send it back to the scorer. */
 export function ReviewActions({
@@ -20,18 +22,29 @@ export function ReviewActions({
   gameId,
   ejected,
   canApprove,
+  candidates,
+  canSelectPlayer,
 }: {
   slug: string;
   gameId: string;
   ejected: readonly { playerId: string; label: string }[];
   canApprove: boolean;
+  candidates: (PlayerPerformance & { efficiency: number })[];
+  canSelectPlayer: boolean;
 }) {
   const t = useTranslations("Review");
+  const award = useTranslations("PlayerOfGame");
   const mutation = useScheduleMutation();
   const [suspend, setSuspend] = useState(() =>
     ejected.map((player) => player.playerId),
   );
   const [comment, setComment] = useState("");
+  const [playerOfGame, setPlayerOfGame] = useState(
+    candidates[0]?.playerId ?? "",
+  );
+  const selected = candidates.find(
+    (player) => player.playerId === playerOfGame,
+  );
   return (
     <div className="space-y-5">
       {canApprove && (
@@ -40,6 +53,60 @@ export function ReviewActions({
             {t("approveTitle")}
           </h2>
           <p className="text-sm text-muted-foreground">{t("approveHelp")}</p>
+          {canSelectPlayer && candidates.length > 0 && (
+            <fieldset className="space-y-3 rounded-xl border p-4">
+              <legend className="px-1 font-semibold">{award("title")}</legend>
+              <p className="text-sm text-muted-foreground">
+                {award("suggestionHelp")}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {award("formula")}
+              </p>
+              {candidates.filter(
+                (player) => player.efficiency === candidates[0].efficiency,
+              ).length > 1 && (
+                <p className="text-sm font-semibold">{award("tie")}</p>
+              )}
+              <label
+                htmlFor="player-of-game"
+                className="block text-sm font-semibold"
+              >
+                {award("choose")}
+              </label>
+              <select
+                id="player-of-game"
+                value={playerOfGame}
+                disabled={mutation.pending}
+                onChange={(event) => setPlayerOfGame(event.target.value)}
+                className="min-h-12 w-full rounded-xl border bg-background px-3"
+              >
+                {candidates.map((player) => (
+                  <option key={player.playerId} value={player.playerId}>
+                    {award(
+                      player.efficiency === candidates[0].efficiency
+                        ? "suggestedOption"
+                        : "option",
+                      { name: player.name, efficiency: player.efficiency },
+                    )}
+                  </option>
+                ))}
+              </select>
+              {selected && (
+                <PlayerOfGameStats
+                  metrics={selected.metrics}
+                  efficiency={selected.efficiency}
+                />
+              )}
+              <p className="text-sm text-muted-foreground">
+                {award("approvalHelp")}
+              </p>
+            </fieldset>
+          )}
+          {!canSelectPlayer && candidates.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {award("commissionerOnly")}
+            </p>
+          )}
           {ejected.length > 0 && (
             <fieldset className="space-y-2">
               <legend className="font-semibold">{t("suspensions")}</legend>
@@ -71,10 +138,18 @@ export function ReviewActions({
           <Button
             type="button"
             className="w-full sm:w-fit"
-            disabled={mutation.pending}
+            disabled={
+              mutation.pending || (candidates.length > 0 && !canSelectPlayer)
+            }
             onClick={() => {
               if (window.confirm(t("confirmApprove")))
-                mutation.run(() => approveGame(slug, { gameId, suspend }));
+                mutation.run(() =>
+                  approveGame(slug, {
+                    gameId,
+                    suspend,
+                    playerOfGame: canSelectPlayer ? playerOfGame || null : null,
+                  }),
+                );
             }}
           >
             {t(mutation.pending ? "saving" : "approve")}

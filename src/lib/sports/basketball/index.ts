@@ -8,6 +8,8 @@ import {
 } from "./reducer";
 import { summarizeBasketballGame } from "./summary";
 import { basketballLiveScore } from "./live-score";
+import { basketballPerformances } from "./career";
+import { basketballPlayerOfGameCandidates } from "./player-of-game";
 import {
   basketballRulesSchema,
   defaultBasketballRules,
@@ -17,6 +19,7 @@ import {
 export * from "./events";
 export * from "./reducer";
 export * from "./rules";
+export * from "./clock-time";
 export * from "./summary";
 export * from "./live-score";
 export * from "./scoresheet-data";
@@ -35,6 +38,42 @@ export const basketball: SportModule<
   validateEvent: validateBasketballEvent,
   summarizeGame: summarizeBasketballGame,
   liveScore: basketballLiveScore,
+  playerPerformances: basketballPerformances,
+  playerOfGameCandidates: basketballPlayerOfGameCandidates,
+  careerMetrics: [
+    ...[
+      "points",
+      "rebounds",
+      "assists",
+      "steals",
+      "blocks",
+      "turnovers",
+      "minutes",
+    ].map((key) => ({ key, labelKey: key })),
+    {
+      key: "fieldGoals",
+      labelKey: "fieldGoalPercent",
+      denominator: "fieldGoalAttempts",
+    },
+    {
+      key: "threePointers",
+      labelKey: "threePointPercent",
+      denominator: "threePointAttempts",
+    },
+    {
+      key: "freeThrows",
+      labelKey: "freeThrowPercent",
+      denominator: "freeThrowAttempts",
+    },
+  ],
+  statisticalAwards: [
+    "points",
+    "rebounds",
+    "assists",
+    "steals",
+    "blocks",
+    "threePointers",
+  ].map((key) => ({ key, labelKey: key })),
   stats: [
     { key: "points", labelKey: "points" },
     { key: "fieldGoals", labelKey: "fieldGoals" },

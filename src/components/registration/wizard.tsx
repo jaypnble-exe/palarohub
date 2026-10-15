@@ -27,6 +27,11 @@ import { Icon } from "@/components/ui/icon";
 import { Stepper } from "@/components/ui/stepper";
 import { ActionBar } from "@/components/ui/action-bar";
 import { formatSar } from "@/lib/format";
+import { RegistrationMediaPreview, TeamMediaUpload } from "./team-media";
+import type {
+  RegistrationMediaAssets,
+  TeamMediaKind,
+} from "@/lib/validation/team-media";
 
 const STEPS = ["stepTeam", "stepRoster", "stepSend"] as const;
 
@@ -51,6 +56,7 @@ export function RegistrationWizard({
   deadline,
   feeHalalas,
   requireDocuments,
+  initialMedia = {},
 }: {
   slug: string;
   registrationId?: string | null;
@@ -64,6 +70,7 @@ export function RegistrationWizard({
   deadline: string;
   feeHalalas: number;
   requireDocuments: boolean;
+  initialMedia?: RegistrationMediaAssets;
 }) {
   const t = useTranslations("Registration");
   const format = useFormatter();
@@ -72,6 +79,9 @@ export function RegistrationWizard({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<RegistrationActionResult>();
+  const [media, setMedia] = useState(initialMedia);
+  const [uploadBusy, setUploadBusy] = useState({ logo: false, jersey: false });
+  const uploading = uploadBusy.logo || uploadBusy.jersey;
   const {
     control,
     setValue,
@@ -99,6 +109,11 @@ export function RegistrationWizard({
   const divisionOptions = openDivisions(values.teamId);
   const teamName = teams.find((team) => team.id === values.teamId)?.name;
   function chooseTeam(teamId: string) {
+    if (teamId !== values.teamId) {
+      setValue("logoPath", null);
+      setValue("jerseyDesignPath", null);
+      setMedia({});
+    }
     setValue("teamId", teamId);
     const options = openDivisions(teamId);
     if (!options.some((item) => item.id === values.divisionId))
@@ -158,6 +173,11 @@ export function RegistrationWizard({
       })
     : [];
   function save(submit: boolean) {
+    if (uploading) return;
+    if (submit && !getValues("logoPath")) {
+      setResult({ error: "teamLogoRequired" });
+      return;
+    }
     void handleSubmit((input) =>
       startTransition(async () => {
         try {
@@ -225,7 +245,7 @@ export function RegistrationWizard({
               type="button"
               variant="ghost"
               className="min-h-11 px-3 py-2 text-sm"
-              disabled={pending}
+              disabled={pending || uploading}
               onClick={() => save(false)}
             >
               {t("saveDraft")}
@@ -249,7 +269,7 @@ export function RegistrationWizard({
                   key={team.id}
                   name="registration-team"
                   checked={values.teamId === team.id}
-                  disabled={registrationId !== null}
+                  disabled={registrationId !== null || uploading}
                   onChange={() => chooseTeam(team.id)}
                   title={team.name}
                   description={
@@ -258,6 +278,34 @@ export function RegistrationWizard({
                 />
               ))}
             </fieldset>
+            <section className="space-y-3">
+              <h3 className="font-display text-xl font-semibold">
+                {t("teamArtwork")}
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {(["logo", "jersey"] as const).map((kind: TeamMediaKind) => (
+                  <TeamMediaUpload
+                    key={`${values.teamId}-${kind}`}
+                    slug={slug}
+                    teamId={values.teamId ?? ""}
+                    kind={kind}
+                    asset={media[kind]}
+                    disabled={pending || uploading || !values.teamId}
+                    onBusy={(busy) =>
+                      setUploadBusy((current) => ({ ...current, [kind]: busy }))
+                    }
+                    onChange={(asset) => {
+                      setValue(
+                        kind === "logo" ? "logoPath" : "jerseyDesignPath",
+                        asset?.path ?? null,
+                      );
+                      setMedia((current) => ({ ...current, [kind]: asset }));
+                      setResult(undefined);
+                    }}
+                  />
+                ))}
+              </div>
+            </section>
             <fieldset className="space-y-3">
               <legend className="mb-3 font-semibold">{t("division")}</legend>
               {divisions.map((item) => {
@@ -344,6 +392,10 @@ export function RegistrationWizard({
         {step === 3 && (
           <section className="space-y-5">
             {heading("reviewRegistration")}
+            <RegistrationMediaPreview assets={media} />
+            {!values.logoPath && (
+              <Alert tone="warning">{t("teamLogoRequired")}</Alert>
+            )}
             <dl className={cn(cardVariants(), "grid grid-cols-2 gap-4")}>
               {summary.map(([label, value]) => (
                 <div key={label} className="min-w-0 space-y-1">
@@ -377,7 +429,7 @@ export function RegistrationWizard({
             <Button
               type="button"
               variant="outline"
-              disabled={pending}
+              disabled={pending || uploading}
               onClick={() => goTo(step - 1)}
             >
               <Icon name="back" className="size-5" />
@@ -389,6 +441,7 @@ export function RegistrationWizard({
             className="flex-1"
             disabled={
               pending ||
+              uploading ||
               (step === 1 && !division) ||
               (step === 3 && issues.length > 0)
             }

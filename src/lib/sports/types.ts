@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Tiebreaker } from "../domain/standings";
+import type { CareerMetric, PlayerPerformance } from "../domain/career-stats";
 
 export type Sport = "basketball";
 export type GameResult = "win" | "loss" | "draw" | "forfeit";
@@ -66,6 +67,14 @@ export interface SportModule<Rules, Event, State, EventError = string> {
   /** The score and where the game stands, at any point in the game. */
   liveScore(state: State, rules: Rules): LiveScore;
   stats: readonly StatDefinition[];
+  careerMetrics: readonly CareerMetric[];
+  statisticalAwards: readonly StatDefinition[];
+  playerPerformances(
+    state: State,
+  ): (PlayerPerformance & { side: "home" | "away" })[];
+  playerOfGameCandidates(
+    state: State,
+  ): (PlayerPerformance & { side: "home" | "away"; efficiency: number })[];
   standingsPoints(result: GameResult): number;
   /** Applied in order to teams level on standings points. */
   tiebreakers: readonly Tiebreaker[];

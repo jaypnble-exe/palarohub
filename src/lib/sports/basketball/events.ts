@@ -91,6 +91,13 @@ export const basketballEventSchema = z.discriminatedUnion("type", [
   event("clock_start", empty),
   event("clock_stop", empty),
   event(
+    "clock_adjust",
+    z.strictObject({
+      remainingMs: z.number().int().min(0).max(3_600_000),
+      reason: z.string().trim().min(1).max(300),
+    }),
+  ),
+  event(
     "score",
     z.strictObject({
       team: side,
