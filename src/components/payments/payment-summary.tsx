@@ -2,36 +2,65 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import type { PaymentStatus } from "@/lib/domain/payments";
 import type { TeamPayments } from "@/lib/payments-data";
 import { formatSar } from "@/lib/format";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { cardVariants } from "@/components/ui/card";
+import { Progress } from "@/components/ui/stat";
+import { cn } from "@/lib/utils";
 
-/** Plain-language status of one team's payments. */
+/**
+ * Plain-language status of one team's payments: what is left, how much of
+ * the season is paid, and whether anything is due before the next game.
+ */
 export async function PaymentSummary({ team }: { team: TeamPayments }) {
   const t = await getTranslations("Payments");
   const format = await getFormatter();
   const sar = (halalas: number) => formatSar(format, halalas);
   const { status } = team;
+  const owed = team.quotaHalalas + team.finesHalalas;
+  const badge = paymentBadge(status, (key, values) => t(key, values), format);
+  const facts = [
+    { label: t("fee"), value: team.quotaHalalas },
+    { label: t("fines"), value: team.finesHalalas },
+    { label: t("paid"), value: team.paidHalalas },
+  ];
   return (
-    <div className="space-y-3">
-      <PaymentBadge status={status} />
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-        <div>
-          <dt className="text-muted-foreground">{t("fee")}</dt>
-          <dd className="font-semibold">{sar(team.quotaHalalas)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{t("fines")}</dt>
-          <dd className="font-semibold">{sar(team.finesHalalas)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{t("paid")}</dt>
-          <dd className="font-semibold">{sar(team.paidHalalas)}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">{t("balance")}</dt>
-          <dd className="font-semibold">
+    <section
+      aria-label={t("teamTitle")}
+      className={cn(cardVariants({ padding: "lg" }), "space-y-5")}
+    >
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-muted-foreground">
+            {t("stillToPay")}
+          </p>
+          <p className="font-display text-4xl leading-none font-semibold tabular-nums">
             {sar(Math.max(0, status.balanceHalalas))}
-          </dd>
+          </p>
         </div>
+        {/* When behind, the callout below says it with the amount. */}
+        {!status.behind && <Badge tone={badge.tone}>{badge.text}</Badge>}
+      </div>
+      <div className="space-y-2">
+        <Progress value={team.paidHalalas} max={owed} label={t("paid")} />
+        <p className="text-sm text-muted-foreground tabular-nums">
+          {t("paidOf", { paid: sar(team.paidHalalas), total: sar(owed) })}
+        </p>
+      </div>
+      {status.behind ? (
+        <Alert tone="danger">
+          {t("behindCallout", { amount: sar(status.behindByHalalas) })}
+        </Alert>
+      ) : status.paidInFull ? (
+        <Alert tone="success">{t("paidInFullCallout")}</Alert>
+      ) : null}
+      <dl className="grid grid-cols-3 gap-3 border-t pt-4 text-sm">
+        {facts.map((fact) => (
+          <div key={fact.label}>
+            <dt className="text-muted-foreground">{fact.label}</dt>
+            <dd className="font-semibold tabular-nums">{sar(fact.value)}</dd>
+          </div>
+        ))}
       </dl>
       <p className="text-sm text-muted-foreground">
         {status.perGameHalalas === null
@@ -43,7 +72,7 @@ export async function PaymentSummary({ team }: { team: TeamPayments }) {
               due: sar(status.dueNowHalalas),
             })}
       </p>
-    </div>
+    </section>
   );
 }
 

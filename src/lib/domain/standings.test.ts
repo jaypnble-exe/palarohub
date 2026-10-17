@@ -5,9 +5,9 @@ import {
   type StandingsRules,
 } from "./standings";
 
-// FIBA-style: win 2, loss 1.
+// FIBA-style: win 2, loss 1, loss by forfeit 0.
 const rules: StandingsRules = {
-  points: (result) => (result === "win" ? 2 : 1),
+  points: (result) => (result === "win" ? 2 : result === "forfeit" ? 0 : 1),
   tiebreakers: [
     "headToHeadPoints",
     "headToHeadDifference",
@@ -141,5 +141,37 @@ describe("standings", () => {
       [1, 1, true],
       [1, 1, true],
     ]);
+  });
+});
+
+describe("forfeits", () => {
+  it("counts a forfeit as a loss worth no points", () => {
+    const rows = computeStandings(
+      teams.slice(0, 2),
+      [{ ...game("a", 20, 0, "b"), forfeitedBy: "away" }],
+      rules,
+    );
+    const b = rows.find((row) => row.teamId === "b")!;
+    expect([b.played, b.losses, b.points, b.pointsFor]).toEqual([1, 1, 0, 0]);
+    expect(rows.find((row) => row.teamId === "a")!.points).toBe(2);
+  });
+  it("gives both teams a forfeit loss when neither came", () => {
+    const rows = computeStandings(
+      teams.slice(0, 2),
+      [{ ...game("a", 0, 0, "b"), forfeitedBy: "both" }],
+      rules,
+    );
+    expect(rows.map((row) => [row.losses, row.draws, row.points])).toEqual([
+      [1, 0, 0],
+      [1, 0, 0],
+    ]);
+  });
+  it("treats a default as an ordinary loss", () => {
+    const rows = computeStandings(
+      teams.slice(0, 2),
+      [game("a", 0, 2, "b")],
+      rules,
+    );
+    expect(rows.find((row) => row.teamId === "a")!.points).toBe(1);
   });
 });

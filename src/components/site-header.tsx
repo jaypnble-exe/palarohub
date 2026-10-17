@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getAuth } from "@/lib/auth";
 import { displayNameOf } from "@/lib/user-name";
+import { accountChoices } from "@/lib/saved-accounts";
 import { AccountMenu } from "./account-menu";
 import { SignInLink } from "./sign-in-link";
 import { Icon } from "./ui/icon";
@@ -12,6 +13,7 @@ export async function SiteHeader() {
   const auth = await getAuth();
   const email = auth?.user.email ?? "";
   const name = auth ? displayNameOf(auth.user) : "";
+  const accounts = auth ? await accountChoices(auth.user.id) : [];
   return (
     <header className="bg-navy text-on-dark">
       <div className="mx-auto flex min-h-16 max-w-4xl items-center justify-between gap-3 px-5 py-2">
@@ -31,7 +33,7 @@ export async function SiteHeader() {
           </span>
         </Link>
         {auth ? (
-          <AccountMenu name={name} email={email} />
+          <AccountMenu name={name} email={email} accounts={accounts} />
         ) : (
           <SignInLink label={t("signIn")} />
         )}

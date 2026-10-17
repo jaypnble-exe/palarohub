@@ -189,6 +189,24 @@ describe("team manager home", () => {
     expect(
       within(next).getByText("Riyadh Royals 61 – 55 Hail Hawks"),
     ).toBeInTheDocument();
+    expect(within(next).getByText("Won")).toBeInTheDocument();
+  });
+
+  it("leads with the next game from the team's side, and its record", async () => {
+    render(await TeamHome(homeProps));
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent("Riyadh Royals");
+    expect(heading).toHaveTextContent("Royals B");
+    expect(screen.getByText(en.TeamHome.nextUp)).toBeInTheDocument();
+    expect(screen.getByText("vs Yanbu Kings")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Fri, Oct 30.*Main court · Away/),
+    ).toBeInTheDocument();
+    const teams = screen.getByRole("region", { name: en.TeamHome.yourTeams });
+    expect(within(teams).getByText("1–0")).toBeInTheDocument();
+    expect(
+      within(teams).getByText(/SAR\s?0\.00 of SAR\s?1,800\.00/),
+    ).toBeInTheDocument();
   });
 
   it("invites a new manager to register when a season is open", async () => {

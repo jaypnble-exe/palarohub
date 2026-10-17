@@ -38,6 +38,7 @@ export function ReviewActions({
   const [suspend, setSuspend] = useState(() =>
     ejected.map((player) => player.playerId),
   );
+  const [games, setGames] = useState<Record<string, number>>({});
   const [comment, setComment] = useState("");
   const [playerOfGame, setPlayerOfGame] = useState(
     candidates[0]?.playerId ?? "",
@@ -114,24 +115,48 @@ export function ReviewActions({
                 {t("suspensionsHelp")}
               </p>
               {ejected.map((player) => (
-                <label
+                <div
                   key={player.playerId}
-                  className="flex min-h-11 items-center gap-3"
+                  className="flex flex-wrap items-center gap-3"
                 >
-                  <input
-                    type="checkbox"
-                    className="size-5 accent-primary"
-                    checked={suspend.includes(player.playerId)}
-                    onChange={(event) =>
-                      setSuspend(
-                        event.target.checked
-                          ? [...suspend, player.playerId]
-                          : suspend.filter((id) => id !== player.playerId),
-                      )
-                    }
-                  />
-                  {t("suspendPlayer", { player: player.label })}
-                </label>
+                  <label className="flex min-h-11 flex-1 items-center gap-3">
+                    <input
+                      type="checkbox"
+                      className="size-5 accent-primary"
+                      checked={suspend.includes(player.playerId)}
+                      onChange={(event) =>
+                        setSuspend(
+                          event.target.checked
+                            ? [...suspend, player.playerId]
+                            : suspend.filter((id) => id !== player.playerId),
+                        )
+                      }
+                    />
+                    {t("suspendPlayer", { player: player.label })}
+                  </label>
+                  {suspend.includes(player.playerId) && (
+                    <label className="flex items-center gap-2 text-sm font-semibold">
+                      {t("suspendFor")}
+                      <select
+                        value={games[player.playerId] ?? 1}
+                        disabled={mutation.pending}
+                        onChange={(event) =>
+                          setGames({
+                            ...games,
+                            [player.playerId]: Number(event.target.value),
+                          })
+                        }
+                        className="min-h-11 rounded-xl border bg-background px-3"
+                      >
+                        {[1, 2, 3, 4, 5].map((count) => (
+                          <option key={count} value={count}>
+                            {t("gamesCount", { count })}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
               ))}
             </fieldset>
           )}
@@ -147,6 +172,7 @@ export function ReviewActions({
                   approveGame(slug, {
                     gameId,
                     suspend,
+                    suspendGames: suspend.map((id) => games[id] ?? 1),
                     playerOfGame: canSelectPlayer ? playerOfGame || null : null,
                   }),
                 );

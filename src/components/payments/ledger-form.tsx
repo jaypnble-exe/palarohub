@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
+import { formatSar } from "@/lib/format";
 import { recordLedgerEntry } from "@/app/(admin)/admin/[league]/payments/actions";
 import { sarToHalalas } from "@/lib/validation/registration";
 import { fineReasons, paymentMethods } from "@/lib/validation/payments";
@@ -20,6 +21,8 @@ export function LedgerForm({
   seasonTeamId,
   today,
   suggestedHalalas,
+  perGameHalalas = null,
+  balanceHalalas = 0,
 }: {
   slug: string;
   seasonTeamId: string;
@@ -27,8 +30,13 @@ export function LedgerForm({
   today: string;
   /** Prefilled payment amount, e.g. what is due now. */
   suggestedHalalas: number;
+  /** One game's share of the fee, when the team has a schedule. */
+  perGameHalalas?: number | null;
+  /** Everything still owed for the season. */
+  balanceHalalas?: number;
 }) {
   const t = useTranslations("Payments");
+  const format = useFormatter();
   const mutation = useScheduleMutation();
   const [kind, setKind] = useState<"payment" | "fine">("payment");
   const [amount, setAmount] = useState(
@@ -39,6 +47,17 @@ export function LedgerForm({
     useState<(typeof fineReasons)[number]>("technical");
   const [paidOn, setPaidOn] = useState(today);
   const [note, setNote] = useState("");
+  const asSar = (halalas: number) => (halalas / 100).toFixed(2);
+  // One tap fills the usual amounts; duplicates and zero amounts are left out.
+  const quick = [
+    { key: "quickDue", halalas: suggestedHalalas },
+    { key: "quickPerGame", halalas: perGameHalalas ?? 0 },
+    { key: "quickBalance", halalas: balanceHalalas },
+  ].filter(
+    (option, index, all) =>
+      option.halalas > 0 &&
+      all.findIndex((other) => other.halalas === option.halalas) === index,
+  );
   return (
     <form
       className={`${cardVariants()} space-y-5`}
@@ -66,6 +85,7 @@ export function LedgerForm({
         );
       }}
     >
+      <h2 className="font-display text-xl font-semibold">{t("recordTitle")}</h2>
       <ChipGroup
         label={t("entryType")}
         stretch
@@ -85,6 +105,31 @@ export function LedgerForm({
             onChange={(event) => setAmount(event.target.value)}
           />
         </Field>
+        {kind === "payment" && quick.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-muted-foreground">
+              {t("quickAmounts")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {quick.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  aria-pressed={amount === asSar(option.halalas)}
+                  onClick={() => setAmount(asSar(option.halalas))}
+                  className="inline-flex min-h-11 flex-col items-start justify-center rounded-xl border-2 border-border bg-card px-3 py-1.5 text-left transition-colors hover:bg-accent aria-pressed:border-navy aria-pressed:bg-accent"
+                >
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {t(option.key)}
+                  </span>
+                  <span className="text-sm font-bold tabular-nums">
+                    {formatSar(format, option.halalas)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {kind === "payment" ? (
           <div className="space-y-2">
             <p className="font-semibold">{t("method")}</p>

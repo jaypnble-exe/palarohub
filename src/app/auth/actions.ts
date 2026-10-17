@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseConfig } from "@/lib/supabase/env";
 import { getAuth, getSiteUrl } from "@/lib/auth";
 import { isGoogleEnabled } from "@/lib/auth-settings";
+import { forgetSavedAccount, readSavedAccounts } from "@/lib/saved-accounts";
 import {
   emailSchema,
   newPasswordSchema,
@@ -60,8 +61,10 @@ export async function signInWithPassword(
   if (!parsed.success) return { error: "invalidForm" };
   if (!hasSupabaseConfig()) return { error: "unavailable" };
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return authError(error);
+  // Signed in now, so it is no longer one of the other saved accounts.
+  if (data.user) await forgetSavedAccount(data.user.id);
   return { success: true, redirectTo: safeNextPath(next) };
 }
 
@@ -139,6 +142,8 @@ export async function signOut() {
     const supabase = await createClient();
     const { error } = await supabase.auth.signOut();
     if (error) redirect("/leagues?error=signOutFailed");
+    // Other accounts on this device stay one tap away on the sign-in screen.
+    if ((await readSavedAccounts()).length) redirect("/login");
   }
   redirect("/");
 }

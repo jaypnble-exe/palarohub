@@ -15,6 +15,7 @@ export async function RegistrationDetails({
   showStatus = true,
   showRoster = true,
   showArtwork = true,
+  showSummary = true,
 }: {
   data: Data;
   /** Off where a status banner already explains the registration. */
@@ -22,69 +23,96 @@ export async function RegistrationDetails({
   /** Off while the roster is being edited; the editor already shows it. */
   showRoster?: boolean;
   showArtwork?: boolean;
+  /** Off where a banner above already shows the season, division and fee. */
+  showSummary?: boolean;
 }) {
   const t = await getTranslations("Registration");
   const format = await getFormatter();
-  const entries =
+  const entries = (
     data.registration.status === "rejected"
       ? data.entries
-      : data.entries.filter((entry) => entry.active);
+      : data.entries.filter((entry) => entry.active)
+  ).toSorted((a, b) => a.jersey_number - b.jersey_number);
+  const catalogPlayer = (playerId: string) =>
+    data.catalog.find((player) => player.id === playerId);
   return (
     <div className="space-y-6">
       {showArtwork && <RegistrationMediaPreview assets={data.media} />}
       {showRoster && (
         <>
-          <section className={cn(cardVariants(), "space-y-3")}>
-            <p>
-              {t("seasonDivision", {
-                season: data.season.name,
-                division: data.division.name,
-              })}
-            </p>
-            <p>
-              {t("feeValue", {
-                amount: formatSar(format, data.registration.fee_halalas),
-              })}
-            </p>
-            {showStatus && (
-              <Badge>{t(`status.${data.registration.status}`)}</Badge>
-            )}
-            {showStatus && data.registration.review_comment && (
-              <p className="rounded-xl bg-accent p-4 text-sm">
-                {data.registration.review_comment}
+          {showSummary && (
+            <section className={cn(cardVariants(), "space-y-3")}>
+              <p>
+                {t("seasonDivision", {
+                  season: data.season.name,
+                  division: data.division.name,
+                })}
               </p>
-            )}
-          </section>
+              <p>
+                {t("feeValue", {
+                  amount: formatSar(format, data.registration.fee_halalas),
+                })}
+              </p>
+              {showStatus && (
+                <Badge>{t(`status.${data.registration.status}`)}</Badge>
+              )}
+              {showStatus && data.registration.review_comment && (
+                <p className="rounded-xl bg-accent p-4 text-sm">
+                  {data.registration.review_comment}
+                </p>
+              )}
+            </section>
+          )}
           <section className="space-y-4">
-            <h2 className="font-display text-2xl font-semibold">
-              {t("yourRoster")}
-            </h2>
-            <ul className={cn(cardVariants({ padding: "none" }), "divide-y")}>
-              {entries.map((entry) => (
-                <li
-                  key={entry.id}
-                  className="flex flex-wrap items-center justify-between gap-3 p-4"
-                >
-                  <p className="font-semibold">
-                    {entry.player_name ??
-                      data.catalog.find(
-                        (player) => player.id === entry.player_id,
-                      )?.name ??
-                      t("player")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {t("rosterPlayer", {
-                      jersey: entry.jersey_number,
-                      rating:
-                        entry.rating_snapshot ??
-                        data.catalog.find(
-                          (player) => player.id === entry.player_id,
-                        )?.rating ??
-                        t("unrated"),
-                    })}
-                  </p>
-                </li>
-              ))}
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-display text-2xl font-semibold">
+                {t("yourRoster")}
+              </h2>
+              <p className="text-sm font-semibold text-muted-foreground">
+                {t("rosterCount", { count: entries.length })} ·{" "}
+                {t("rosterAllowed", {
+                  min: data.division.roster_min,
+                  max: data.division.roster_max,
+                })}
+              </p>
+            </div>
+            <ul
+              className={cn(
+                cardVariants({ padding: "none" }),
+                "divide-y sm:grid sm:grid-cols-2 sm:divide-y-0",
+              )}
+            >
+              {entries.map((entry) => {
+                const rating =
+                  entry.rating_snapshot ??
+                  catalogPlayer(entry.player_id)?.rating ??
+                  null;
+                return (
+                  <li
+                    key={entry.id}
+                    className="flex items-center gap-3 px-4 py-3 sm:border-b sm:odd:border-r"
+                  >
+                    <span
+                      className="grid size-11 shrink-0 place-items-center rounded-xl bg-navy font-display text-xl font-semibold text-on-dark tabular-nums"
+                      aria-label={t("jerseyLabel", {
+                        number: entry.jersey_number,
+                      })}
+                    >
+                      {entry.jersey_number}
+                    </span>
+                    <span className="min-w-0 flex-1 font-semibold break-words">
+                      {entry.player_name ??
+                        catalogPlayer(entry.player_id)?.name ??
+                        t("player")}
+                    </span>
+                    <Badge tone={rating ? "neutral" : "warning"}>
+                      {rating
+                        ? t("ratingBadge", { rating })
+                        : t("unratedBadge")}
+                    </Badge>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         </>
@@ -122,12 +150,13 @@ export async function RegistrationDetails({
           <h2 className="font-display text-2xl font-semibold">
             {t("reviewHistory")}
           </h2>
-          <ol className="space-y-3">
+          <ol className="relative space-y-4 border-l-2 border-border pl-6">
             {data.reviews.map((review, index) => (
-              <li
-                key={`${review.created_at}-${index}`}
-                className="space-y-2 rounded-xl border bg-card p-4"
-              >
+              <li key={`${review.created_at}-${index}`} className="relative">
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1.5 -left-[1.95rem] size-3.5 rounded-full border-2 border-card bg-primary"
+                />
                 <p className="font-semibold">{t(`history.${review.action}`)}</p>
                 <p className="text-sm text-muted-foreground">
                   {t("reviewBy", {
@@ -138,7 +167,11 @@ export async function RegistrationDetails({
                     }),
                   })}
                 </p>
-                {review.comment && <p className="text-sm">{review.comment}</p>}
+                {review.comment && (
+                  <p className="mt-1 rounded-xl bg-accent p-3 text-sm">
+                    {review.comment}
+                  </p>
+                )}
               </li>
             ))}
           </ol>

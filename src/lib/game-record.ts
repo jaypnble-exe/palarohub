@@ -19,7 +19,7 @@ export async function loadGameRecord(supabase: Client, gameId: string) {
   const { data: game, error } = await supabase
     .from("games")
     .select(
-      "id,league_id,status,scheduled_at,venue,round,season_id,division_id,divisions(name,sport,rules,seasons(name,rules)),leagues(name)",
+      "id,league_id,status,scheduled_at,venue,round,season_id,division_id,bracket_slot_id,divisions(name,sport,rules,seasons(name,rules)),leagues(name)",
     )
     .eq("id", gameId)
     .maybeSingle();
@@ -67,6 +67,9 @@ export async function loadGameRecord(supabase: Client, gameId: string) {
       scheduledAt: game.scheduled_at,
       venue: game.venue,
       round: game.round,
+      seasonId: game.season_id,
+      /** Playoff games advance the bracket, so their results stay locked. */
+      inBracket: game.bracket_slot_id !== null,
     },
     leagueName: game.leagues?.name ?? "",
     seasonName: season.name,

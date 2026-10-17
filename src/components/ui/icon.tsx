@@ -26,7 +26,10 @@ export type IconName =
   | "close"
   | "lock"
   | "signOut"
-  | "search";
+  | "search"
+  | "trophy"
+  | "stats"
+  | "bracket";
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z" />,
@@ -162,6 +165,15 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="m20 20-4.4-4.4" />
     </>
   ),
+  trophy: (
+    <>
+      <circle cx="12" cy="9" r="6" />
+      <path d="m12 6 .9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 8.1l2-.3Z" />
+      <path d="M8.5 14 7 21l5-2.5 5 2.5-1.5-7" />
+    </>
+  ),
+  stats: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  bracket: <path d="M3 5h5v6H3M3 13h5v6H3M8 8h4v8H8M12 12h9" />,
 };
 
 /** Line icons in one style. Decorative: always pair with a visible label. */

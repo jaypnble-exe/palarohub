@@ -1,4 +1,5 @@
-export type StandingsResult = "win" | "loss" | "draw";
+/** A forfeit is a loss that earns no standings points (FIBA: 0 instead of 1). */
+export type StandingsResult = "win" | "loss" | "draw" | "forfeit";
 
 /** Sport-neutral tiebreakers, applied in the order a sport module lists them. */
 export type Tiebreaker =
@@ -27,6 +28,8 @@ export interface StandingsGame {
   awayId: string;
   homeScore: number;
   awayScore: number;
+  /** Set when the result was a forfeit: that team (or both) lost by not playing. */
+  forfeitedBy?: "home" | "away" | "both" | null;
 }
 
 export interface StandingsRow {
@@ -79,11 +82,17 @@ function tally(
     const away = totals.get(game.awayId);
     if (!home || !away) continue;
     const outcome: [StandingsResult, StandingsResult] =
-      game.homeScore > game.awayScore
-        ? ["win", "loss"]
-        : game.homeScore < game.awayScore
-          ? ["loss", "win"]
-          : ["draw", "draw"];
+      game.forfeitedBy === "both"
+        ? ["forfeit", "forfeit"]
+        : game.forfeitedBy === "home"
+          ? ["forfeit", "win"]
+          : game.forfeitedBy === "away"
+            ? ["win", "forfeit"]
+            : game.homeScore > game.awayScore
+              ? ["win", "loss"]
+              : game.homeScore < game.awayScore
+                ? ["loss", "win"]
+                : ["draw", "draw"];
     for (const [line, scored, allowed, result] of [
       [home, game.homeScore, game.awayScore, outcome[0]],
       [away, game.awayScore, game.homeScore, outcome[1]],
@@ -93,8 +102,8 @@ function tally(
       line.pointsAgainst += allowed;
       line.points += rules.points(result);
       if (result === "win") line.wins++;
-      else if (result === "loss") line.losses++;
-      else line.draws++;
+      else if (result === "draw") line.draws++;
+      else line.losses++;
     }
   }
   return totals;

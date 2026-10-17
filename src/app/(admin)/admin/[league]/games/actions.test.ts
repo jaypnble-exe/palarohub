@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { approveGame } from "./actions";
+import { approveGame, correctResult, recordForfeit } from "./actions";
 import { getLeagueAccess } from "@/lib/league-access";
 import { loadGameRecord } from "@/lib/game-record";
 import { getSportModule } from "@/lib/sports/registry";
@@ -55,6 +55,7 @@ describe("game award approval action", () => {
       p_away_score: 40,
       p_summary: { official: true },
       p_suspend_player_ids: [],
+      p_suspend_games: [],
       p_player_id: playerId,
     });
   });
@@ -96,5 +97,81 @@ describe("game award approval action", () => {
       }),
     ).toEqual({ error: "gameNotFound" });
     expect(rpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("forfeits and corrections", () => {
+  it("records a no-show without needing the game's score", async () => {
+    expect(
+      await recordForfeit("sindikato", {
+        gameId,
+        kind: "forfeit",
+        side: "away",
+        reason: "Did not show up",
+      }),
+    ).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledExactlyOnceWith("record_forfeit", {
+      p_league_id: "league-one",
+      p_game_id: gameId,
+      p_kind: "forfeit",
+      p_side: "away",
+      p_reason: "Did not show up",
+      p_home_score: 0,
+      p_away_score: 0,
+    });
+  });
+  it("sends the score so far for a default", async () => {
+    vi.mocked(getSportModule).mockReturnValue({
+      liveScore: () => ({ homeScore: 31, awayScore: 36, status: { key: "x" } }),
+    } as unknown as ReturnType<typeof getSportModule>);
+    await recordForfeit("sindikato", {
+      gameId,
+      kind: "default",
+      side: "home",
+      reason: "Only one player left",
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      "record_forfeit",
+      expect.objectContaining({ p_home_score: 31, p_away_score: 36 }),
+    );
+  });
+  it("needs a reason, and refuses a double default", async () => {
+    expect(
+      await recordForfeit("sindikato", {
+        gameId,
+        kind: "forfeit",
+        side: "home",
+        reason: " ",
+      }),
+    ).toEqual({ error: "reasonRequired" });
+    expect(
+      await recordForfeit("sindikato", {
+        gameId,
+        kind: "default",
+        side: "both",
+        reason: "Both",
+      }),
+    ).toEqual({ error: "invalidForm" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("lets only the commissioner reopen a result", async () => {
+    vi.mocked(getLeagueAccess).mockResolvedValue({
+      supabase: { rpc },
+      league: { id: "league-one" },
+      canView: true,
+      canManage: false,
+    } as unknown as Awaited<ReturnType<typeof getLeagueAccess>>);
+    expect(
+      await correctResult("sindikato", { gameId, reason: "Wrong player" }),
+    ).toEqual({ error: "commissionerOnly" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+  it("explains a locked playoff result in plain words", async () => {
+    rpc.mockResolvedValue({
+      error: { message: "bracket_result_locked", code: "23514" },
+    });
+    expect(
+      await correctResult("sindikato", { gameId, reason: "Wrong score" }),
+    ).toEqual({ error: "bracketLocked" });
   });
 });

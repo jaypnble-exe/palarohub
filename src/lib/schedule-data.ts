@@ -15,6 +15,9 @@ export interface ScheduleGame {
   divisionName?: string;
   /** Only once the result is approved. */
   homeScore?: number | null;
+  /** How an approved game was won: played, forfeit or default. */
+  outcome?: string | null;
+  forfeitedBy?: string | null;
   awayScore?: number | null;
 }
 

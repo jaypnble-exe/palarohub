@@ -98,4 +98,27 @@ describe("payment form", () => {
     );
     expect(recordLedgerEntry).not.toHaveBeenCalled();
   });
+  it("fills the usual amounts in one tap", () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={en} timeZone="Asia/Riyadh">
+        <LedgerForm
+          slug="sindikato"
+          seasonTeamId={team}
+          today="2026-10-23"
+          suggestedHalalas={45000}
+          perGameHalalas={15000}
+          balanceHalalas={180000}
+        />
+      </NextIntlClientProvider>,
+    );
+    const amount = screen.getByLabelText(en.Payments.amount);
+    expect(amount).toHaveValue("450.00");
+    fireEvent.click(screen.getByRole("button", { name: /One game/ }));
+    expect(amount).toHaveValue("150.00");
+    fireEvent.click(screen.getByRole("button", { name: /Everything left/ }));
+    expect(amount).toHaveValue("1800.00");
+    expect(
+      screen.getByRole("button", { name: /Everything left/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
 });

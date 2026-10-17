@@ -85,7 +85,7 @@ export async function managerOverview(
       ? supabase
           .from("published_games")
           .select(
-            "id,round,scheduled_at,venue,status,division_name,home_season_team_id,away_season_team_id,home_team_name,away_team_name,home_score,away_score",
+            "id,round,scheduled_at,venue,status,division_name,home_season_team_id,away_season_team_id,home_team_name,away_team_name,home_score,away_score,outcome,forfeited_by",
           )
           .eq("league_id", leagueId)
           .or(
@@ -138,6 +138,8 @@ export async function managerOverview(
     divisionName: game.division_name ?? undefined,
     homeScore: game.home_score,
     awayScore: game.away_score,
+    outcome: game.outcome,
+    forfeitedBy: game.forfeited_by,
     registrationId: mine.has(game.home_season_team_id ?? "")
       ? (game.home_season_team_id ?? "")
       : (game.away_season_team_id ?? ""),

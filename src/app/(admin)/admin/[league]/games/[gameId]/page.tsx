@@ -7,6 +7,11 @@ import { AccessDenied } from "@/components/access-denied";
 import { Button } from "@/components/ui/button";
 import { BoxScores } from "@/components/scorer/basketball/box-score";
 import { ReviewActions } from "@/components/review/review-actions";
+import {
+  CorrectResultForm,
+  ForfeitForm,
+} from "@/components/review/result-actions";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Alert } from "@/components/ui/alert";
@@ -67,7 +72,28 @@ export default async function GameReviewPage({
         }
       />
 
-      {summary ? (
+      {/* The official result once approved (it may be a forfeit); otherwise the score so far. */}
+      {record.result ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="font-display text-5xl font-semibold">
+            {record.result.home_score} – {record.result.away_score}
+          </p>
+          {record.result.outcome !== "played" && (
+            <Badge tone="warning">
+              {t(`outcome.${record.result.outcome}`, {
+                team:
+                  record.result.forfeited_by === "both"
+                    ? ""
+                    : teamNames[
+                        (record.result.forfeited_by ?? "home") as
+                          "home" | "away"
+                      ],
+                both: record.result.forfeited_by === "both" ? "yes" : "no",
+              })}
+            </Badge>
+          )}
+        </div>
+      ) : summary ? (
         <p className="font-display text-5xl font-semibold">
           {summary.homeScore} – {summary.awayScore}
         </p>
@@ -80,7 +106,7 @@ export default async function GameReviewPage({
         </Alert>
       )}
 
-      {game.status === "approved" && (
+      {game.status === "approved" && record.result?.outcome !== "forfeit" && (
         <Button asChild>
           <a
             href={`/api/games/${game.id}/scoresheet`}
@@ -102,6 +128,24 @@ export default async function GameReviewPage({
             state,
           )}
           canSelectPlayer={canManage}
+        />
+      )}
+
+      {["scheduled", "postponed", "in_progress", "submitted"].includes(
+        game.status,
+      ) && (
+        <ForfeitForm
+          slug={slug}
+          gameId={game.id}
+          teamNames={teamNames}
+          started={state.phase !== "pregame"}
+        />
+      )}
+      {game.status === "approved" && canManage && !game.inBracket && (
+        <CorrectResultForm
+          slug={slug}
+          gameId={game.id}
+          forfeit={record.result?.outcome === "forfeit"}
         />
       )}
 

@@ -13,16 +13,29 @@ import { AccessGuide } from "@/components/access-guide";
 import { cardVariants } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { accountChoices } from "@/lib/saved-accounts";
+import { AccountChoices } from "@/components/account-switcher";
+import Link from "next/link";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string; new?: string }>;
+  searchParams: Promise<{
+    next?: string;
+    error?: string;
+    new?: string;
+    add?: string;
+  }>;
 }) {
-  const { next: requestedNext, error, new: startNew } = await searchParams;
+  const { next: requestedNext, error, new: startNew, add } = await searchParams;
   const next = safeNextPath(requestedNext);
-  if (await getAuth()) redirect(next);
+  const auth = await getAuth();
+  // Adding another account keeps the current one signed in until the new sign-in.
+  const adding = Boolean(auth) && add === "1";
+  if (auth && !adding) redirect(next);
   const t = await getTranslations("Login");
+  const accountText = await getTranslations("Accounts");
+  const saved = await accountChoices(auth?.user.id);
   const configured = hasSupabaseConfig();
   const google = configured && (await isGoogleEnabled());
   // New team managers arrive from a registration link: start them on "I'm new".
@@ -55,7 +68,37 @@ export default async function LoginPage({
               : t("registeringTeam")}
           </Alert>
         )}
+        {adding && auth && (
+          <Alert tone="info">
+            <strong>{accountText("addingTitle")}.</strong>{" "}
+            {accountText("addingBody", { email: auth.user.email ?? "" })}{" "}
+            <Link href="/leagues" className="font-semibold underline">
+              {accountText("addingCancel", { email: auth.user.email ?? "" })}
+            </Link>
+          </Alert>
+        )}
+        {configured && saved.length > 0 && (
+          <section
+            aria-labelledby="saved-accounts"
+            className={cn(cardVariants(), "space-y-3")}
+          >
+            <div className="space-y-1">
+              <h2 id="saved-accounts" className="text-lg font-semibold">
+                {accountText("savedTitle")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {accountText("savedHelp")}
+              </p>
+            </div>
+            <AccountChoices accounts={saved} />
+          </section>
+        )}
         <div className={cn(cardVariants({ padding: "lg" }), "space-y-5")}>
+          {adding && (
+            <p className="text-sm text-muted-foreground">
+              {accountText("privacy")}
+            </p>
+          )}
           {configured ? (
             <>
               <LoginForm

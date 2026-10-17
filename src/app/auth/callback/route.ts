@@ -3,13 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/auth";
 import { safeNextPath } from "@/lib/validation/auth";
 import { hasSupabaseConfig } from "@/lib/supabase/env";
+import { forgetSavedAccount } from "@/lib/saved-accounts";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   if (code && hasSupabaseConfig()) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      if (data.user) await forgetSavedAccount(data.user.id);
       const next = safeNextPath(request.nextUrl.searchParams.get("next"));
       const response = NextResponse.redirect(new URL(next, getSiteUrl()));
       response.headers.set("Cache-Control", "private, no-store");

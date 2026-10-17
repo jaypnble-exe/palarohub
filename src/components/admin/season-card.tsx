@@ -28,6 +28,7 @@ const phaseTone = {
   upcoming: "primary",
   inProgress: "success",
   finished: "dark",
+  closed: "neutral",
 } as const;
 
 /** One season at a glance; the whole card opens its setup. */
@@ -50,17 +51,19 @@ export async function SeasonCard({
     season.phase === "draft"
       ? t("nextFinishSetup")
       : season.phase === "finished"
-        ? undefined
-        : season.registration === "open" && season.deadline
-          ? t("registrationOpenUntil", {
-              date: format.dateTime(new Date(season.deadline), {
-                day: "numeric",
-                month: "short",
-              }),
-            })
-          : season.phase === "upcoming"
-            ? t("nextOpenRegistration")
-            : undefined;
+        ? t("nextCloseSeason")
+        : season.phase === "closed"
+          ? undefined
+          : season.registration === "open" && season.deadline
+            ? t("registrationOpenUntil", {
+                date: format.dateTime(new Date(season.deadline), {
+                  day: "numeric",
+                  month: "short",
+                }),
+              })
+            : season.phase === "upcoming"
+              ? t("nextOpenRegistration")
+              : undefined;
   return (
     <li>
       <Link

@@ -146,6 +146,17 @@ export async function GameList({
                     {team("home", game.homeName)}
                     {team("away", game.awayName)}
                   </div>
+                  {game.outcome && game.outcome !== "played" && (
+                    <p className="text-sm font-semibold text-orange-dark">
+                      {t(`outcome.${game.outcome}`, {
+                        team:
+                          game.forfeitedBy === "away"
+                            ? game.awayName
+                            : game.homeName,
+                        both: game.forfeitedBy === "both" ? "yes" : "no",
+                      })}
+                    </p>
+                  )}
                   {liveStatus && (
                     <p className="font-display text-base tracking-wide text-orange-dark">
                       {live(liveStatus.key, liveStatus.values)}

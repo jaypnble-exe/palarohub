@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { playerSuspensions } from "@/lib/suspension-data";
 import Link from "next/link";
 import { z } from "zod";
 import { getTranslations, getFormatter } from "next-intl/server";
@@ -52,6 +54,7 @@ export default async function PlayerPage({
     throw new Error("Unable to load player details.");
   if (!player.data) notFound();
   const career = await careerGames(supabase, league.id, undefined, playerId);
+  const suspensions = await playerSuspensions(supabase, league.id, playerId);
   const competition = await getTranslations("Competition");
   const t = await getTranslations("Registration");
   const format = await getFormatter();
@@ -93,6 +96,39 @@ export default async function PlayerPage({
           suspended: checks.data?.suspended ?? false,
         }}
       />
+      {suspensions.length > 0 && (
+        <section className="space-y-3" aria-labelledby="suspensions-title">
+          <h2
+            id="suspensions-title"
+            className="font-display text-2xl font-semibold"
+          >
+            {t("suspensionsTitle")}
+          </h2>
+          <ul className="space-y-2">
+            {suspensions.map((suspension) => (
+              <li
+                key={suspension.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-card p-4"
+              >
+                <div className="space-y-1">
+                  <p className="font-semibold">{suspension.matchup}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("suspensionServed", {
+                      served: suspension.progress.served,
+                      total: suspension.progress.total,
+                    })}
+                  </p>
+                </div>
+                <Badge tone={suspension.progress.done ? "success" : "danger"}>
+                  {suspension.progress.done
+                    ? t("suspensionDone")
+                    : t("suspensionLeft", { count: suspension.progress.left })}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <section className="space-y-4">
         <h2 className="font-display text-2xl font-semibold">
           {t("ratingHistory")}

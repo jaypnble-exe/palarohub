@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { formatSar } from "@/lib/format";
-import type { ManagerOverview, ManagerRegistration } from "@/lib/team-data";
+import type {
+  ManagerGame,
+  ManagerOverview,
+  ManagerRegistration,
+} from "@/lib/team-data";
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, cardVariants } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { Section } from "@/components/ui/section";
+import { Progress } from "@/components/ui/stat";
 import { TileGrid, type Tile } from "@/components/ui/tile-grid";
 import { Button } from "@/components/ui/button";
 import { paymentBadge } from "@/components/payments/payment-summary";
@@ -23,10 +29,15 @@ const statusTone: Record<
   approved: "success",
   rejected: "danger",
 };
+const dayMs = 86_400_000;
+const riyadhOffsetMs = 3 * 3_600_000;
+/** Calendar days in Riyadh, so "Tomorrow" flips at local midnight. */
+const riyadhDay = (date: Date) =>
+  Math.floor((date.getTime() + riyadhOffsetMs) / dayMs);
 
 /**
- * Team manager home: what to do next, how each team stands, and the next
- * games. Read-only for everything the league decides.
+ * Team manager home: the next game first, then what to do, how each team
+ * stands, and the schedule. Read-only for everything the league decides.
  */
 export async function TeamHome({
   slug,
@@ -89,6 +100,39 @@ export async function TeamHome({
         game.registrationId === registrationId &&
         (game.status === "scheduled" || game.status === "in_progress"),
     );
+  const teamNameOf = new Map(
+    registrations.map((item) => [item.id, item.teamName]),
+  );
+  const teamNames = [...new Set(teamNameOf.values())];
+  /** Which side the manager's team is on, so every game reads "vs opponent". */
+  const sideOf = (game: ManagerGame) => {
+    const own = teamNameOf.get(game.registrationId);
+    const home = game.homeName === own;
+    return {
+      team: own ?? game.homeName,
+      opponent: home ? game.awayName : game.homeName,
+      home,
+      scored: (home ? game.homeScore : game.awayScore) ?? 0,
+      allowed: (home ? game.awayScore : game.homeScore) ?? 0,
+    };
+  };
+  const recordOf = (registrationId: string) => {
+    const played = games.filter(
+      (game) =>
+        game.registrationId === registrationId &&
+        game.status === "approved" &&
+        game.homeScore !== null,
+    );
+    const wins = played.filter((game) => {
+      const side = sideOf(game);
+      return side.scored > side.allowed;
+    }).length;
+    return { played: played.length, wins, losses: played.length - wins };
+  };
+  const live = games.find((game) => game.status === "in_progress");
+  const nextGame = live ?? upcoming[0];
+  const daysUntil = (iso: string) =>
+    Math.max(0, riyadhDay(new Date(iso)) - riyadhDay(new Date()));
   const when = (iso: string | null) =>
     iso
       ? format.dateTime(new Date(iso), {
@@ -122,17 +166,77 @@ export async function TeamHome({
     <main className="space-y-7 py-6 sm:space-y-8">
       <Card tone="navy" padding="none" className="overflow-hidden">
         <div className="h-1.5 bg-primary" />
-        <div className="space-y-2 p-5 sm:p-7">
-          <p className="text-sm font-semibold text-on-dark-muted">
-            {t("role")} · {leagueName}
-          </p>
-          <h1 className="break-words font-display text-4xl font-semibold tracking-wide sm:text-5xl">
-            {registrations.length
-              ? [...new Set(registrations.map((item) => item.teamName))].join(
-                  " · ",
-                )
-              : t("noTeamYet")}
-          </h1>
+        <div className="space-y-5 p-5 sm:p-7">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-on-dark-muted">
+              {t("role")} · {leagueName}
+            </p>
+            <h1
+              className={cn(
+                "font-display font-semibold tracking-wide break-words",
+                teamNames.length > 1
+                  ? "space-y-1 text-3xl sm:text-4xl"
+                  : "text-4xl sm:text-5xl",
+              )}
+            >
+              {teamNames.length
+                ? teamNames.map((name) => (
+                    <span key={name} className="block">
+                      {name}
+                    </span>
+                  ))
+                : t("noTeamYet")}
+            </h1>
+          </div>
+          {nextGame ? (
+            <div className="space-y-3 rounded-2xl bg-white/10 p-4">
+              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-on-dark-muted">
+                {live ? (
+                  <Badge tone="primary">
+                    <span
+                      className="size-2 animate-pulse rounded-full bg-white"
+                      aria-hidden="true"
+                    />
+                    {t("playingNow", { team: sideOf(live).team })}
+                  </Badge>
+                ) : (
+                  <>
+                    {t("nextUp")}
+                    {nextGame.scheduledAt && (
+                      <span className="rounded-full bg-primary px-2.5 py-0.5 text-white">
+                        {t("inDays", { days: daysUntil(nextGame.scheduledAt) })}
+                      </span>
+                    )}
+                  </>
+                )}
+              </p>
+              <p className="font-display text-2xl leading-tight font-semibold break-words sm:text-3xl">
+                {t("versus", { opponent: sideOf(nextGame).opponent })}
+              </p>
+              <p className="text-sm text-on-dark-muted">
+                {[
+                  teamNames.length > 1 ? sideOf(nextGame).team : null,
+                  when(nextGame.scheduledAt),
+                  nextGame.venue || null,
+                  t(sideOf(nextGame).home ? "home" : "away"),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              {live && (
+                <Button asChild className="w-full sm:w-auto">
+                  <Link href={`/tv/${live.id}`}>
+                    <Icon name="live" className="size-5" />
+                    {t("watchLive")}
+                  </Link>
+                </Button>
+              )}
+            </div>
+          ) : registrations.some((item) => item.status === "approved") ? (
+            <p className="rounded-2xl bg-white/10 p-4 text-sm text-on-dark-muted">
+              {t("noNextGame")}
+            </p>
+          ) : null}
         </div>
       </Card>
 
@@ -149,7 +253,7 @@ export async function TeamHome({
                     <Icon name={todo.icon} />
                   </span>
                   <span className="min-w-0 flex-1 space-y-1">
-                    <span className="block font-semibold leading-snug">
+                    <span className="block leading-snug font-semibold">
                       {t(todo.text, todo.values)}
                     </span>
                     {todo.quote && (
@@ -183,10 +287,11 @@ export async function TeamHome({
 
       <Section id="teams" title={t("yourTeams")}>
         {registrations.length ? (
-          <ul className="space-y-3">
+          <ul className="grid gap-3 md:grid-cols-2">
             {registrations.map((registration) => {
               const payment = paymentByRegistration.get(registration.id);
               const next = nextGameFor(registration.id);
+              const record = recordOf(registration.id);
               const badge = payment
                 ? paymentBadge(
                     payment.status,
@@ -194,34 +299,79 @@ export async function TeamHome({
                     format,
                   )
                 : null;
+              const owed = payment
+                ? payment.quotaHalalas + payment.finesHalalas
+                : 0;
               return (
                 <li key={registration.id}>
                   <Link
                     href={`${base}/registrations/${registration.id}`}
                     className={cn(
                       cardVariants({ interactive: true }),
-                      "block space-y-3",
+                      "block h-full space-y-3",
                     )}
                   >
-                    <span className="flex flex-wrap items-start justify-between gap-2">
-                      <span className="min-w-0">
-                        <span className="block font-display text-2xl font-semibold leading-tight">
+                    <span className="flex items-start gap-3">
+                      <Avatar
+                        name={registration.teamName}
+                        className="size-12 bg-navy text-xl text-on-dark"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-display text-2xl leading-tight font-semibold break-words">
                           {registration.teamName}
                         </span>
                         <span className="block text-sm text-muted-foreground">
                           {registration.seasonName} ·{" "}
                           {registration.divisionName}
                         </span>
+                        <Badge
+                          tone={statusTone[registration.status]}
+                          className="mt-2"
+                        >
+                          {registrationText(`status.${registration.status}`)}
+                        </Badge>
                       </span>
-                      <Badge tone={statusTone[registration.status]}>
-                        {registrationText(`status.${registration.status}`)}
-                      </Badge>
                     </span>
                     <span className="block text-sm">
                       {t(`statusHelp.${registration.status}`)}
                     </span>
+                    {(record.played > 0 || payment) && (
+                      <span className="grid grid-cols-2 gap-3 border-t pt-3">
+                        {record.played > 0 && (
+                          <span className="space-y-0.5">
+                            <span className="block text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                              {t("record")}
+                            </span>
+                            <span className="block font-display text-2xl font-semibold tabular-nums">
+                              {t("recordValue", {
+                                wins: record.wins,
+                                losses: record.losses,
+                              })}
+                            </span>
+                          </span>
+                        )}
+                        {payment && (
+                          <span className="col-start-2 space-y-1">
+                            <span className="block text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                              {t("paid")}
+                            </span>
+                            <span className="block text-sm font-semibold tabular-nums">
+                              {t("paidOf", {
+                                paid: formatSar(format, payment.paidHalalas),
+                                total: formatSar(format, owed),
+                              })}
+                            </span>
+                            <Progress
+                              value={payment.paidHalalas}
+                              max={owed}
+                              label={t("paid")}
+                            />
+                          </span>
+                        )}
+                      </span>
+                    )}
                     {(badge || next || registration.changePending) && (
-                      <span className="flex flex-wrap items-center gap-2 border-t pt-3 text-sm">
+                      <span className="flex flex-wrap items-center gap-2 text-sm">
                         {badge && <Badge tone={badge.tone}>{badge.text}</Badge>}
                         {registration.changePending && (
                           <Badge tone="warning">{t("changePending")}</Badge>
@@ -229,10 +379,7 @@ export async function TeamHome({
                         {next && (
                           <span className="text-muted-foreground">
                             {t("nextGame", {
-                              opponent:
-                                next.homeName === registration.teamName
-                                  ? next.awayName
-                                  : next.homeName,
+                              opponent: sideOf(next).opponent,
                               when: when(next.scheduledAt),
                             })}
                           </span>
@@ -273,21 +420,47 @@ export async function TeamHome({
           {upcoming.length ? (
             <ul className={cn(cardVariants({ padding: "none" }), "divide-y")}>
               {upcoming.map((game) => (
-                <li key={game.id} className="space-y-1 p-4">
-                  <span className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-semibold">
-                      {t("matchup", {
-                        home: game.homeName,
-                        away: game.awayName,
-                      })}
-                    </span>
-                    {game.status === "in_progress" && (
-                      <Badge tone="danger">{t("liveNow")}</Badge>
+                <li key={game.id} className="flex items-center gap-4 px-4 py-3">
+                  <span className="w-20 shrink-0 text-center">
+                    {game.scheduledAt ? (
+                      <>
+                        <span className="block text-xs font-bold text-muted-foreground uppercase">
+                          {format.dateTime(new Date(game.scheduledAt), {
+                            weekday: "short",
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                        <span className="block font-display text-lg font-semibold">
+                          {format.dateTime(new Date(game.scheduledAt), {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="block text-xs font-bold text-muted-foreground uppercase">
+                        {t("timeToBeAnnounced")}
+                      </span>
                     )}
                   </span>
-                  <span className="block text-sm text-muted-foreground">
-                    {when(game.scheduledAt)}
-                    {game.venue && ` · ${game.venue}`}
+                  <span className="min-w-0 flex-1 space-y-0.5">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold break-words">
+                        {t("matchup", {
+                          home: game.homeName,
+                          away: game.awayName,
+                        })}
+                      </span>
+                      {game.status === "in_progress" && (
+                        <Badge tone="primary">{t("liveNow")}</Badge>
+                      )}
+                    </span>
+                    <span className="block truncate text-sm text-muted-foreground">
+                      {[t(sideOf(game).home ? "home" : "away"), game.venue]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -299,24 +472,45 @@ export async function TeamHome({
             <div className="space-y-2 pt-2">
               <h3 className="text-lg font-semibold">{t("latestResults")}</h3>
               <ul className={cn(cardVariants({ padding: "none" }), "divide-y")}>
-                {results.map((game) => (
-                  <li
-                    key={game.id}
-                    className="flex flex-wrap items-baseline justify-between gap-2 p-4"
-                  >
-                    <span className="font-semibold">
-                      {t("result", {
-                        home: game.homeName,
-                        homeScore: game.homeScore ?? 0,
-                        away: game.awayName,
-                        awayScore: game.awayScore ?? 0,
-                      })}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {when(game.scheduledAt)}
-                    </span>
-                  </li>
-                ))}
+                {results.map((game) => {
+                  const side = sideOf(game);
+                  const won = side.scored > side.allowed;
+                  return (
+                    <li
+                      key={game.id}
+                      className="flex items-center gap-4 px-4 py-3"
+                    >
+                      <span
+                        className={cn(
+                          "grid size-10 shrink-0 place-items-center rounded-xl font-display text-lg font-bold",
+                          won
+                            ? "bg-success text-white"
+                            : "bg-destructive-soft text-destructive",
+                        )}
+                      >
+                        <span aria-hidden="true">
+                          {t(won ? "won" : "lost")}
+                        </span>
+                        <span className="sr-only">
+                          {t(won ? "wonLabel" : "lostLabel")}
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-semibold break-words">
+                          {t("result", {
+                            home: game.homeName,
+                            homeScore: game.homeScore ?? 0,
+                            away: game.awayName,
+                            awayScore: game.awayScore ?? 0,
+                          })}
+                        </span>
+                        <span className="block text-sm text-muted-foreground">
+                          {when(game.scheduledAt)}
+                        </span>
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

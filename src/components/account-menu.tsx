@@ -3,12 +3,25 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { signOut } from "@/app/auth/actions";
+import { addAccount } from "@/app/auth/accounts";
+import type { AccountChoice } from "@/lib/saved-accounts";
+import { AccountChoices } from "@/components/account-switcher";
 import { Avatar } from "@/components/ui/avatar";
 import { Icon, type IconName } from "@/components/ui/icon";
 
 /** The signed-in person's initials; tap for their account options. */
-export function AccountMenu({ name, email }: { name: string; email: string }) {
+export function AccountMenu({
+  name,
+  email,
+  accounts,
+}: {
+  name: string;
+  email: string;
+  /** Other accounts saved on this device. */
+  accounts: readonly AccountChoice[];
+}) {
   const t = useTranslations("Header");
+  const accountText = useTranslations("Accounts");
   const menuId = useId();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -77,6 +90,20 @@ export function AccountMenu({ name, email }: { name: string; email: string }) {
               <p className="truncate font-semibold">{name}</p>
               <p className="truncate text-sm text-muted-foreground">{email}</p>
             </div>
+          </div>
+          <div className="space-y-1 border-b border-border py-2">
+            {accounts.length > 0 && (
+              <p className="px-3 pt-1 text-xs font-bold tracking-wide text-muted-foreground uppercase">
+                {accountText("switchTitle")}
+              </p>
+            )}
+            <AccountChoices accounts={accounts} compact />
+            <form action={addAccount}>
+              <button type="submit" className={item}>
+                <Icon name="add" className="size-5 text-muted-foreground" />
+                {accountText("add")}
+              </button>
+            </form>
           </div>
           <ul className="space-y-1 pt-2">
             {links.map((link) => (

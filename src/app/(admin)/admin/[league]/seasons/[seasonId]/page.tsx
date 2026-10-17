@@ -9,6 +9,7 @@ import { SportRulesFields } from "@/lib/sports/rules-fields";
 import { allowedRatingLabels } from "@/lib/domain/ratings";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { CloseSeason } from "@/components/admin/close-season";
 import { cardVariants } from "@/components/ui/card";
 import { LinkCard } from "@/components/ui/link-card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -34,6 +35,26 @@ export default async function SeasonPage({
   if (error) throw new Error("Unable to load season.");
   if (!season) notFound();
   const values = seasonFormValues(season, season.divisions);
+  const [closure, openGames] =
+    season.status === "published"
+      ? await Promise.all([
+          supabase
+            .from("season_closures")
+            .select("closed_at")
+            .eq("league_id", league.id)
+            .eq("season_id", season.id)
+            .maybeSingle(),
+          supabase
+            .from("games")
+            .select("id", { count: "exact", head: true })
+            .eq("league_id", league.id)
+            .eq("season_id", season.id)
+            .not("status", "in", "(approved,cancelled)"),
+        ])
+      : [null, null];
+  if (closure?.error || openGames?.error)
+    throw new Error("Unable to load season.");
+  const closedAt = closure?.data?.closed_at ?? null;
   const t = await getTranslations("Seasons");
   const registrationText = await getTranslations("Registration");
   const format = await getFormatter();
@@ -44,7 +65,9 @@ export default async function SeasonPage({
     <PageHeader
       back={{ href: `/admin/${slug}/seasons`, label: t("backToSeasons") }}
       eyebrow={
-        <Badge tone={draft ? "warning" : "success"}>{t(season.status)}</Badge>
+        <Badge tone={draft ? "warning" : closedAt ? "neutral" : "success"}>
+          {t(closedAt ? "closed" : season.status)}
+        </Badge>
       }
       title={season.name}
       description={t("dates", {
@@ -89,7 +112,27 @@ export default async function SeasonPage({
               subtitle={t("teamsShortcutHelp")}
             />
           </div>
-          <Alert tone="info">{t("publishedLocked")}</Alert>
+          {closedAt ? (
+            <Alert tone="success" title={t("closedTitle")}>
+              {t("closedBody", {
+                date: format.dateTime(new Date(closedAt), {
+                  dateStyle: "medium",
+                }),
+              })}
+            </Alert>
+          ) : (
+            <>
+              <Alert tone="info">{t("publishedLocked")}</Alert>
+              {canManage && (
+                <CloseSeason
+                  slug={slug}
+                  seasonId={season.id}
+                  seasonName={season.name}
+                  openGames={openGames?.count ?? 0}
+                />
+              )}
+            </>
+          )}
         </>
       )}
       <Section id="season-ratings" title={t("ratingScale")}>

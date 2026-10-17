@@ -38,25 +38,35 @@ export default async function TeamPaymentsPage({
   const t = await getTranslations("Payments");
   const today = toRiyadhDateTimeInput(new Date().toISOString()).slice(0, 10);
   return (
-    <main className="mx-auto max-w-2xl space-y-6 py-6">
+    <main className="mx-auto max-w-5xl space-y-6 py-6">
       <PageHeader
         back={{
           href: `/admin/${slug}/payments?season=${registration.season_id}`,
           label: t("backToPayments"),
         }}
-        eyebrow={team.divisionName}
+        eyebrow={`${t("teamTitle")} · ${team.divisionName}`}
         title={team.teamName}
       />
-      <PaymentSummary team={team} />
-      <LedgerForm
-        slug={slug}
-        seasonTeamId={team.seasonTeamId}
-        today={today}
-        suggestedHalalas={team.status.behindByHalalas}
-      />
-      <Section id="history" title={t("history")}>
-        <LedgerList slug={slug} entries={team.entries} canEdit />
-      </Section>
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.1fr]">
+        <div className="space-y-6">
+          <PaymentSummary team={team} />
+          <LedgerForm
+            slug={slug}
+            seasonTeamId={team.seasonTeamId}
+            today={today}
+            suggestedHalalas={team.status.behindByHalalas}
+            perGameHalalas={team.status.perGameHalalas}
+            balanceHalalas={Math.max(0, team.status.balanceHalalas)}
+          />
+        </div>
+        <Section
+          id="history"
+          title={t("history")}
+          description={t("historyHelp")}
+        >
+          <LedgerList slug={slug} entries={team.entries} canEdit />
+        </Section>
+      </div>
     </main>
   );
 }

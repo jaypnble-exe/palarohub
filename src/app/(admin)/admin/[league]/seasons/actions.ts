@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getLeagueAccess } from "@/lib/league-access";
 import { seasonSchema, ratingScaleSchema } from "@/lib/validation/seasons";
 import { getSportModule } from "@/lib/sports/registry";
+import { seasonStandings } from "@/lib/standings-data";
 
 export async function saveSeason(
   slug: string,
@@ -61,5 +62,44 @@ export async function saveRatingScale(slug: string, input: unknown) {
   if (error) return { error: "saveFailed" as const };
   revalidatePath(`/admin/${slug}/ratings`);
   revalidatePath(`/admin/${slug}/seasons/new`);
+  return { success: true as const };
+}
+
+/**
+ * Closes a finished season: the final standings are worked out here, the same
+ * way the standings page does, and saved with the season for good.
+ */
+export async function closeSeason(slug: string, seasonId: unknown) {
+  if (!z.uuid().safeParse(seasonId).success)
+    return { error: "invalidSetup" as const };
+  const { supabase, league, canManage } = await getLeagueAccess(slug);
+  if (!canManage) return { error: "notAllowed" as const };
+  const { data: divisions, error: loadError } = await supabase
+    .from("divisions")
+    .select("id,name,sport")
+    .eq("league_id", league.id)
+    .eq("season_id", seasonId as string);
+  if (loadError) return { error: "saveFailed" as const };
+  const standings = await seasonStandings(
+    supabase,
+    league.id,
+    seasonId as string,
+    divisions,
+  );
+  const { error } = await supabase.rpc("close_season", {
+    p_league_id: league.id,
+    p_season_id: seasonId as string,
+    p_standings: JSON.parse(JSON.stringify(standings)),
+  });
+  if (error) {
+    if (error.message.includes("games_without_result"))
+      return { error: "gamesWithoutResult" as const };
+    if (error.message.includes("season_closed"))
+      return { error: "alreadyClosed" as const };
+    if (error.code === "42501") return { error: "notAllowed" as const };
+    return { error: "saveFailed" as const };
+  }
+  revalidatePath(`/admin/${slug}`, "layout");
+  revalidatePath(`/${slug}`, "layout");
   return { success: true as const };
 }

@@ -474,8 +474,88 @@ export type Database = {
           },
         ];
       };
+      game_result_history: {
+        Row: {
+          award: Json | null;
+          game_id: string;
+          id: string;
+          league_id: string;
+          reason: string;
+          reopened_at: string;
+          reopened_by: string;
+          result: Json;
+        };
+        Insert: {
+          award?: Json | null;
+          game_id: string;
+          id?: string;
+          league_id: string;
+          reason: string;
+          reopened_at?: string;
+          reopened_by: string;
+          result: Json;
+        };
+        Update: {
+          award?: Json | null;
+          game_id?: string;
+          id?: string;
+          league_id?: string;
+          reason?: string;
+          reopened_at?: string;
+          reopened_by?: string;
+          result?: Json;
+        };
+        Relationships: [];
+      };
+      season_closures: {
+        Row: {
+          closed_at: string;
+          closed_by: string;
+          league_id: string;
+          season_id: string;
+          standings: Json;
+        };
+        Insert: {
+          closed_at?: string;
+          closed_by: string;
+          league_id: string;
+          season_id: string;
+          standings: Json;
+        };
+        Update: {
+          closed_at?: string;
+          closed_by?: string;
+          league_id?: string;
+          season_id?: string;
+          standings?: Json;
+        };
+        Relationships: [];
+      };
+      suspension_completions: {
+        Row: {
+          completed_at: string;
+          completed_game_id: string;
+          league_id: string;
+          suspension_id: string;
+        };
+        Insert: {
+          completed_at?: string;
+          completed_game_id: string;
+          league_id: string;
+          suspension_id: string;
+        };
+        Update: {
+          completed_at?: string;
+          completed_game_id?: string;
+          league_id?: string;
+          suspension_id?: string;
+        };
+        Relationships: [];
+      };
       game_results: {
         Row: {
+          forfeited_by: string | null;
+          outcome: string;
           approved_at: string;
           approved_by: string;
           away_score: number;
@@ -486,6 +566,8 @@ export type Database = {
           summary: Json;
         };
         Insert: {
+          forfeited_by?: string | null;
+          outcome?: string;
           approved_at?: string;
           approved_by: string;
           away_score: number;
@@ -496,6 +578,8 @@ export type Database = {
           summary: Json;
         };
         Update: {
+          forfeited_by?: string | null;
+          outcome?: string;
           approved_at?: string;
           approved_by?: string;
           away_score?: number;
@@ -890,6 +974,8 @@ export type Database = {
       };
       leagues: {
         Row: {
+          paused_at: string | null;
+          paused_reason: string;
           created_at: string;
           id: string;
           logo_url: string | null;
@@ -899,6 +985,8 @@ export type Database = {
           sport: string;
         };
         Insert: {
+          paused_at?: string | null;
+          paused_reason?: string;
           created_at?: string;
           id?: string;
           logo_url?: string | null;
@@ -908,6 +996,8 @@ export type Database = {
           sport?: string;
         };
         Update: {
+          paused_at?: string | null;
+          paused_reason?: string;
           created_at?: string;
           id?: string;
           logo_url?: string | null;
@@ -918,8 +1008,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      platform_audit_log: {
+        Row: {
+          action: string;
+          actor_id: string;
+          created_at: string;
+          detail: Json;
+          id: string;
+          league_id: string;
+          target_user_id: string | null;
+        };
+        Insert: {
+          action: string;
+          actor_id: string;
+          created_at?: string;
+          detail?: Json;
+          id?: string;
+          league_id: string;
+          target_user_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string;
+          created_at?: string;
+          detail?: Json;
+          id?: string;
+          league_id?: string;
+          target_user_id?: string | null;
+        };
+        Relationships: [];
+      };
       player_checks: {
         Row: {
+          suspension_source: string | null;
           checked_by: string | null;
           documents_present: boolean;
           league_id: string;
@@ -928,6 +1049,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          suspension_source?: string | null;
           checked_by?: string | null;
           documents_present?: boolean;
           league_id: string;
@@ -936,6 +1058,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          suspension_source?: string | null;
           checked_by?: string | null;
           documents_present?: boolean;
           league_id?: string;
@@ -1532,6 +1655,8 @@ export type Database = {
       };
       suspensions: {
         Row: {
+          games: number;
+          season_team_id: string | null;
           created_at: string;
           created_by: string;
           game_id: string;
@@ -1541,6 +1666,8 @@ export type Database = {
           reason: string;
         };
         Insert: {
+          games?: number;
+          season_team_id?: string | null;
           created_at?: string;
           created_by: string;
           game_id: string;
@@ -1550,6 +1677,8 @@ export type Database = {
           reason: string;
         };
         Update: {
+          games?: number;
+          season_team_id?: string | null;
           created_at?: string;
           created_by?: string;
           game_id?: string;
@@ -1748,6 +1877,8 @@ export type Database = {
       };
       published_games: {
         Row: {
+          forfeited_by: string | null;
+          outcome: string | null;
           away_score: number | null;
           away_season_team_id: string | null;
           away_team_name: string | null;
@@ -1858,6 +1989,78 @@ export type Database = {
       };
     };
     Functions: {
+      admin_add_member: {
+        Args: { p_email: string; p_league_id: string; p_role: Database["public"]["Enums"]["league_role"] };
+        Returns: string;
+      };
+      admin_find_users: {
+        Args: { p_query: string };
+        Returns: {
+          created_at: string;
+          display_name: string;
+          email: string;
+          email_confirmed_at: string | null;
+          is_platform_admin: boolean;
+          last_sign_in_at: string | null;
+          managed_teams: Json;
+          memberships: Json;
+          user_id: string;
+        }[];
+      };
+      admin_league_log: {
+        Args: { p_league_id: string };
+        Returns: {
+          action: string;
+          actor_email: string | null;
+          created_at: string;
+          detail: Json;
+          id: string;
+          target_email: string | null;
+        }[];
+      };
+      admin_league_members: {
+        Args: { p_league_id: string };
+        Returns: {
+          created_at: string;
+          display_name: string;
+          email: string;
+          last_sign_in_at: string | null;
+          role: Database["public"]["Enums"]["league_role"];
+          user_id: string;
+        }[];
+      };
+      admin_leagues: {
+        Args: never;
+        Returns: {
+          commissioners: Json;
+          created_at: string;
+          current_season: string | null;
+          games_live: number;
+          games_played: number;
+          id: string;
+          last_activity: string;
+          name: string;
+          paused_at: string | null;
+          paused_reason: string;
+          slug: string;
+          sport: string;
+          staff_count: number;
+          teams: number;
+        }[];
+      };
+      admin_overview: { Args: never; Returns: Json };
+      admin_remove_member: {
+        Args: { p_league_id: string; p_role: Database["public"]["Enums"]["league_role"]; p_user_id: string };
+        Returns: undefined;
+      };
+      admin_replace_commissioner: {
+        Args: { p_email: string; p_league_id: string };
+        Returns: string;
+      };
+      admin_set_league_paused: {
+        Args: { p_league_id: string; p_paused: boolean; p_reason?: string };
+        Returns: undefined;
+      };
       add_game: {
         Args: {
           p_away_season_team_id: string;
@@ -1887,6 +2090,7 @@ export type Database = {
           p_last_sequence: number;
           p_league_id: string;
           p_summary: Json;
+          p_suspend_games?: number[];
           p_suspend_player_ids?: string[];
         };
         Returns: undefined;
@@ -1900,6 +2104,7 @@ export type Database = {
           p_league_id: string;
           p_player_id?: string;
           p_summary: Json;
+          p_suspend_games?: number[];
           p_suspend_player_ids?: string[];
         };
         Returns: undefined;
@@ -1984,6 +2189,26 @@ export type Database = {
           p_season_id: string;
         };
         Returns: Json;
+      };
+      close_season: {
+        Args: { p_league_id: string; p_season_id: string; p_standings: Json };
+        Returns: undefined;
+      };
+      record_forfeit: {
+        Args: {
+          p_away_score?: number;
+          p_game_id: string;
+          p_home_score?: number;
+          p_kind: string;
+          p_league_id: string;
+          p_reason: string;
+          p_side: string;
+        };
+        Returns: undefined;
+      };
+      reopen_result: {
+        Args: { p_game_id: string; p_league_id: string; p_reason: string };
+        Returns: undefined;
       };
       reopen_game: {
         Args: { p_comment: string; p_game_id: string; p_league_id: string };

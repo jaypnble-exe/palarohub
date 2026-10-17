@@ -39,6 +39,7 @@ function failure(error: {
   }
   if (error.message.includes("registration_closed"))
     return { error: "registrationClosed" };
+  if (error.message.includes("league_paused")) return { error: "leaguePaused" };
   if (error.message.includes("deadline_passed"))
     return { error: "deadlinePassed" };
   if (error.message.includes("registration_not_submitted"))

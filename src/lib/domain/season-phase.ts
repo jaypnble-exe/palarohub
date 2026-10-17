@@ -1,4 +1,5 @@
-export type SeasonPhase = "draft" | "upcoming" | "inProgress" | "finished";
+export type SeasonPhase =
+  "draft" | "upcoming" | "inProgress" | "finished" | "closed";
 
 const DAY_MS = 86400000;
 const day = (value: string) => new Date(`${value}T12:00:00Z`).getTime();
@@ -7,8 +8,11 @@ const day = (value: string) => new Date(`${value}T12:00:00Z`).getTime();
 export function seasonPhase(
   season: { status: string; start_date: string; end_date: string },
   today: string,
+  /** Closed by the commissioner: final, whatever the dates say. */
+  closed = false,
 ): SeasonPhase {
   if (season.status !== "published") return "draft";
+  if (closed) return "closed";
   if (today < season.start_date) return "upcoming";
   if (today > season.end_date) return "finished";
   return "inProgress";

@@ -69,7 +69,7 @@ set local role anon;
 select is((select count(*)::integer from public.game_player_awards where league_id='a2000000-0000-4000-8000-000000000001'),1,'public sees only the confirmed approved award');
 select ok(not has_table_privilege('anon','public.game_player_awards','INSERT'),'public cannot write awards');
 select ok(not has_table_privilege('authenticated','public.game_player_awards','UPDATE'),'signed-in users cannot rewrite awards');
-select ok(not has_function_privilege('anon','public.approve_game_with_player(uuid,uuid,integer,integer,integer,jsonb,uuid[],uuid)','execute'),'public cannot approve results');
+select ok(not has_function_privilege('anon','public.approve_game_with_player(uuid,uuid,integer,integer,integer,jsonb,uuid[],uuid,integer[])','execute'),'public cannot approve results');
 reset role;
 select * from finish();
 rollback;

@@ -31,7 +31,7 @@ export async function seasonStandings(
     supabase
       .from("published_games")
       .select(
-        "division_id,home_season_team_id,away_season_team_id,home_score,away_score,bracket_slot_id",
+        "division_id,home_season_team_id,away_season_team_id,home_score,away_score,bracket_slot_id,outcome,forfeited_by",
       )
       .eq("league_id", leagueId)
       .eq("season_id", seasonId)
@@ -55,6 +55,10 @@ export async function seasonStandings(
                 awayId: game.away_season_team_id,
                 homeScore: game.home_score,
                 awayScore: game.away_score,
+                forfeitedBy:
+                  game.outcome === "forfeit"
+                    ? (game.forfeited_by as "home" | "away" | "both")
+                    : null,
               },
             ]
           : [],

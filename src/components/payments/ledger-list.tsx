@@ -7,6 +7,7 @@ import { formatSar } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { cardVariants } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import {
   ScheduleFeedback,
@@ -30,44 +31,86 @@ export function LedgerList({
     return <EmptyState icon="payments" title={t("noEntries")} />;
   return (
     <ul className={`${cardVariants({ padding: "none" })} divide-y`}>
-      {entries.map((entry) => (
-        <li key={entry.id} className="space-y-2 p-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p
-              className={
-                entry.reversed
-                  ? "font-semibold text-muted-foreground line-through"
-                  : "font-semibold"
-              }
-            >
-              {entry.kind === "payment"
-                ? t("paymentLine", {
-                    amount: sar(entry.amountHalalas),
-                    method: t(`methods.${entry.method ?? "other"}`),
-                  })
-                : entry.kind === "fine"
-                  ? t("fineLine", {
-                      amount: sar(entry.amountHalalas),
-                      reason: t(`reasons.${entry.fineReason ?? "other"}`),
-                    })
-                  : t("reversalLine", { amount: sar(entry.amountHalalas) })}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {format.dateTime(new Date(`${entry.paidOn}T12:00:00Z`), {
-                dateStyle: "medium",
-                timeZone: "UTC",
-              })}
-            </p>
-          </div>
-          {entry.note && <p className="text-sm">{entry.note}</p>}
-          {entry.reversed && (
-            <p className="text-sm text-muted-foreground">{t("reversedNote")}</p>
-          )}
-          {canEdit && entry.kind !== "reversal" && !entry.reversed && (
-            <ReverseEntry slug={slug} entryId={entry.id} />
-          )}
-        </li>
-      ))}
+      {entries.map((entry) => {
+        const tone =
+          entry.kind === "payment"
+            ? "bg-success-soft text-success"
+            : entry.kind === "fine"
+              ? "bg-destructive-soft text-destructive"
+              : "bg-accent text-muted-foreground";
+        return (
+          <li key={entry.id} className="space-y-2 p-4">
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden="true"
+                className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone}`}
+              >
+                <Icon
+                  name={
+                    entry.kind === "payment"
+                      ? "payments"
+                      : entry.kind === "fine"
+                        ? "alert"
+                        : "back"
+                  }
+                  className="size-5"
+                />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p
+                  className={
+                    entry.reversed
+                      ? "font-semibold text-muted-foreground line-through"
+                      : "font-semibold"
+                  }
+                >
+                  {entry.kind === "payment"
+                    ? t("entryPayment", {
+                        method: t(`methods.${entry.method ?? "other"}`),
+                      })
+                    : entry.kind === "fine"
+                      ? t("entryFine", {
+                          reason: t(`reasons.${entry.fineReason ?? "other"}`),
+                        })
+                      : t("entryReversal")}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {format.dateTime(new Date(`${entry.paidOn}T12:00:00Z`), {
+                    dateStyle: "medium",
+                    timeZone: "UTC",
+                  })}
+                </p>
+              </div>
+              <p
+                className={`shrink-0 text-right font-display text-xl font-semibold tabular-nums ${
+                  entry.reversed
+                    ? "text-muted-foreground line-through"
+                    : entry.kind === "payment"
+                      ? "text-success"
+                      : entry.kind === "fine"
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                }`}
+              >
+                {entry.kind === "reversal"
+                  ? t("reversalLine", { amount: sar(entry.amountHalalas) })
+                  : sar(entry.amountHalalas)}
+              </p>
+            </div>
+            <div className="space-y-2 pl-13">
+              {entry.note && <p className="text-sm">{entry.note}</p>}
+              {entry.reversed && (
+                <p className="text-sm text-muted-foreground">
+                  {t("reversedNote")}
+                </p>
+              )}
+              {canEdit && entry.kind !== "reversal" && !entry.reversed && (
+                <ReverseEntry slug={slug} entryId={entry.id} />
+              )}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

@@ -10,6 +10,8 @@ export const reservedSlugs = [
   "login",
   "auth",
   "leagues",
+  "new",
+  "users",
 ] as const;
 export const leagueSchema = z.object({
   name: z.string().trim().min(1).max(100),

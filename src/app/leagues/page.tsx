@@ -53,8 +53,8 @@ export default async function MyLeaguesPage({
       {admin && (
         <Button asChild variant="outline" className="w-full">
           <Link href="/admin">
-            <Icon name="add" className="size-5" />
-            {t("create")}
+            <Icon name="workspace" className="size-5" />
+            {t("platformAdmin")}
           </Link>
         </Button>
       )}

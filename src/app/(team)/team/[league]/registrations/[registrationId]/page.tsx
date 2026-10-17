@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
 import { loadRegistration } from "@/lib/registration-data";
 import { AccessDenied } from "@/components/access-denied";
 import { RegistrationDetails } from "@/components/registration/details";
@@ -9,7 +9,8 @@ import { seasonPayments } from "@/lib/payments-data";
 import { PaymentSummary } from "@/components/payments/payment-summary";
 import { LedgerList } from "@/components/payments/ledger-list";
 import { cardVariants } from "@/components/ui/card";
-import { PageHeader } from "@/components/ui/page-header";
+import { RegistrationHero } from "@/components/team/registration-hero";
+import { paymentBadge } from "@/components/payments/payment-summary";
 import { Alert } from "@/components/ui/alert";
 import { Section } from "@/components/ui/section";
 import { RegistrationStatus } from "@/components/team/registration-status";
@@ -65,6 +66,8 @@ export default async function ManagerRegistrationPage({
         )
       : [];
   const paymentText = await getTranslations("Payments");
+  const format = await getFormatter();
+  const status = data.registration.status as ManagerRegistration["status"];
   const pendingChange = data.changes.find(
     (change) => change.status === "submitted",
   );
@@ -104,13 +107,36 @@ export default async function ManagerRegistrationPage({
   );
   return (
     <main className="mx-auto max-w-2xl space-y-6 py-6">
-      <PageHeader
-        back={{ href: `/team/${slug}`, label: t("teamHome") }}
-        eyebrow={`${data.season.name} · ${data.division.name}`}
-        title={data.registration.team_name}
+      <RegistrationHero
+        slug={slug}
+        teamName={data.registration.team_name}
+        seasonName={data.season.name}
+        divisionName={data.division.name}
+        status={status}
+        logoUrl={data.media.logo?.url}
+        players={roster.length}
+        rosterMin={data.division.roster_min}
+        rosterMax={data.division.roster_max}
+        maxRating={data.division.max_rating}
+        feeHalalas={data.registration.fee_halalas}
+        deadline={data.settings.deadline}
+        registrationOpen={registrationOpen}
+        payment={
+          payments
+            ? {
+                leftHalalas: Math.max(0, payments.status.balanceHalalas),
+                label: paymentBadge(
+                  payments.status,
+                  (key, values) => paymentText(key, values),
+                  format,
+                ).text,
+                behind: payments.status.behind,
+              }
+            : null
+        }
       />
       <RegistrationStatus
-        status={data.registration.status as ManagerRegistration["status"]}
+        status={status}
         seasonName={data.season.name}
         comment={data.registration.review_comment}
       />
@@ -123,6 +149,7 @@ export default async function ManagerRegistrationPage({
         showStatus={false}
         showRoster={!editable}
         showArtwork={!editable}
+        showSummary={false}
       />
       {payments && (
         <Section id="payments" title={paymentText("teamTitle")}>
